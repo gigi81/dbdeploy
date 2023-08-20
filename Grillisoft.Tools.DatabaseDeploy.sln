@@ -5,6 +5,12 @@ VisualStudioVersion = 16.0.30330.147
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grillisoft.Tools.DatabaseDeploy", "src\Grillisoft.Tools.DatabaseDeploy\Grillisoft.Tools.DatabaseDeploy.csproj", "{4FB49F20-35AE-4D66-AFB6-A4465D036CF3}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{EDB208D8-E952-450C-A274-69FAD0613CD2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grillisoft.Tools.DatabaseDeploy.Abstractions", "src\Grillisoft.Tools.DatabaseDeploy.Abstractions\Grillisoft.Tools.DatabaseDeploy.Abstractions.csproj", "{36E7258E-030E-411F-950A-E5C7D63B6798}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grillisoft.Tools.DatabaseDeploy.Contracts", "src\Grillisoft.Tools.DatabaseDeploy.Contracts\Grillisoft.Tools.DatabaseDeploy.Contracts.csproj", "{45A67FBB-E3A1-446E-A66E-1AD946BBAB8F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,11 +21,23 @@ Global
 		{4FB49F20-35AE-4D66-AFB6-A4465D036CF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4FB49F20-35AE-4D66-AFB6-A4465D036CF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4FB49F20-35AE-4D66-AFB6-A4465D036CF3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36E7258E-030E-411F-950A-E5C7D63B6798}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36E7258E-030E-411F-950A-E5C7D63B6798}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36E7258E-030E-411F-950A-E5C7D63B6798}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36E7258E-030E-411F-950A-E5C7D63B6798}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45A67FBB-E3A1-446E-A66E-1AD946BBAB8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45A67FBB-E3A1-446E-A66E-1AD946BBAB8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45A67FBB-E3A1-446E-A66E-1AD946BBAB8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45A67FBB-E3A1-446E-A66E-1AD946BBAB8F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2FE47D27-BA6B-46C6-858E-032AAAB5007A}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{36E7258E-030E-411F-950A-E5C7D63B6798} = {EDB208D8-E952-450C-A274-69FAD0613CD2}
+		{45A67FBB-E3A1-446E-A66E-1AD946BBAB8F} = {EDB208D8-E952-450C-A274-69FAD0613CD2}
 	EndGlobalSection
 EndGlobal

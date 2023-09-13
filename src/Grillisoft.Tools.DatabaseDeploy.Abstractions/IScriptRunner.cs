@@ -2,5 +2,5 @@
 
 public interface IScriptRunner
 {
-    public void Run(string script);
+    void Run(string script);
 }

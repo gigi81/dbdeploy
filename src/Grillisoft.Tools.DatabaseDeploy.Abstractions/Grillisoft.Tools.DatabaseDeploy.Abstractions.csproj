@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.Contracts\Grillisoft.Tools.DatabaseDeploy.Contracts.csproj" />
+  </ItemGroup>
+
 </Project>

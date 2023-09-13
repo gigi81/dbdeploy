@@ -13,20 +13,20 @@ namespace Grillisoft.Tools.DatabaseDeploy
         }
 
         private readonly IDirectoryInfo _directory;
-        private readonly Dictionary<string, Branch> _branches = new Dictionary<string, Branch>();
+        private readonly Dictionary<string, BranchLoader> _branches = new Dictionary<string, BranchLoader>();
 
         private DeployManager(IDirectoryInfo directory)
         {
             _directory = directory;
         }
 
-        public IReadOnlyDictionary<string, Branch> Branches => _branches;
+        public IReadOnlyDictionary<string, BranchLoader> Branches => _branches;
 
         private void Load()
         {
             _directory.ThrowIfNotFound();
             _directory.ForEachFile((f, _) => {
-                var branch = Branch.Load(f);
+                var branch = BranchLoader.Load(f);
                 _branches.Add(branch.Name, branch);
             }, null, false, "*.csv");
         }

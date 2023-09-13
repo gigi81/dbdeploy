@@ -1,15 +1,21 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <AssemblyName>dbdeploy</AssemblyName>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
+	<Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="TestableIO.System.IO.Abstractions" Version="19.2.51" />
-    <PackageReference Include="TestableIO.System.IO.Abstractions.Extensions" Version="2.0.3" />
+    <PackageReference Include="TestableIO.System.IO.Abstractions.Extensions" Version="2.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.Abstractions\Grillisoft.Tools.DatabaseDeploy.Abstractions.csproj" />
+    <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.Contracts\Grillisoft.Tools.DatabaseDeploy.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

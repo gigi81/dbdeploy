@@ -2,5 +2,5 @@
 
 public interface IScriptParser
 {
-    string Parse(string script);
+    string[] Parse(string script);
 }

@@ -5,5 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="TestableIO.System.IO.Abstractions" Version="19.2.51" />
+    <PackageReference Include="TestableIO.System.IO.Abstractions.Extensions" Version="2.0.5" />
+  </ItemGroup>
 
 </Project>

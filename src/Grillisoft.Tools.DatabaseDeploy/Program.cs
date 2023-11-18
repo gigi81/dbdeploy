@@ -1,12 +1,19 @@
 ﻿using System;
+using System.IO.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy;
 
-namespace Grillisoft.Tools.DatabaseDeploy
+try
 {
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            Console.WriteLine("Hello World!");
-        }
-    }
+    var fs = new FileSystem();
+    var directory = fs.DirectoryInfo.New(".");
+    var manager = DeployManager.Load(directory);
+                
+    manager.Validate();
+
+    return 0;
+}
+catch (Exception ex)
+{
+    Console.WriteLine(ex);
+    return -1;
 }

@@ -2,7 +2,7 @@
 
 namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
 
-public interface IDatabaseMigrationPersistance
+public interface IDatabaseMigrationPersistence
 {
     void Initialize();
 

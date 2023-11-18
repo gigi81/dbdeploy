@@ -1,2 +1,2 @@
 ﻿namespace Grillisoft.Tools.DatabaseDeploy.Contracts;
-public record Branch(string Name, Step[] steps);
+public record Branch(string Name, IReadOnlyCollection<Step> Steps);

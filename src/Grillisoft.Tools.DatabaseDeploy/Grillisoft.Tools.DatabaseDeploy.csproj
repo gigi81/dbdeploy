@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="TestableIO.System.IO.Abstractions" Version="19.2.51" />
+    <PackageReference Include="TestableIO.System.IO.Abstractions.Wrappers" Version="19.2.51" />
     <PackageReference Include="TestableIO.System.IO.Abstractions.Extensions" Version="2.0.5" />
   </ItemGroup>
 

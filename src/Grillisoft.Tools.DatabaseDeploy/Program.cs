@@ -14,7 +14,7 @@ try
 
     if (result.Errors.Any())
     {
-        Environment.ExitCode = ExitCode.GenericError;
+        Environment.ExitCode = ExitCode.InvalidArguments;
         //TODO: print errors
     }
     else
@@ -66,5 +66,6 @@ static IHostBuilder CreateHostBuilder(object options, string[] args)
 static class ExitCode
 {
     public const int Ok = 0;
-    public const int GenericError = -1;
+    public const int InvalidArguments = -1;
+    public const int GenericError = -2;
 }

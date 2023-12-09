@@ -64,4 +64,9 @@ public sealed class DeployManager
 
         return errors;
     }
+
+    public void Deploy(string branch)
+    {
+        
+    }
 }

@@ -19,7 +19,7 @@ public static class BranchLoader
     
     public static Branch Load(IFileInfo file)
     {
-        return LoadInternal(file, new Stack<string>());
+        return LoadInternal(file, new HashSet<string>(StringComparer.InvariantCultureIgnoreCase));
     }
 
     public static IFileInfo GetBranchFile(string branchName, IDirectoryInfo directory)
@@ -28,9 +28,11 @@ public static class BranchLoader
         return directory.File($"{branchName}.csv");
     }
 
-    private static Branch LoadInternal(IFileInfo file, Stack<string> files)
+    private static Branch LoadInternal(IFileInfo file, ISet<string> files)
     {
-        CheckForCircularIncludes(file, files);
+        file.ThrowIfNotFound();
+        if (!files.Add(file.Name))
+            throw new Exception($"Circular include detected for file '{file.Name}'");
 
         var directory = file.Directory ?? file.FileSystem.CurrentDirectory();
         var steps = new List<Step>();
@@ -74,27 +76,12 @@ public static class BranchLoader
         return name;
     }
 
-    private static void CheckForCircularIncludes(IFileInfo file, Stack<string> files)
-    {
-        file.ThrowIfNotFound();
-        files.Push(file.FullName);
-
-        //check for duplicate files in the stack (circular include)
-        var duplicateFile = files
-            .GroupBy(f => f)
-            .FirstOrDefault(g => g.Count() > 1)
-            ?.FirstOrDefault();
-
-        if (!string.IsNullOrEmpty(duplicateFile))
-            throw new Exception($"Circular include detected for file {duplicateFile}");
-    }
-
     private static Step ReadStep(string line, int count, IDirectoryInfo directory)
     {
         var split = line.Split(',');
         if (split.Length != 2)
             throw new ArgumentException($"Invalid format '{line}' on line {count}");
 
-        return new Step(split[0], split[1], directory);
+        return new Step(split[0].Trim(), split[1].Trim(), directory);
     }
 }

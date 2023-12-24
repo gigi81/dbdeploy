@@ -2,5 +2,5 @@
 
 public interface IDatabaseFactory
 {
-    IDatabase? GetDatabase(string name);
+    Task<IDatabase?> GetDatabase(string name);
 }

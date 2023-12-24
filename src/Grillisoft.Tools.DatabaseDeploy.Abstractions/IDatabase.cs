@@ -5,5 +5,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
 public interface IDatabase
 {
     Task<List<DatabaseMigration>> GetMigrations();
-    Task Deploy(Step step);
+    Task AddMigration(DatabaseMigration migration);
+    Task RemoveMigration(DatabaseMigration migration);
+    Task Run(string script);
 }

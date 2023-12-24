@@ -10,4 +10,9 @@ internal static class Extensions
     {
         return first.Except(second, StringComparer.InvariantCultureIgnoreCase);
     }
+
+    public static Queue<T> ToQueue<T>(this IEnumerable<T> items)
+    {
+        return new Queue<T>(items);
+    }
 }

@@ -42,33 +42,41 @@ public class DeployService : BackgroundService
         if (!manager.Branches.TryGetValue(_options.Branch, out var branch))
             throw new BranchNotFoundException(_options.Branch);
 
-        var databases = branch.Databases.ToDictionary(d => d, GetDatabase);
-        var migrations =
-            branch.Databases.ToDictionary(d => d, d => new Queue<DatabaseMigration>(await databases[d].GetMigrations()));
+        var tasks = branch.Databases.Select(GetDatabase).ToArray();
+        var databases = (await Task.WhenAll(tasks))
+            .ToDictionary(d => d.Name, d => d);
         
         foreach (var step in branch.Steps)
         {
-            if (migrations[step.Database].TryDequeue(out var migration))
+            var (_, database, migrations) = databases[step.Database];
+            
+            if (migrations.TryDequeue(out var migration))
             {
                 if (!migration.Name.Equals(step.Name, StringComparison.InvariantCultureIgnoreCase))
                     throw new Exception("Sequence error detected"); //TODO: improve error
             }
             else
             {
-                await databases[step.Database].Deploy(step);
+                await database.Run(step.DeployScript);
+                await database.AddMigration(new DatabaseMigration(step.Name, DateTimeOffset.UtcNow, Environment.UserName, step.DeployScript.Name));
             }
         }
     }
 
-    private IDatabase GetDatabase(string name)
+    private async Task<DatabaseInfo> GetDatabase(string name)
     {
         foreach (var factory in _databaseFactories)
         {
-            var database = factory.GetDatabase(name);
+            var database = await factory.GetDatabase(name);
             if (database != null)
-                return database;
+            {
+                return new(
+                    name, database, (await database.GetMigrations()).ToQueue());
+            }
         }
 
         throw new Exception($"Database not found '{name}'");
     }
 }
+
+internal record DatabaseInfo(string Name, IDatabase Database, Queue<DatabaseMigration> Migrations);

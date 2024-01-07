@@ -20,6 +20,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{E878A210-5E10-4674-8DA1-F65BF8CF1D23}"
+	ProjectSection(SolutionItems) = preProject
+		tests\Directory.Build.props = tests\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grillisoft.Tools.DatabaseDeploy.Tests", "tests\Grillisoft.Tools.DatabaseDeploy.Tests\Grillisoft.Tools.DatabaseDeploy.Tests.csproj", "{D8A67169-663B-4628-B345-617D6EF06E9E}"
 EndProject

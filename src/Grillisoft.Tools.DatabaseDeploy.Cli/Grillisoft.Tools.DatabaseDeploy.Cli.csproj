@@ -3,6 +3,9 @@
     <PropertyGroup>
       <AssemblyName>dbdeploy</AssemblyName>
       <OutputType>Exe</OutputType>
+      <PackAsTool>true</PackAsTool>
+      <ToolCommandName>dbdeploy</ToolCommandName>
+      <IsPackable>true</IsPackable>
     </PropertyGroup>
 	
 	<ItemGroup>

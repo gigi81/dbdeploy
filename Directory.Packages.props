@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="CommandLineParser" Version="2.9.1" />
+    <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.2" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
     <PackageVersion Include="Serilog" Version="3.1.1" />
@@ -14,6 +15,7 @@
     <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="20.0.4" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions.Wrappers" Version="20.0.4" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions.Extensions" Version="2.2.1" />
+    <PackageVersion Include="TestableIO.System.IO.Abstractions.TestingHelpers" Version="20.0.4" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageVersion Include="xunit" Version="2.6.5" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.6">

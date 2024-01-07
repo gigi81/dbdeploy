@@ -3,6 +3,7 @@
     <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.Abstractions\Grillisoft.Tools.DatabaseDeploy.Abstractions.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
 </Project>

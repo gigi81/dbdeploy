@@ -1,19 +1,30 @@
-﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+﻿using System.Data;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Microsoft.Data.SqlClient;
 
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer;
 
-internal class SqlServerDatabase : IDatabase
+internal class SqlServerDatabase : IDatabase, IAsyncDisposable
 {
+    private readonly SqlConnection _connection;
     private readonly SqlServerScriptParser _parser;
 
-    public SqlServerDatabase(SqlServerScriptParser parser)
+    public SqlServerDatabase(string connectionString, SqlServerScriptParser parser)
     {
+        _connection = new SqlConnection(connectionString);
         _parser = parser;
     }
 
     public IScriptParser ScriptParser => _parser;
-    public Task RunScript(string script, CancellationToken cancellationToken) => throw new NotImplementedException();
+
+    public async Task RunScript(string script, CancellationToken cancellationToken)
+    {
+        await OpenConnection(cancellationToken);
+        await using var command = _connection.CreateCommand();
+        command.CommandText = script;
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
 
     public Task InitializeMigrations(CancellationToken cancellationToken) => throw new NotImplementedException();
 
@@ -22,4 +33,15 @@ internal class SqlServerDatabase : IDatabase
     public Task AddMigration(DatabaseMigration migration, CancellationToken cancellationToken) => throw new NotImplementedException();
 
     public Task RemoveMigration(DatabaseMigration migration, CancellationToken cancellationToken) => throw new NotImplementedException();
+
+    private async Task OpenConnection(CancellationToken cancellationToken)
+    {
+        if (_connection.State != ConnectionState.Open)
+            await _connection.OpenAsync(cancellationToken);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _connection.DisposeAsync();
+    }
 }

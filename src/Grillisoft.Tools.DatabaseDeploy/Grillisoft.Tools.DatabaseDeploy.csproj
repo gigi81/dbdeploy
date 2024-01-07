@@ -1,19 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <AssemblyName>dbdeploy</AssemblyName>
-    <OutputType>Exe</OutputType>
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="CommandLineParser" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" />
-    <PackageReference Include="Serilog" />
-    <PackageReference Include="Serilog.Extensions.Hosting" />
-    <PackageReference Include="Serilog.Extensions.Logging" />
-    <PackageReference Include="Serilog.Sinks.Console" />
+	<PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="TestableIO.System.IO.Abstractions" />
-    <PackageReference Include="TestableIO.System.IO.Abstractions.Wrappers" />
     <PackageReference Include="TestableIO.System.IO.Abstractions.Extensions" />
   </ItemGroup>
 

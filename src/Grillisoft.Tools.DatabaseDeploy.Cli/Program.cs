@@ -42,12 +42,12 @@ static IHostBuilder CreateHostBuilder(object options, string[] args)
         .UseSerilog((hostingContext, services, loggerConfiguration) =>
         {
             loggerConfiguration.Enrich.FromLogContext()
-                               .WriteTo.Console();
+                .WriteTo.Console();
         })
         .ConfigureServices((hostContext, services) =>
         {
             services.AddSingleton<IFileSystem, FileSystem>()
-                    .AddSingleton(options);
+                .AddSingleton(options);
 
             switch (options)
             {

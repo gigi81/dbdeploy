@@ -1,11 +1,14 @@
-﻿using Grillisoft.Tools.DatabaseDeploy.Contracts;
+﻿using System.IO.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
 
 public interface IDatabase
 {
-    Task<List<DatabaseMigration>> GetMigrations();
+    IScriptParser ScriptParser { get; }
+    Task RunScript(string script);
+    Task InitializeMigrations();
+    Task<DatabaseMigration[]> GetMigrations();
     Task AddMigration(DatabaseMigration migration);
     Task RemoveMigration(DatabaseMigration migration);
-    Task Run(string script);
 }

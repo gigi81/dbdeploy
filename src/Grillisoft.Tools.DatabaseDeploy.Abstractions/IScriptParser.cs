@@ -1,6 +1,8 @@
-﻿namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
+﻿using System.IO.Abstractions;
+
+namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
 
 public interface IScriptParser
 {
-    string[] Parse(string script);
+    Task<IAsyncEnumerable<string>> Parse(IFileInfo scriptFile);
 }

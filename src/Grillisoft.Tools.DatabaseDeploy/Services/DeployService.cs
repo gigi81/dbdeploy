@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO.Abstractions;
 using System.Linq;
@@ -54,11 +53,37 @@ public class DeployService : BackgroundService
             {
                 if (!migration.Name.Equals(step.Name, StringComparison.InvariantCultureIgnoreCase))
                     throw new Exception("Sequence error detected"); //TODO: improve error
+                
+                _logger.LogInformation($"Step {step.Name} already deployed");
             }
             else
             {
-                await database.Run(step.DeployScript);
+                await RunScript(step.DeployScript, database, stoppingToken);
+                if(_options.UnitTest)
+                    await RunScript(step.TestScript, database, stoppingToken);
+
+                _logger.LogInformation($"Adding migration {step.Name}");
                 await database.AddMigration(new DatabaseMigration(step.Name, DateTimeOffset.UtcNow, Environment.UserName, step.DeployScript.Name));
+            }
+        }
+    }
+
+    private async Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken stoppingToken)
+    {
+        _logger.LogInformation($"Parsing script {scriptFile.FullName}");
+        var scripts = await database.ScriptParser.Parse(scriptFile);
+        
+        _logger.LogInformation($"Running script {scriptFile.FullName}");
+        await foreach (var script in scripts.WithCancellation(stoppingToken))
+        {
+            try
+            {
+                await database.RunScript(script);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to run script {0}", script);
+                throw;
             }
         }
     }
@@ -70,12 +95,12 @@ public class DeployService : BackgroundService
             var database = await factory.GetDatabase(name);
             if (database != null)
             {
-                return new(
-                    name, database, (await database.GetMigrations()).ToQueue());
+                var migrations = (await database.GetMigrations()).ToQueue();
+                return new(name, database, migrations);
             }
         }
 
-        throw new Exception($"Database not found '{name}'");
+        throw new Exception($"Database '{name}' not found");
     }
 }
 

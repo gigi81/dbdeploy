@@ -22,17 +22,17 @@ public abstract class BaseService : BackgroundService
         _databaseFactories = databaseFactories;
     }
 
-    protected async Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken stoppingToken)
+    protected async Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken cancellationToken)
     {
         _logger.LogInformation($"Parsing script {scriptFile.FullName}");
-        var scripts = await database.ScriptParser.Parse(scriptFile);
+        var scripts = await database.ScriptParser.Parse(scriptFile, cancellationToken);
         
         _logger.LogInformation($"Running script {scriptFile.FullName}");
-        await foreach (var script in scripts.WithCancellation(stoppingToken))
+        await foreach (var script in scripts.WithCancellation(cancellationToken))
         {
             try
             {
-                await database.RunScript(script);
+                await database.RunScript(script, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -42,22 +42,22 @@ public abstract class BaseService : BackgroundService
         }
     }
 
-    protected async Task<Dictionary<string, DatabaseInfo>> GetDatabases(IEnumerable<string> databases)
+    protected async Task<Dictionary<string, DatabaseInfo>> GetDatabases(IEnumerable<string> databases, CancellationToken cancellationToken)
     {
-        var tasks = databases.Select(GetDatabase).ToArray();
+        var tasks = databases.Select(d => GetDatabase(d, cancellationToken)).ToArray();
         var databaseInfos = await Task.WhenAll(tasks);
         
         return databaseInfos.ToDictionary(d => d.Name, d => d);
     }
     
-    protected async Task<DatabaseInfo> GetDatabase(string name)
+    protected async Task<DatabaseInfo> GetDatabase(string name, CancellationToken cancellationToken)
     {
         foreach (var factory in _databaseFactories)
         {
-            var database = await factory.GetDatabase(name);
+            var database = await factory.GetDatabase(name, cancellationToken);
             if (database != null)
             {
-                var migrations = await database.GetMigrations();
+                var migrations = await database.GetMigrations(cancellationToken);
                 return new(name, database, migrations.ToQueue());
             }
         }

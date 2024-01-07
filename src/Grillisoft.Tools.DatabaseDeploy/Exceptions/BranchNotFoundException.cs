@@ -3,9 +3,14 @@
 [Serializable]
 public class BranchNotFoundException : Exception
 {
-    public BranchNotFoundException()
+    private readonly string _branchName;
+
+    public BranchNotFoundException(string branchName)
     {
+        _branchName = branchName;
     }
-    public BranchNotFoundException(string message) : base(message) { }
-    public BranchNotFoundException(string message, Exception inner) : base(message, inner) { }
+
+    public string BranchName => _branchName;
+
+    public override string Message => $"Branch {_branchName} not found";
 }

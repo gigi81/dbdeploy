@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO.Abstractions;
-using System.Linq;
+﻿using System.IO.Abstractions;
 using CommandLine;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Grillisoft.Tools.DatabaseDeploy.Services;
@@ -58,12 +56,12 @@ static IHostBuilder CreateHostBuilder(object options, string[] args)
                     services.AddHostedService<RollbackService>();
                     break;
                 default:
-                    throw new Exception($"Options of type {options?.GetType().Name} not supported");
+                    throw new Exception($"Options of type {options.GetType().Name} not supported");
             }
         });
 }
 
-static class ExitCode
+internal static class ExitCode
 {
     public const int Ok = 0;
     public const int InvalidArguments = -1;

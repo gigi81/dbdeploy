@@ -7,7 +7,7 @@ public sealed class DeployOptions
 {
     public string Branch { get; set; } = "main";
 
-    public string Path { get; set; } = "";
+    public string Path { get; set; } = ".";
 
     public bool UnitTest { get; set; } = false;
 }

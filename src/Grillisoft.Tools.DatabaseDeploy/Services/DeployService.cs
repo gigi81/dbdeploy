@@ -35,7 +35,7 @@ public class DeployService : BaseService
         if (!manager.Branches.TryGetValue(_options.Branch, out var branch))
             throw new BranchNotFoundException(_options.Branch);
 
-        var databases = await GetDatabases(branch.Databases);
+        var databases = await GetDatabases(branch.Databases, stoppingToken);
         
         foreach (var step in branch.Steps)
         {
@@ -44,7 +44,7 @@ public class DeployService : BaseService
             if (migrations.TryDequeue(out var migration))
             {
                 if (!migration.Name.Equals(step.Name, StringComparison.InvariantCultureIgnoreCase))
-                    throw new Exception("Sequence error detected"); //TODO: improve error
+                    throw new StepMigrationMissmatchException(step, migration);
                 
                 _logger.LogInformation($"Step {step.Name} already deployed");
             }
@@ -55,7 +55,13 @@ public class DeployService : BaseService
                     await RunScript(step.TestScript, database, stoppingToken);
 
                 _logger.LogInformation($"Adding migration {step.Name}");
-                await database.AddMigration(new DatabaseMigration(step.Name, DateTimeOffset.UtcNow, Environment.UserName, step.DeployScript.Name));
+                var migrationToAdd = new DatabaseMigration(
+                    step.Name,
+                    DateTimeOffset.UtcNow,
+                    Environment.UserName,
+                    step.DeployScript.Name);
+                
+                await database.AddMigration(migrationToAdd, stoppingToken);
             }
         }
     }

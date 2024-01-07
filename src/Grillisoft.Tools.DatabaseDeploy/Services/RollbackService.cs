@@ -36,7 +36,7 @@ public class RollbackService : BaseService
         if (!manager.Branches.TryGetValue(_options.Branch, out var branch))
             throw new BranchNotFoundException(_options.Branch);
 
-        var databases = await GetDatabases(branch.Databases);
+        var databases = await GetDatabases(branch.Databases, stoppingToken);
         
         foreach (var step in branch.Steps.Reverse())
         {

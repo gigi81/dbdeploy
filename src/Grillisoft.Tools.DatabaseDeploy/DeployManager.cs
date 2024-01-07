@@ -59,14 +59,9 @@ public sealed class DeployManager
         var untracked = found.ExceptIgnoreCase(mandatoryFiles)
             .ExceptIgnoreCase(extraFiles)
             .ToArray();
-        foreach (var file in untracked)
-            errors.Add($"Untracked file detected {file}");
+        
+        errors.AddRange(untracked.Select(file => $"Untracked file detected {file}"));
 
         return errors;
-    }
-
-    public void Deploy(string branch)
-    {
-        
     }
 }

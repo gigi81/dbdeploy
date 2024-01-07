@@ -1,23 +1,48 @@
-﻿using System.Threading;
+﻿using System;
+using System.Collections.Generic;
+using System.IO.Abstractions;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
-public class RollbackService : BackgroundService
+public class RollbackService : BaseService
 {
     private readonly RollbackOptions _options;
-    private readonly ILogger<RollbackService> _logger;
+    private readonly IFileSystem _fileSystem;
 
     public RollbackService(
         RollbackOptions options,
-        ILogger<RollbackService> logger)
+        IFileSystem fileSystem,
+        IEnumerable<IDatabaseFactory> databaseFactories,
+        ILogger<RollbackService> logger
+     ) : base(databaseFactories, logger)
     {
         _options = options;
-        _logger = logger;
+        _fileSystem = fileSystem;
     }
-    
-    protected override Task ExecuteAsync(CancellationToken stoppingToken) => throw new System.NotImplementedException();
+
+    protected async override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        var manager = DeployManager.Load(_fileSystem.DirectoryInfo.New(_options.Path));
+        var errors = manager.Validate();
+
+        if (!manager.Branches.TryGetValue(_options.Branch, out var branch))
+            throw new BranchNotFoundException(_options.Branch);
+
+        var databases = await GetDatabases(branch.Databases);
+        
+        foreach (var step in branch.Steps.Reverse())
+        {
+            var (_, database, migrations) = databases[step.Database];
+            
+            //TODO
+        }
+    }
 }

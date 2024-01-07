@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Grillisoft.Tools.DatabaseDeploy.Exceptions;
+﻿namespace Grillisoft.Tools.DatabaseDeploy.Exceptions;
 
 [Serializable]
 public class BranchNotFoundException : Exception
@@ -10,7 +8,4 @@ public class BranchNotFoundException : Exception
     }
     public BranchNotFoundException(string message) : base(message) { }
     public BranchNotFoundException(string message, Exception inner) : base(message, inner) { }
-    protected BranchNotFoundException(
-        System.Runtime.Serialization.SerializationInfo info,
-        System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
 }

@@ -3,12 +3,12 @@
 namespace Grillisoft.Tools.DatabaseDeploy.Exceptions;
 
 [Serializable]
-public class StepMigrationMissmatchException : Exception
+public class StepMigrationMismatchException : Exception
 {
     private readonly Step _step;
     private readonly DatabaseMigration _migration;
 
-    public StepMigrationMissmatchException(Step step, DatabaseMigration migration)
+    public StepMigrationMismatchException(Step step, DatabaseMigration migration)
     {
         _step = step;
         _migration = migration;

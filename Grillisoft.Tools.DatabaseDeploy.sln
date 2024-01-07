@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grillisoft.Tools.DatabaseDe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grillisoft.Tools.DatabaseDeploy.Cli", "src\Grillisoft.Tools.DatabaseDeploy.Cli\Grillisoft.Tools.DatabaseDeploy.Cli.csproj", "{78E8F8E2-9A26-418B-9786-50FA59C04887}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grillisoft.Tools.DatabaseDeploy.SqlServer", "src\Grillisoft.Tools.DatabaseDeploy.SqlServer\Grillisoft.Tools.DatabaseDeploy.SqlServer.csproj", "{8617A54F-E82C-4771-ACD3-02ABB6BE577A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{78E8F8E2-9A26-418B-9786-50FA59C04887}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{78E8F8E2-9A26-418B-9786-50FA59C04887}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{78E8F8E2-9A26-418B-9786-50FA59C04887}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8617A54F-E82C-4771-ACD3-02ABB6BE577A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8617A54F-E82C-4771-ACD3-02ABB6BE577A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8617A54F-E82C-4771-ACD3-02ABB6BE577A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8617A54F-E82C-4771-ACD3-02ABB6BE577A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -61,6 +67,7 @@ Global
 		{4FB49F20-35AE-4D66-AFB6-A4465D036CF3} = {EDB208D8-E952-450C-A274-69FAD0613CD2}
 		{D8A67169-663B-4628-B345-617D6EF06E9E} = {E878A210-5E10-4674-8DA1-F65BF8CF1D23}
 		{78E8F8E2-9A26-418B-9786-50FA59C04887} = {EDB208D8-E952-450C-A274-69FAD0613CD2}
+		{8617A54F-E82C-4771-ACD3-02ABB6BE577A} = {EDB208D8-E952-450C-A274-69FAD0613CD2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2FE47D27-BA6B-46C6-858E-032AAAB5007A}

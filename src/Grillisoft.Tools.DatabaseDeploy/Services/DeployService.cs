@@ -44,7 +44,7 @@ public class DeployService : BaseService
             if (migrations.TryDequeue(out var migration))
             {
                 if (!migration.Name.Equals(step.Name, StringComparison.InvariantCultureIgnoreCase))
-                    throw new StepMigrationMissmatchException(step, migration);
+                    throw new StepMigrationMismatchException(step, migration);
                 
                 _logger.LogInformation($"Step {step.Name} already deployed");
             }

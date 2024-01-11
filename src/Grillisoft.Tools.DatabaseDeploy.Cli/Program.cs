@@ -1,5 +1,6 @@
 ﻿using System.IO.Abstractions;
 using CommandLine;
+using Grillisoft.Tools.DatabaseDeploy;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Grillisoft.Tools.DatabaseDeploy.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,6 +46,7 @@ static IHostBuilder CreateHostBuilder(object options, string[] args)
         .ConfigureServices((hostContext, services) =>
         {
             services.AddSingleton<IFileSystem, FileSystem>()
+                .AddSqlServer()
                 .AddSingleton(options);
 
             switch (options)

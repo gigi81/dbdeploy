@@ -19,6 +19,7 @@
 	</ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.SqlServer\Grillisoft.Tools.DatabaseDeploy.SqlServer.csproj" />
       <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy\Grillisoft.Tools.DatabaseDeploy.csproj" />
     </ItemGroup>
 

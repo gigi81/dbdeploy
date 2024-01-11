@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Grillisoft.Tools.DatabaseDeploy.SqlServer;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Grillisoft.Tools.DatabaseDeploy.SqlServer;
+// ReSharper disable once CheckNamespace
+namespace Grillisoft.Tools.DatabaseDeploy;
 
 public static class Extensions
 {

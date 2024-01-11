@@ -13,16 +13,27 @@ internal class SqlServerDatabase : IDatabase, IAsyncDisposable
     private readonly string _getSql;
     private readonly string _addSql;
     private readonly string _deleteSql;
-    
+    private readonly string _createSql;
+
     public SqlServerDatabase(string connectionString, string migrationTableName, SqlServerScriptParser parser)
     {
         _connection = new SqlConnection(connectionString);
         _migrationTableName = migrationTableName;
         _parser = parser;
 
-        _getSql = $"SELECT * FROM {migrationTableName}";
-        _addSql = $"INSERT INTO {migrationTableName} VALUES(@name)";
+        _getSql = $"SELECT [name], [deployed_utc], [user], [hash] FROM {migrationTableName}";
+        _addSql = $"INSERT INTO {migrationTableName} VALUES(@name, @deployed_utc, @user, @hash)";
         _deleteSql = $"DELETE FROM {migrationTableName} WHERE name = @name";
+        _createSql = $@"
+            IF OBJECT_ID(N'[{migrationTableName}]', N'U') IS NULL
+            CREATE TABLE [{migrationTableName}] (
+              [name] NVARCHAR(255),
+              [deployed_utc] datetime2,
+              [user] NVARCHAR(100),
+              [hash] char(32),
+              CONSTRAINT [PK_{migrationTableName}] PRIMARY KEY CLUSTERED([name] ASC)
+            );
+        ";
     }
 
     public IScriptParser ScriptParser => _parser;
@@ -33,8 +44,13 @@ internal class SqlServerDatabase : IDatabase, IAsyncDisposable
         await using var command = CreateCommand(script);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
-    
-    public Task InitializeMigrations(CancellationToken cancellationToken) => throw new NotImplementedException();
+
+    public async Task InitializeMigrations(CancellationToken cancellationToken)
+    {
+        await OpenConnection(cancellationToken);
+        await using var command = CreateCommand(_createSql);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
 
     public async Task<ICollection<DatabaseMigration>> GetMigrations(CancellationToken cancellationToken)
     {

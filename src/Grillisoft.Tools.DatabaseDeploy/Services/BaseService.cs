@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO.Abstractions;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Microsoft.Extensions.Hosting;
@@ -13,22 +8,19 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
 public abstract class BaseService : BackgroundService
 {
-    protected readonly IEnumerable<IDatabaseFactory> _databaseFactories;
+    private readonly IEnumerable<IDatabaseFactory> _databaseFactories;
     protected readonly ILogger _logger;
 
     protected BaseService(IEnumerable<IDatabaseFactory> databaseFactories, ILogger logger)
     {
-        _logger = logger;
         _databaseFactories = databaseFactories;
+        _logger = logger;
     }
 
     protected async Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken cancellationToken)
     {
-        _logger.LogInformation($"Parsing script {scriptFile.FullName}");
-        var scripts = await database.ScriptParser.Parse(scriptFile, cancellationToken);
-        
         _logger.LogInformation($"Running script {scriptFile.FullName}");
-        await foreach (var script in scripts.WithCancellation(cancellationToken))
+        await foreach (var script in database.ScriptParser.Parse(scriptFile, cancellationToken))
         {
             try
             {

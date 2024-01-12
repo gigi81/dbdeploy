@@ -30,5 +30,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
     <PackageVersion Include="Snapshooter.Xunit" Version="0.14.0" />
+    <PackageVersion Include="FakeItEasy" Version="8.1.0" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,8 @@
 ﻿using System.IO.Abstractions;
 using CommandLine;
 using Grillisoft.Tools.DatabaseDeploy;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Cli;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Grillisoft.Tools.DatabaseDeploy.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,20 +49,23 @@ static IHostBuilder CreateHostBuilder(object options, string[] args)
         {
             services.AddSingleton<IFileSystem, FileSystem>()
                 .AddSqlServer()
-                .AddSingleton(options);
-
-            switch (options)
-            {
-                case DeployOptions:
-                    services.AddHostedService<DeployService>();
-                    break;
-                case RollbackOptions:
-                    services.AddHostedService<RollbackService>();
-                    break;
-                default:
-                    throw new Exception($"Options of type {options.GetType().Name} not supported");
-            }
+                .AddSingleton(options)
+                .AddSingleton(typeof(IExecutable), GetServiceType(options))
+                .AddHostedService<ExecutableBackgroundService>();
         });
+}
+
+static Type GetServiceType(object options)
+{
+    switch (options)
+    {
+        case DeployOptions:
+            return typeof(DeployService);
+        case RollbackOptions:
+            return typeof(RollbackService);
+        default:
+            throw new Exception($"Options of type {options.GetType().Name} not supported");
+    }
 }
 
 internal static class ExitCode

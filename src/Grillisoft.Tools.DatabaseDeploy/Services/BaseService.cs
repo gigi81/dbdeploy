@@ -1,12 +1,11 @@
 ﻿using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
-public abstract class BaseService : BackgroundService
+public abstract class BaseService : IExecutable
 {
     private readonly IEnumerable<IDatabaseFactory> _databaseFactories;
     protected readonly ILogger _logger;
@@ -16,6 +15,8 @@ public abstract class BaseService : BackgroundService
         _databaseFactories = databaseFactories;
         _logger = logger;
     }
+
+    public abstract Task Execute(CancellationToken cancellationToken);
 
     protected async Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken cancellationToken)
     {

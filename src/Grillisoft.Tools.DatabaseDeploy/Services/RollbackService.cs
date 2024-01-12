@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO.Abstractions;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
@@ -28,7 +22,7 @@ public class RollbackService : BaseService
         _fileSystem = fileSystem;
     }
 
-    protected async override Task ExecuteAsync(CancellationToken stoppingToken)
+    public async override Task Execute(CancellationToken stoppingToken)
     {
         var manager = DeployManager.Load(_fileSystem.DirectoryInfo.New(_options.Path));
         var errors = manager.Validate();

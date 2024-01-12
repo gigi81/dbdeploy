@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Grillisoft.Tools.DatabaseDeploy;
+﻿namespace Grillisoft.Tools.DatabaseDeploy;
 
 internal static class Extensions
 {

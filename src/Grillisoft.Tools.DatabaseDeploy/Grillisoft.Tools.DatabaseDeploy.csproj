@@ -2,7 +2,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" />
-	<PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="TestableIO.System.IO.Abstractions" />
     <PackageReference Include="TestableIO.System.IO.Abstractions.Extensions" />
   </ItemGroup>

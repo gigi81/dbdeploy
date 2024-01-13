@@ -9,17 +9,18 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 public class RollbackService : BaseService
 {
     private readonly RollbackOptions _options;
-    private readonly IFileSystem _fileSystem;
+    private readonly IProgress<int> _progress;
 
     public RollbackService(
         RollbackOptions options,
         IFileSystem fileSystem,
         IEnumerable<IDatabaseFactory> databaseFactories,
+        IProgress<int> progress,
         ILogger<RollbackService> logger
      ) : base(fileSystem, databaseFactories, logger)
     {
         _options = options;
-        _fileSystem = fileSystem;
+        _progress = progress;
     }
 
     public async override Task Execute(CancellationToken stoppingToken)
@@ -30,8 +31,12 @@ public class RollbackService : BaseService
             throw new BranchNotFoundException(_options.Branch);
 
         var databases = await GetDatabases(branch.Databases, true, stoppingToken);
-
-        foreach (var step in manager.GetRollbackSteps(branch))
+        var steps = manager.GetRollbackSteps(branch).ToArray();
+        var count = 0;
+        
+        _progress.Report(0);
+        
+        foreach (var step in steps)
         {
             //if we get to the init script, we are done
             if (step.IsInit)
@@ -47,12 +52,17 @@ public class RollbackService : BaseService
             if (!migration.Name.EqualsIgnoreCase(step.Name))
             {
                 _logger.LogInformation($"Database {database.Name} Step {step.Name} was not deployed. Skipping rollback");
-                continue;
+            }
+            else
+            {
+                await RunScript(step.RollbackScript, database, stoppingToken);
+                await database.RemoveMigration(migration, stoppingToken);
+                migrations.Dequeue();
             }
             
-            await RunScript(step.RollbackScript, database, stoppingToken);
-            await database.RemoveMigration(migration, stoppingToken);
-            migrations.Dequeue();
+            _progress.Report(++count * 100 / steps.Length);
         }
+        
+        _progress.Report(100);
     }
 }

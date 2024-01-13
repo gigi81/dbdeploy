@@ -10,7 +10,6 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 public class DeployService : BaseService
 {
     private readonly DeployOptions _options;
-    private readonly IFileSystem _fileSystem;
     private readonly IProgress<int> _progress;
 
     public DeployService(
@@ -22,7 +21,6 @@ public class DeployService : BaseService
     ) : base(fileSystem, databaseFactories, logger)
     {
         _options = options;
-        _fileSystem = fileSystem;
         _progress = progress;
     }
     

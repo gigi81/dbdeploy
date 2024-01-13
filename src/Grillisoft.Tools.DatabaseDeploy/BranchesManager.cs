@@ -92,7 +92,7 @@ public class BranchesManager
 
             if (line.StartsWith(IncludeKeyword))
             {
-                var includeFile = GetBranchFile(line.Substring(IncludeKeyword.Length + 1), directory);
+                var includeFile = GetBranchFile(line.Substring(IncludeKeyword.Length).Trim(), directory);
                 var includeBranch = await LoadInternal(includeFile, files);
                 steps.AddRange(includeBranch.Steps);
                 continue;

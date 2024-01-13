@@ -15,6 +15,7 @@ public static class SampleFilesystems
                 Database01,TKT-001.SampleDescription
             ")},
         { @"c:\demo\release_1.2.csv", new MockFileData(@"
+                @include release/1.1
                 Database02,TKT-002.SampleDescription
             ")},
         { $@"c:\demo\Database01\{Step.InitStepName}.sql", new MockFileData("INIT Database01") },

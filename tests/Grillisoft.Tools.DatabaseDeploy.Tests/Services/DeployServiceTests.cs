@@ -86,4 +86,40 @@ public class DeployServiceTests
         migrations01.Skip(1).First().Name.Should().Be("TKT-001.SampleDescription");
         migrations02.First().Name.Should().Be(Step.InitStepName);
     }
+    
+    [Fact]
+    public async Task Execute_WhenDeployingRelease1_2Branch_IsSuccessful()
+    {
+        //arrange
+        var database01 = new DatabaseMock("Database01");
+        var database02 = new DatabaseMock("Database02");
+        var databaseFactory = new DatabaseFactoryMock(database01, database02);
+
+        var sut = new TestServiceCollection<DeployService>(_output)
+            .AddSingleton(new DeployOptions
+            {
+                Path = @"c:\demo",
+                Branch = "release/1.2"
+            })
+            .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
+            .AddSingleton<IDatabaseFactory>(databaseFactory)
+            .AddSingleton<IProgress<int>>(new Progress<int>())
+            .BuildServiceProvider()
+            .GetRequiredService<DeployService>();
+
+        //act
+        await sut.Execute(_cancellationToken);
+
+        //assert
+        var migrations01 = await database01.GetMigrations(_cancellationToken);
+        var migrations02 = await database02.GetMigrations(_cancellationToken);
+
+        migrations01.Count.Should().Be(2);
+        migrations01.First().Name.Should().Be(Step.InitStepName);
+        migrations01.Skip(1).First().Name.Should().Be("TKT-001.SampleDescription");
+        
+        migrations02.Count.Should().Be(2);
+        migrations02.First().Name.Should().Be(Step.InitStepName);
+        migrations02.Skip(1).First().Name.Should().Be("TKT-002.SampleDescription");
+    }
 }

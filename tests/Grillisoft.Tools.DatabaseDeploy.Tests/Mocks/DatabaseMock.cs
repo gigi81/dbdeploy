@@ -8,6 +8,11 @@ public class DatabaseMock : IDatabase
     private readonly List<DatabaseMigration> _migrations = new();
     private readonly List<string> _scripts = new();
 
+    public DatabaseMock()
+        : this(new ScriptParserMock())
+    {
+    }
+    
     public DatabaseMock(IScriptParser scriptParser)
     {
         ScriptParser = scriptParser;

@@ -1,6 +1,5 @@
 ﻿using System.IO.Abstractions.TestingHelpers;
 using FakeItEasy;
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Grillisoft.Tools.DatabaseDeploy.Services;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Mocks;
@@ -18,21 +17,34 @@ public class DeployServiceTests
         //arrange
         var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            { @"c:\myfile.txt", new MockFileData("Testing is meh.") },
-            { @"c:\demo\jQuery.js", new MockFileData("some js") },
-            { @"c:\demo\image.gif", new MockFileData(new byte[] { 0x12, 0x34, 0x56, 0xd2 }) }
+            { @"c:\demo\main.csv", new MockFileData(@"
+                Database01,.Init
+                Database02,.Init
+            ")},
+            { @"c:\demo\release_1.csv", new MockFileData(@"
+                Database01,TKT-001.SampleDescription
+            ")},
+            { @"c:\demo\release_2.csv", new MockFileData(@"
+                Database02,TKT-002.SampleDescription
+            ")},
+            { @"c:\demo\Database01\.Init.sql", new MockFileData(".Init.sql") },
+            { @"c:\demo\Database01\TKT-001.SampleDescription.Deploy.sql", new MockFileData("TKT-001.SampleDescription.Deploy.sql") },
+            { @"c:\demo\Database01\TKT-001.SampleDescription.Rollback.sql", new MockFileData("TKT-001.SampleDescription.Rollback.sql") },
+            { @"c:\demo\Database02\.Init.sql", new MockFileData(".Init.sql") },
+            { @"c:\demo\Database02\TKT-002.SampleDescription.Deploy.sql", new MockFileData("TKT-002.SampleDescription.Deploy.sql") },
+            { @"c:\demo\Database02\TKT-002.SampleDescription.Rollback.sql", new MockFileData("TKT-002.SampleDescription.Rollback.sql") },
         });
 
         var options = new DeployOptions
         {
             Path = @"c:\demo"
         };
-
-        var databaseFactory = A.Fake<IDatabaseFactory>();
-        var database = new DatabaseMock(new ScriptParserMock());
         
-        A.CallTo(() => databaseFactory.GetDatabase("", _cancellationTokenSource.Token)).Returns(database);
-        
+        var database01 = new DatabaseMock();
+        var database02 = new DatabaseMock();
+        var databaseFactory = new DatabaseFactoryMock();
+        databaseFactory.AddDatabase("Database01", database01);
+        databaseFactory.AddDatabase("Database02", database02);
         var logger = A.Fake<ILogger<DeployService>>();
         
         var sut = new DeployService(options, fileSystem, new []{ databaseFactory }, logger);

@@ -1,4 +1,5 @@
-﻿using System.IO.Abstractions;
+﻿using System.Diagnostics;
+using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Microsoft.Extensions.Logging;
@@ -44,7 +45,9 @@ public abstract class BaseService : IExecutable, IAsyncDisposable
         {
             try
             {
+                var stopwatch = Stopwatch.StartNew();
                 await database.RunScript(script, cancellationToken);
+                _logger.LogInformation($"Database {database.Name} Script {scriptFile.FullName} executed in {stopwatch.Elapsed}");
             }
             catch (Exception ex)
             {

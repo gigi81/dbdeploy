@@ -10,15 +10,13 @@ public class DatabaseFactoryMock : IDatabaseFactory
     {
     }
 
-    public DatabaseFactoryMock(string name, IDatabase database)
+    public DatabaseFactoryMock(params IDatabase[] databases)
         : this()
     {
-        this.AddDatabase(name, database);
-    }
-    
-    public void AddDatabase(string name, IDatabase database)
-    {
-        _databases.Add(name, database);
+        foreach (var database in databases)
+        {
+            _databases.Add(database.Name, database);
+        }
     }
     
     public Task<IDatabase?> GetDatabase(string name, CancellationToken cancellationToken)

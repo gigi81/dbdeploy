@@ -20,7 +20,7 @@ public abstract class BaseService : IExecutable
 
     protected async Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken cancellationToken)
     {
-        _logger.LogInformation($"Running script {scriptFile.FullName}");
+        _logger.LogInformation($"Database {database.Name} Running script {scriptFile.FullName}");
         await foreach (var script in database.ScriptParser.Parse(scriptFile, cancellationToken))
         {
             try
@@ -29,7 +29,7 @@ public abstract class BaseService : IExecutable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to run script {0}", script);
+                _logger.LogError(ex, $"Database {database.Name} Failed to run script {{0}}", script);
                 throw;
             }
         }

@@ -64,7 +64,7 @@ public static class BranchLoader
     private static string GetBranchName(IFileInfo file)
     {
         var name = file.Name;
-        var index = name.IndexOf('.');
+        var index = name.LastIndexOf('.');
         if (index >= 0)
             name = name.Substring(0, index);
 
@@ -78,6 +78,6 @@ public static class BranchLoader
         if (split.Length != 2)
             throw new ArgumentException($"Invalid format '{line}' on line {count}");
 
-        return new Step(split[0].Trim(), split[1].Trim(), directory);
+        return new Step(split[0].Trim(), split[1].Trim(), directory.SubDirectory(split[0].Trim()));
     }
 }

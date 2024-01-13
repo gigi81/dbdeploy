@@ -5,6 +5,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
 
 public interface IDatabase
 {
+    string Name { get; }
     IScriptParser ScriptParser { get; }
     Task RunScript(string script, CancellationToken cancellationToken);
     Task InitializeMigrations(CancellationToken cancellationToken);

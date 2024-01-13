@@ -42,7 +42,7 @@ public class DeployService : BaseService
                 if (!migration.Name.Equals(step.Name, StringComparison.InvariantCultureIgnoreCase))
                     throw new StepMigrationMismatchException(step, migration);
                 
-                _logger.LogInformation($"Step {step.Name} already deployed");
+                _logger.LogInformation($"Database {database.Name} Step {step.Name} already deployed");
             }
             else
             {
@@ -50,7 +50,7 @@ public class DeployService : BaseService
                 if(_options.UnitTest)
                     await RunScript(step.TestScript, database, stoppingToken);
 
-                _logger.LogInformation($"Adding migration {step.Name}");
+                _logger.LogInformation($"Database {database.Name} Adding migration {step.Name}");
                 var migrationToAdd = new DatabaseMigration(
                     step.Name,
                     DateTimeOffset.UtcNow,

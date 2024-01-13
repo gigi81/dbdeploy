@@ -8,6 +8,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.SqlServer;
 internal class SqlServerDatabase : IDatabase, IAsyncDisposable
 {
     private readonly SqlConnection _connection;
+    private readonly string _name;
     private readonly string _migrationTableName;
     private readonly SqlServerScriptParser _parser;
     private readonly string _getSql;
@@ -15,8 +16,9 @@ internal class SqlServerDatabase : IDatabase, IAsyncDisposable
     private readonly string _deleteSql;
     private readonly string _createSql;
 
-    public SqlServerDatabase(string connectionString, string migrationTableName, SqlServerScriptParser parser)
+    public SqlServerDatabase(string name, string connectionString, string migrationTableName, SqlServerScriptParser parser)
     {
+        _name = name;
         _connection = new SqlConnection(connectionString);
         _migrationTableName = migrationTableName;
         _parser = parser;
@@ -36,6 +38,8 @@ internal class SqlServerDatabase : IDatabase, IAsyncDisposable
         ";
     }
 
+    public string Name => _name;
+    
     public IScriptParser ScriptParser => _parser;
 
     public async Task RunScript(string script, CancellationToken cancellationToken)

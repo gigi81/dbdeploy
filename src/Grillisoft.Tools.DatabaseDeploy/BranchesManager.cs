@@ -3,28 +3,56 @@ using Grillisoft.Tools.DatabaseDeploy.Contracts;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
 
-public static class BranchLoader
+public class BranchesManager
 {
     private const string IncludeKeyword = "@include ";
-
-    public static IEnumerable<Branch> LoadAll(IDirectoryInfo directory)
-    {
-        return directory.EnumerateFiles("*.csv", SearchOption.TopDirectoryOnly)
-                        .Select(Load);
-    }
+    private const string MainBranchFilename = "main.csv";
     
-    public static Branch Load(IFileInfo file)
+    private readonly IDirectoryInfo _directory;
+    private readonly Dictionary<string, Branch> _branches = new();
+    private Branch? _mainBranch;
+
+    public BranchesManager(IDirectoryInfo directory)
     {
-        return LoadInternal(file, new HashSet<string>(StringComparer.InvariantCultureIgnoreCase));
+        _directory = directory;
     }
 
-    public static IFileInfo GetBranchFile(string branchName, IDirectoryInfo directory)
+    public IReadOnlyDictionary<string, Branch> Branches => _branches;
+
+    public IDirectoryInfo Directory => _directory;
+
+    public async Task<List<string>> Load()
+    {
+        _directory.ThrowIfNotFound();
+        
+        _mainBranch = await Load(_directory.File(MainBranchFilename));
+        _branches.Add(_mainBranch.Name, _mainBranch);
+        
+        var files = _directory.EnumerateFiles("*.csv", SearchOption.TopDirectoryOnly)
+            .Where(f => !f.Name.Equals(MainBranchFilename, StringComparison.InvariantCultureIgnoreCase))
+            .ToArray();
+
+        foreach (var file in files)
+        {
+            var branch = await Load(file);
+            _branches.Add(branch.Name, branch);
+        }
+
+        return BranchesValidator.Validate(_branches.Values, _directory);
+    }
+
+    private async Task<Branch> Load(IFileInfo file)
+    {
+        return await LoadInternal(file, new HashSet<string>(StringComparer.InvariantCultureIgnoreCase));
+    }
+
+    private static IFileInfo GetBranchFile(string branchName, IDirectoryInfo directory)
     {
         branchName = branchName.Replace('/', '_');
         return directory.File($"{branchName}.csv");
     }
 
-    private static Branch LoadInternal(IFileInfo file, ISet<string> files)
+    private async Task<Branch> LoadInternal(IFileInfo file, ISet<string> files)
     {
         file.ThrowIfNotFound();
         if (!files.Add(file.Name))
@@ -34,7 +62,7 @@ public static class BranchLoader
         var steps = new List<Step>();
         var count = 1;
 
-        foreach (var l in file.EnumerateLines())
+        await foreach (var l in file.FileSystem.File.ReadLinesAsync(file.FullName))
         {
             if (string.IsNullOrWhiteSpace(l))
             {
@@ -50,7 +78,7 @@ public static class BranchLoader
             if (line.StartsWith(IncludeKeyword))
             {
                 var includeFile = GetBranchFile(line.Substring(IncludeKeyword.Length + 1), directory);
-                var includeBranch = LoadInternal(includeFile, files);
+                var includeBranch = await LoadInternal(includeFile, files);
                 steps.AddRange(includeBranch.Steps);
                 continue;
             }
@@ -58,6 +86,9 @@ public static class BranchLoader
             steps.Add(ReadStep(line, count++, directory));
         }
 
+        if (_mainBranch != null)
+            steps = _mainBranch.Steps.Concat(steps).ToList();
+        
         return new Branch(GetBranchName(file), steps);
     }
 

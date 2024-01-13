@@ -7,16 +7,32 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
 public abstract class BaseService : IExecutable
 {
+    private readonly IFileSystem _fileSystem;
     private readonly IEnumerable<IDatabaseFactory> _databaseFactories;
     protected readonly ILogger _logger;
 
-    protected BaseService(IEnumerable<IDatabaseFactory> databaseFactories, ILogger logger)
+    protected BaseService(IFileSystem fileSystem, IEnumerable<IDatabaseFactory> databaseFactories, ILogger logger)
     {
+        _fileSystem = fileSystem;
         _databaseFactories = databaseFactories;
         _logger = logger;
     }
 
     public abstract Task Execute(CancellationToken cancellationToken);
+
+    protected async Task<BranchesManager> LoadBranchesManager(string path)
+    {
+        var manager = new BranchesManager(_fileSystem.DirectoryInfo.New(path));
+        var errors = await manager.Load();
+
+        foreach (var error in errors)
+            _logger.LogError(error);
+
+        if (errors.Count > 0)
+            throw new Exception("Detected error(s) in branches configuration");
+
+        return manager;
+    }
 
     protected async Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken cancellationToken)
     {

@@ -3,37 +3,12 @@ using Grillisoft.Tools.DatabaseDeploy.Contracts;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
 
-public sealed class DeployManager
+public sealed class BranchesValidator
 {
-    public static DeployManager Load(IDirectoryInfo directory)
-    {
-        var manager = new DeployManager(directory);
-        manager.Load();
-        return manager;
-    }
-
-    private readonly IDirectoryInfo _directory;
-    private readonly Dictionary<string, Branch> _branches = new();
-
-    private DeployManager(IDirectoryInfo directory)
-    {
-        _directory = directory;
-    }
-
-    public IReadOnlyDictionary<string, Branch> Branches => _branches;
-
-    private void Load()
-    {
-        _directory.ThrowIfNotFound();
-
-        foreach (var branch in BranchLoader.LoadAll(_directory))
-            _branches.Add(branch.Name, branch);
-    }
-
-    public List<string> Validate()
+    public static List<string> Validate(IEnumerable<Branch> branches, IDirectoryInfo directory)
     {
         var errors = new List<string>();
-        var steps = _branches.Values.SelectMany(b => b.Steps).Distinct().ToArray();
+        var steps = branches.SelectMany(b => b.Steps).Distinct().ToArray();
             
         var mandatoryFiles = steps.SelectMany(s => s.MandatoryFiles)
             .Select(s => s.FullName)
@@ -45,7 +20,7 @@ public sealed class DeployManager
             .Distinct()
             .ToHashSet();
 
-        var found = _directory.EnumerateFiles("*.sql", SearchOption.AllDirectories)
+        var found = directory.EnumerateFiles("*.sql", SearchOption.AllDirectories)
             .Select(s => s.FullName)
             .ToHashSet();
             

@@ -17,7 +17,7 @@ public class DeployService : BaseService
         IFileSystem fileSystem,
         IEnumerable<IDatabaseFactory> databaseFactories,
         ILogger<DeployService> logger
-    ) : base(databaseFactories, logger)
+    ) : base(fileSystem, databaseFactories, logger)
     {
         _options = options;
         _fileSystem = fileSystem;
@@ -25,12 +25,11 @@ public class DeployService : BaseService
     
     public async override Task Execute(CancellationToken stoppingToken)
     {
-        var manager = DeployManager.Load(_fileSystem.DirectoryInfo.New(_options.Path));
-        var errors = manager.Validate();
-
+        var manager = await LoadBranchesManager(_options.Path);
+       
         if (!manager.Branches.TryGetValue(_options.Branch, out var branch))
             throw new BranchNotFoundException(_options.Branch);
-
+        
         var databases = await GetDatabases(branch.Databases, stoppingToken);
         
         foreach (var step in branch.Steps)

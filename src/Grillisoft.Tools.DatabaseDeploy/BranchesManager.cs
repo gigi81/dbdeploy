@@ -6,10 +6,11 @@ namespace Grillisoft.Tools.DatabaseDeploy;
 public class BranchesManager
 {
     private const string IncludeKeyword = "@include ";
+    private const string MainBranch = "main";
     private const string MainBranchFilename = "main.csv";
     
     private readonly IDirectoryInfo _directory;
-    private readonly Dictionary<string, Branch> _branches = new();
+    private readonly Dictionary<string, Branch> _branches = new(StringComparer.InvariantCultureIgnoreCase);
     private Branch? _mainBranch;
 
     public BranchesManager(IDirectoryInfo directory)
@@ -21,6 +22,19 @@ public class BranchesManager
 
     public IDirectoryInfo Directory => _directory;
 
+    public IEnumerable<Step> GetDeploySteps(Branch branch)
+    {
+        if (branch.Name.EqualsIgnoreCase(MainBranch) || _mainBranch == null)
+            return branch.Steps;
+
+        return _mainBranch.Steps.Concat(branch.Steps);
+    }
+
+    public IEnumerable<Step> GetRollbackSteps(Branch branch)
+    {
+        return branch.Steps.Reverse();
+    }
+
     public async Task<List<string>> Load()
     {
         _directory.ThrowIfNotFound();
@@ -29,7 +43,7 @@ public class BranchesManager
         _branches.Add(_mainBranch.Name, _mainBranch);
         
         var files = _directory.EnumerateFiles("*.csv", SearchOption.TopDirectoryOnly)
-            .Where(f => !f.Name.Equals(MainBranchFilename, StringComparison.InvariantCultureIgnoreCase))
+            .Where(f => !f.Name.EqualsIgnoreCase(MainBranchFilename))
             .ToArray();
 
         foreach (var file in files)
@@ -58,6 +72,7 @@ public class BranchesManager
         if (!files.Add(file.Name))
             throw new Exception($"Circular include detected for file '{file.Name}'");
 
+        var branchName = GetBranchName(file);
         var directory = file.Directory ?? file.FileSystem.CurrentDirectory();
         var steps = new List<Step>();
         var count = 1;
@@ -86,10 +101,7 @@ public class BranchesManager
             steps.Add(ReadStep(line, count++, directory));
         }
 
-        if (_mainBranch != null)
-            steps = _mainBranch.Steps.Concat(steps).ToList();
-        
-        return new Branch(GetBranchName(file), steps);
+        return new Branch(branchName, steps);
     }
 
     private static string GetBranchName(IFileInfo file)

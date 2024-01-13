@@ -29,13 +29,30 @@ public class RollbackService : BaseService
         if (!manager.Branches.TryGetValue(_options.Branch, out var branch))
             throw new BranchNotFoundException(_options.Branch);
 
-        var databases = await GetDatabases(branch.Databases, stoppingToken);
-        
-        foreach (var step in branch.Steps.Reverse())
+        var databases = await GetDatabases(branch.Databases, true, stoppingToken);
+
+        foreach (var step in manager.GetRollbackSteps(branch))
         {
+            //if we get to the init script, we are done
+            if (step.IsInit)
+                break;
+                
             var (_, database, migrations) = databases[step.Database];
             
-            //TODO
+            //if there are no more migrations to rollback, we are done
+            if (!migrations.TryPeek(out var migration))
+                break;
+
+            //step name does not match the migration step
+            if (!migration.Name.EqualsIgnoreCase(step.Name))
+            {
+                _logger.LogInformation($"Database {database.Name} Step {step.Name} was not deployed. Skipping rollback");
+                continue;
+            }
+            
+            await RunScript(step.RollbackScript, database, stoppingToken);
+            await database.RemoveMigration(migration, stoppingToken);
+            migrations.Dequeue();
         }
     }
 }

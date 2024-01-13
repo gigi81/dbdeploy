@@ -51,22 +51,25 @@ public abstract class BaseService : IExecutable
         }
     }
 
-    protected async Task<Dictionary<string, DatabaseInfo>> GetDatabases(IEnumerable<string> databases, CancellationToken cancellationToken)
+    protected async Task<Dictionary<string, DatabaseInfo>> GetDatabases(IEnumerable<string> databases, bool reverse, CancellationToken cancellationToken)
     {
-        var tasks = databases.Select(d => GetDatabase(d, cancellationToken)).ToArray();
+        var tasks = databases.Select(d => GetDatabase(d, reverse, cancellationToken)).ToArray();
         var databaseInfos = await Task.WhenAll(tasks);
         
         return databaseInfos.ToDictionary(d => d.Name, d => d);
     }
     
-    protected async Task<DatabaseInfo> GetDatabase(string name, CancellationToken cancellationToken)
+    protected async Task<DatabaseInfo> GetDatabase(string name, bool reverse, CancellationToken cancellationToken)
     {
         foreach (var factory in _databaseFactories)
         {
             var database = await factory.GetDatabase(name, cancellationToken);
             if (database != null)
             {
-                var migrations = await database.GetMigrations(cancellationToken);
+                IEnumerable<DatabaseMigration> migrations = await database.GetMigrations(cancellationToken);
+                if (reverse)
+                    migrations = migrations.Reverse();
+                
                 return new(name, database, migrations.ToQueue());
             }
         }

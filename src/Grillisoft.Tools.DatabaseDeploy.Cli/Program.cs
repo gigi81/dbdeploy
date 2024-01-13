@@ -48,6 +48,7 @@ static IHostBuilder CreateHostBuilder(object options, string[] args)
         .ConfigureServices((hostContext, services) =>
         {
             services.AddSingleton<IFileSystem, FileSystem>()
+                .AddSingleton<IProgress<int>, ConsoleProgress>()
                 .AddSqlServer()
                 .AddSingleton(options)
                 .AddSingleton(typeof(IExecutable), GetServiceType(options))

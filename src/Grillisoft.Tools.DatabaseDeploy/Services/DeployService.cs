@@ -11,16 +11,19 @@ public class DeployService : BaseService
 {
     private readonly DeployOptions _options;
     private readonly IFileSystem _fileSystem;
+    private readonly IProgress<int> _progress;
 
     public DeployService(
         DeployOptions options,
         IFileSystem fileSystem,
         IEnumerable<IDatabaseFactory> databaseFactories,
+        IProgress<int> progress,
         ILogger<DeployService> logger
     ) : base(fileSystem, databaseFactories, logger)
     {
         _options = options;
         _fileSystem = fileSystem;
+        _progress = progress;
     }
     
     public async override Task Execute(CancellationToken stoppingToken)
@@ -29,16 +32,20 @@ public class DeployService : BaseService
        
         if (!manager.Branches.TryGetValue(_options.Branch, out var branch))
             throw new BranchNotFoundException(_options.Branch);
+
+        var steps = manager.GetDeploySteps(branch).ToArray();
+        var databases = await GetDatabases(steps.Select(s => s.Database).Distinct(), false, stoppingToken);
+        var count = 0;
+
+        _progress.Report(0);
         
-        var databases = await GetDatabases(branch.Databases, stoppingToken);
-        
-        foreach (var step in branch.Steps)
+        foreach (var step in steps)
         {
             var (_, database, migrations) = databases[step.Database];
             
             if (migrations.TryDequeue(out var migration))
             {
-                if (!migration.Name.Equals(step.Name, StringComparison.InvariantCultureIgnoreCase))
+                if (!migration.Name.EqualsIgnoreCase(step.Name))
                     throw new StepMigrationMismatchException(step, migration);
                 
                 _logger.LogInformation($"Database {database.Name} Step {step.Name} already deployed");
@@ -58,6 +65,10 @@ public class DeployService : BaseService
                 
                 await database.AddMigration(migrationToAdd, stoppingToken);
             }
+            
+            _progress.Report(++count * 100 / steps.Length);
         }
+        
+        _progress.Report(100);
     }
 }

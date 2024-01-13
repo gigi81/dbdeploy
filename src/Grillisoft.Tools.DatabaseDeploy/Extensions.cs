@@ -11,4 +11,9 @@ internal static class Extensions
     {
         return new Queue<T>(items);
     }
+
+    public static bool EqualsIgnoreCase(this string obj, string value)
+    {
+        return obj.Equals(value, StringComparison.InvariantCultureIgnoreCase);
+    }
 }

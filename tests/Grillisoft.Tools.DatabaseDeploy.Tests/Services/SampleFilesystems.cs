@@ -8,8 +8,8 @@ public static class SampleFilesystems
 {
     private static bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
     public static string Sample01RootPath = IsWindows ? "c:\\demo\\" : "/opt/demo/";
-    private static string Sample01Database01Path = IsWindows ? "c:\\demo\\Database01\\" : "/opt/demo/database01/";
-    private static string Sample01Database02Path = IsWindows ? "c:\\demo\\Database02\\" : "/opt/demo/database02/";
+    private static string Sample01Database01Path = IsWindows ? "c:\\demo\\Database01\\" : "/opt/demo/Database01/";
+    private static string Sample01Database02Path = IsWindows ? "c:\\demo\\Database02\\" : "/opt/demo/Database02/";
     
     public static MockFileSystem Sample01 = new(new Dictionary<string, MockFileData>
     {

@@ -41,7 +41,7 @@ public class RollbackServiceTests
         var sut = new TestServiceCollection<RollbackService>(_output)
             .AddSingleton(new RollbackOptions
             {
-                Path = @"c:\demo",
+                Path = SampleFilesystems.Sample01RootPath,
                 Branch = "release/1.1"
             })
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)

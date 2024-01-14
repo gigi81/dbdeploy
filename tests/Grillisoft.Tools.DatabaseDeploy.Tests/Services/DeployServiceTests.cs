@@ -32,7 +32,7 @@ public class DeployServiceTests
         var sut = new TestServiceCollection<DeployService>(_output)
             .AddSingleton(new DeployOptions
             {
-                Path = @"c:\demo"
+                Path = SampleFilesystems.Sample01RootPath
             })
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
             .AddSingleton<IDatabaseFactory>(databaseFactory)
@@ -64,7 +64,7 @@ public class DeployServiceTests
         var sut = new TestServiceCollection<DeployService>(_output)
             .AddSingleton(new DeployOptions
             {
-                Path = @"c:\demo",
+                Path = SampleFilesystems.Sample01RootPath,
                 Branch = "release/1.1"
             })
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
@@ -98,7 +98,7 @@ public class DeployServiceTests
         var sut = new TestServiceCollection<DeployService>(_output)
             .AddSingleton(new DeployOptions
             {
-                Path = @"c:\demo",
+                Path = SampleFilesystems.Sample01RootPath,
                 Branch = "release/1.2"
             })
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)

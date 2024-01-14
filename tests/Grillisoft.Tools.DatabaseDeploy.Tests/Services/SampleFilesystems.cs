@@ -6,11 +6,12 @@ namespace Grillisoft.Tools.DatabaseDeploy.Tests.Services;
 
 public static class SampleFilesystems
 {
-    private static string Root = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "\"c:\\demo\\" : "/opt/demo/";
-    private static string Database01 = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "\"c:\\demo\\Database01" : "/opt/demo/database01";
-    private static string Database02 = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "\"c:\\demo\\Database02" : "/opt/demo/database02";
+    private static bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+    private static string Root = IsWindows ? "c:\\demo\\" : "/opt/demo/";
+    private static string Database01 = IsWindows ? "c:\\demo\\Database01\\" : "/opt/demo/database01/";
+    private static string Database02 = IsWindows ? "c:\\demo\\Database02\\" : "/opt/demo/database02/";
     
-    public static MockFileSystem Sample01 = new MockFileSystem(new Dictionary<string, MockFileData>
+    public static MockFileSystem Sample01 = new(new Dictionary<string, MockFileData>
     {
         { $"{Root}main.csv", new MockFileData($@"
                 Database01,{Step.InitStepName}

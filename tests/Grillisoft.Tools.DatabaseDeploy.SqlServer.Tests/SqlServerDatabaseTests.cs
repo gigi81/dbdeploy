@@ -15,7 +15,6 @@ public class SqlServerDatabaseTests : IAsyncLifetime
         _cancellationToken = _cancellationTokenSource.Token;
     }
     
-    [Fact (Skip = "CI fails decause of docker setup")]
     public async Task InitializeMigrations_Then_GetMigrations_ShouldBeEmpty()
     {
         //arrange

@@ -27,6 +27,8 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 8.0.x
+      - name: Setup Docker
+        uses: docker-practice/actions-setup-docker@v1
       - name: Run tests
         run: dotnet test --collect:"XPlat Code Coverage" --logger "GitHubActions" --logger "trx;LogFileName=test-results.trx" || true
       - name: Test Report

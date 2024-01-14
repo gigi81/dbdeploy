@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+      <PackageReference Include="MySqlConnector" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.Database\Grillisoft.Tools.DatabaseDeploy.Database.csproj" />
+    </ItemGroup>
+
+</Project>

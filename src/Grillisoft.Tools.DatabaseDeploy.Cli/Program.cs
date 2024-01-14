@@ -50,6 +50,7 @@ static IHostBuilder CreateHostBuilder(object options, string[] args)
             services.AddSingleton<IFileSystem, FileSystem>()
                 .AddSingleton<IProgress<int>, ConsoleProgress>()
                 .AddSqlServer()
+                .AddMySql()
                 .AddSingleton(options)
                 .AddSingleton(typeof(IExecutable), GetServiceType(options))
                 .AddHostedService<ExecutableBackgroundService>();

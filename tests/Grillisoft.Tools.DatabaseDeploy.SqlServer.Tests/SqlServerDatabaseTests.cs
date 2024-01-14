@@ -15,6 +15,7 @@ public class SqlServerDatabaseTests : IAsyncLifetime
         _cancellationToken = _cancellationTokenSource.Token;
     }
     
+    [Fact]
     public async Task InitializeMigrations_Then_GetMigrations_ShouldBeEmpty()
     {
         //arrange

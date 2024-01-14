@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Grillisoft.Tools.DatabaseDeploy.SqlServer\Grillisoft.Tools.DatabaseDeploy.SqlServer.csproj" />
+    <ProjectReference Include="..\..\src\Grillisoft.Tools.DatabaseDeploy\Grillisoft.Tools.DatabaseDeploy.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Testcontainers.MsSql" />
+  </ItemGroup>
+</Project>

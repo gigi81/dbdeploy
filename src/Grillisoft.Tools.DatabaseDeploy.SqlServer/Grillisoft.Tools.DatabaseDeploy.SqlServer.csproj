@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.Abstractions\Grillisoft.Tools.DatabaseDeploy.Abstractions.csproj" />
+    <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.Database\Grillisoft.Tools.DatabaseDeploy.Database.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" />

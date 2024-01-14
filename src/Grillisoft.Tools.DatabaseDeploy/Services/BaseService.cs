@@ -5,14 +5,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
-public abstract class BaseService : IExecutable
+public abstract class BaseService : IExecutable, IAsyncDisposable
 {
     private readonly IFileSystem _fileSystem;
     private readonly IEnumerable<IDatabaseFactory> _databaseFactories;
+    private readonly Dictionary<string, DatabaseInfo> _databases = new(StringComparer.InvariantCultureIgnoreCase);
+    private readonly bool _reverse = false;
     protected readonly ILogger _logger;
 
-    protected BaseService(IFileSystem fileSystem, IEnumerable<IDatabaseFactory> databaseFactories, ILogger logger)
+    protected BaseService(bool reverse, IFileSystem fileSystem, IEnumerable<IDatabaseFactory> databaseFactories, ILogger logger)
     {
+        _reverse = reverse;
         _fileSystem = fileSystem;
         _databaseFactories = databaseFactories;
         _logger = logger;
@@ -51,15 +54,17 @@ public abstract class BaseService : IExecutable
         }
     }
 
-    protected async Task<Dictionary<string, DatabaseInfo>> GetDatabases(IEnumerable<string> databases, bool reverse, CancellationToken cancellationToken)
+    protected async Task<DatabaseInfo> GetDatabase(string name, CancellationToken cancellationToken)
     {
-        var tasks = databases.Select(d => CreateDatabase(d, reverse, cancellationToken)).ToArray();
-        var databaseInfos = await Task.WhenAll(tasks);
-        
-        return databaseInfos.ToDictionary(d => d.Name, d => d);
+        if (_databases.TryGetValue(name, out var ret))
+            return ret;
+
+        ret = await CreateDatabase(name, cancellationToken);
+        _databases.Add(name, ret);
+        return ret;
     }
     
-    protected async Task<DatabaseInfo> CreateDatabase(string name, bool reverse, CancellationToken cancellationToken)
+    protected async Task<DatabaseInfo> CreateDatabase(string name, CancellationToken cancellationToken)
     {
         foreach (var factory in _databaseFactories)
         {
@@ -67,7 +72,7 @@ public abstract class BaseService : IExecutable
             if (database != null)
             {
                 IEnumerable<DatabaseMigration> migrations = await database.GetMigrations(cancellationToken);
-                if (reverse)
+                if (_reverse)
                     migrations = migrations.Reverse();
                 
                 return new(name, database, migrations.ToQueue());
@@ -78,4 +83,14 @@ public abstract class BaseService : IExecutable
     }
     
     protected record DatabaseInfo(string Name, IDatabase Database, Queue<DatabaseMigration> Migrations);
+
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var database in _databases.Values)
+        {
+            await database.Database.DisposeAsync();
+        }
+        
+        _databases.Clear();
+    }
 }

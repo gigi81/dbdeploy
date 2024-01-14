@@ -5,7 +5,7 @@ using Grillisoft.Tools.DatabaseDeploy.Contracts;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Database;
 
-public abstract class DatabaseBase : IDatabase, IAsyncDisposable
+public abstract class DatabaseBase : IDatabase
 {
     private string _name;
     private DbConnection _connection;

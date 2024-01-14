@@ -51,4 +51,9 @@ public class DatabaseMock : IDatabase
         _migrations.Remove(migration);
         return Task.CompletedTask;
     }
+
+    public ValueTask DisposeAsync()
+    {
+        return ValueTask.CompletedTask;
+    }
 }

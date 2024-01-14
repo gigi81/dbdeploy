@@ -3,7 +3,7 @@ using Grillisoft.Tools.DatabaseDeploy.Contracts;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
 
-public interface IDatabase
+public interface IDatabase : IAsyncDisposable
 {
     string Name { get; }
     IScriptParser ScriptParser { get; }

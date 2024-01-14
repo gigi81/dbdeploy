@@ -18,7 +18,7 @@ public class DeployService : BaseService
         IEnumerable<IDatabaseFactory> databaseFactories,
         IProgress<int> progress,
         ILogger<DeployService> logger
-    ) : base(fileSystem, databaseFactories, logger)
+    ) : base(false, fileSystem, databaseFactories, logger)
     {
         _options = options;
         _progress = progress;
@@ -32,14 +32,13 @@ public class DeployService : BaseService
             throw new BranchNotFoundException(_options.Branch);
 
         var steps = manager.GetDeploySteps(branch).ToArray();
-        var databases = await GetDatabases(steps.Select(s => s.Database).Distinct(), false, stoppingToken);
         var count = 0;
 
         _progress.Report(0);
         
         foreach (var step in steps)
         {
-            var (_, database, migrations) = databases[step.Database];
+            var (_, database, migrations) = await GetDatabase(step.Database, stoppingToken);
             
             if (migrations.TryDequeue(out var migration))
             {

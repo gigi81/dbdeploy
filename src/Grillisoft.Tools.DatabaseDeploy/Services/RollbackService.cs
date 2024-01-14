@@ -17,7 +17,7 @@ public class RollbackService : BaseService
         IEnumerable<IDatabaseFactory> databaseFactories,
         IProgress<int> progress,
         ILogger<RollbackService> logger
-     ) : base(fileSystem, databaseFactories, logger)
+     ) : base(true, fileSystem, databaseFactories, logger)
     {
         _options = options;
         _progress = progress;
@@ -29,8 +29,7 @@ public class RollbackService : BaseService
 
         if (!manager.Branches.TryGetValue(_options.Branch, out var branch))
             throw new BranchNotFoundException(_options.Branch);
-
-        var databases = await GetDatabases(branch.Databases, true, stoppingToken);
+        
         var steps = manager.GetRollbackSteps(branch).ToArray();
         var count = 0;
         
@@ -42,7 +41,7 @@ public class RollbackService : BaseService
             if (step.IsInit)
                 break;
                 
-            var (_, database, migrations) = databases[step.Database];
+            var (_, database, migrations) = await GetDatabase(step.Database, stoppingToken);
             
             //if there are no more migrations to rollback, we are done
             if (!migrations.TryPeek(out var migration))

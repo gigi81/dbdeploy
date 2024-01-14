@@ -6,6 +6,10 @@ on:
       - 'feature/**'
   pull_request:
     branches: [main]
+permissions:
+  contents: read
+  actions: read
+  checks: write
 jobs:
   test:
     name: Test

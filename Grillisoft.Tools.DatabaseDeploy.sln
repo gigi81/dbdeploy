@@ -36,6 +36,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grillisoft.Tools.DatabaseDe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grillisoft.Tools.DatabaseDeploy.MySql", "src\Grillisoft.Tools.DatabaseDeploy.MySql\Grillisoft.Tools.DatabaseDeploy.MySql.csproj", "{CE4BA54A-A41E-4454-A7BB-9493DFF827D3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grillisoft.Tools.DatabaseDeploy.MySql.Tests", "tests\Grillisoft.Tools.DatabaseDeploy.MySql.Tests\Grillisoft.Tools.DatabaseDeploy.MySql.Tests.csproj", "{346CE4E7-0B4F-41AA-AB1A-F2C5874054A8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -78,6 +80,10 @@ Global
 		{CE4BA54A-A41E-4454-A7BB-9493DFF827D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE4BA54A-A41E-4454-A7BB-9493DFF827D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CE4BA54A-A41E-4454-A7BB-9493DFF827D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{346CE4E7-0B4F-41AA-AB1A-F2C5874054A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{346CE4E7-0B4F-41AA-AB1A-F2C5874054A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{346CE4E7-0B4F-41AA-AB1A-F2C5874054A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{346CE4E7-0B4F-41AA-AB1A-F2C5874054A8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -92,6 +98,7 @@ Global
 		{7407C2B2-B447-4E7C-AC47-98C07DF3F013} = {E878A210-5E10-4674-8DA1-F65BF8CF1D23}
 		{0CFDFA4B-D68B-43B5-A3E0-55836B6BD482} = {EDB208D8-E952-450C-A274-69FAD0613CD2}
 		{CE4BA54A-A41E-4454-A7BB-9493DFF827D3} = {EDB208D8-E952-450C-A274-69FAD0613CD2}
+		{346CE4E7-0B4F-41AA-AB1A-F2C5874054A8} = {E878A210-5E10-4674-8DA1-F65BF8CF1D23}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2FE47D27-BA6B-46C6-858E-032AAAB5007A}

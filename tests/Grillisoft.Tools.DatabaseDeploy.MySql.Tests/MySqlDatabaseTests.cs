@@ -1,17 +1,17 @@
 ﻿using FluentAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Tests;
-using Testcontainers.MsSql;
+using Testcontainers.MySql;
 using Xunit;
 
-namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests;
+namespace Grillisoft.Tools.DatabaseDeploy.MySql.Tests;
 
-public class SqlServerDatabaseTests : IAsyncLifetime
+public class MySqlDatabaseTests : IAsyncLifetime
 {
-    private readonly MsSqlContainer _container = new MsSqlBuilder().Build();
+    private readonly MySqlContainer _container = new MySqlBuilder().Build();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly CancellationToken _cancellationToken;
 
-    public SqlServerDatabaseTests()
+    public MySqlDatabaseTests()
     {
         _cancellationToken = _cancellationTokenSource.Token;
     }
@@ -21,7 +21,7 @@ public class SqlServerDatabaseTests : IAsyncLifetime
     public async Task InitializeMigrations_Then_GetMigrations_ShouldBeEmpty()
     {
         //arrange
-        var sut = new SqlServerDatabase("test", _container.GetConnectionString(), "__Migrations", new SqlServerScriptParser());
+        var sut = new MySqlDatabase("test", _container.GetConnectionString(), "__Migrations", new MySqlScriptParser());
 
         //act
         await sut.InitializeMigrations(_cancellationToken);

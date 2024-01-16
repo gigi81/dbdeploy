@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using Grillisoft.Tools.DatabaseDeploy.Tests;
 using Testcontainers.MsSql;
 using Xunit;
 
@@ -16,6 +17,7 @@ public class SqlServerDatabaseTests : IAsyncLifetime
     }
     
     [Fact]
+    [Trait(nameof(DockerPlatform), nameof(DockerPlatform.Linux))]
     public async Task InitializeMigrations_Then_GetMigrations_ShouldBeEmpty()
     {
         //arrange

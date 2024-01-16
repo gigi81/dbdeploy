@@ -27,16 +27,11 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 8.0.x
-      - name: Setup docker on MacOS
-        if: runner.os == 'macos'
-        run: |
-          brew install docker
-          colima start --network-address
-          export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
-          export TESTCONTAINERS_HOST_OVERRIDE=$(colima ls -j | jq -r '.address')
-          export DOCKER_HOST="unix://${HOME}/.colima/default/docker.sock"
-      - name: Run tests
-        run: dotnet test --collect:"XPlat Code Coverage" --logger "GitHubActions" --logger "trx;LogFileName=test-results.trx" || true
+      - name: Run Tests
+        run: dotnet test --collect:"XPlat Code Coverage" --logger "GitHubActions" --logger "trx;LogFileName=test-results.trx" --filter DockerPlatform!=Linux || true
+      - name: Run Integration Tests
+        run: dotnet test --collect:"XPlat Code Coverage" --logger "GitHubActions" --logger "trx;LogFileName=test-results.trx" --filter DockerPlatform=Linux || true
+        if: success() && ${{ startsWith(matrix.os, 'ubuntu') }}
       - name: Test Report
         uses: dorny/test-reporter@v1.7.0
         if: success() || failure()

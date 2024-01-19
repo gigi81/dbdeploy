@@ -2,4 +2,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Grillisoft.Tools.DatabaseDeploy\Grillisoft.Tools.DatabaseDeploy.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Testcontainers" />
+  </ItemGroup>
 </Project>

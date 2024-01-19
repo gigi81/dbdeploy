@@ -3,14 +3,14 @@ using Microsoft.Data.SqlClient;
 
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer;
 
-internal class SqlServerDatabase : DatabaseBase
+public class SqlServerDatabase : DatabaseBase
 {
     private readonly string _getSql;
     private readonly string _addSql;
     private readonly string _removeSql;
     private readonly string _initSql;
 
-    public SqlServerDatabase(string name, string connectionString, string migrationTableName, SqlServerScriptParser parser)
+    internal SqlServerDatabase(string name, string connectionString, string migrationTableName, SqlServerScriptParser parser)
         : base(name, new SqlConnection(connectionString), parser)
     {
         _getSql = $"SELECT [name], [deployed_utc], [user], [hash] FROM {migrationTableName}";

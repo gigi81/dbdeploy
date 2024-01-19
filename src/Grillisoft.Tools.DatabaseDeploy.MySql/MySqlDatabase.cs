@@ -15,17 +15,16 @@ public class MySqlDatabase : DatabaseBase
     public MySqlDatabase(string name, string connectionString, string migrationTableName, MySqlScriptParser parser)
         : base(name, new MySqlConnection(connectionString), parser)
     {
-        _getSql = $"SELECT [name], [deployed_utc], [user], [hash] FROM {migrationTableName}";
-        _addSql = $"INSERT INTO {migrationTableName} VALUES(@name, @deployed_utc, @user, @hash)";
-        _removeSql = $"DELETE FROM {migrationTableName} WHERE name = @name";
+        _getSql = $"SELECT `name`, `deployed_utc`, `user`, `hash` FROM `{migrationTableName}`";
+        _addSql = $"INSERT INTO `{migrationTableName}` VALUES(@name, @deployed_utc, @user, @hash)";
+        _removeSql = $"DELETE FROM `{migrationTableName}` WHERE `name` = @name";
         _initSql = $@"
-            IF OBJECT_ID(N'[{migrationTableName}]', N'U') IS NULL
-            CREATE TABLE [{migrationTableName}] (
-              [name] NVARCHAR(255),
-              [deployed_utc] datetime2,
-              [user] NVARCHAR(100),
-              [hash] char(32),
-              CONSTRAINT [PK_{migrationTableName}] PRIMARY KEY CLUSTERED([name] ASC)
+            CREATE TABLE IF NOT EXISTS `{migrationTableName}` (
+              `name` NVARCHAR(255),
+              `deployed_utc` datetime,
+              `user` NVARCHAR(100),
+              `hash` char(32),
+              PRIMARY KEY (`name`)
             );
         ";
     }

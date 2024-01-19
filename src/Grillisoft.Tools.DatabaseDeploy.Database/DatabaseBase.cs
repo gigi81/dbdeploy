@@ -7,9 +7,9 @@ namespace Grillisoft.Tools.DatabaseDeploy.Database;
 
 public abstract class DatabaseBase : IDatabase
 {
-    private string _name;
-    private DbConnection _connection;
-    private IScriptParser _parser;
+    private readonly string _name;
+    private readonly DbConnection _connection;
+    private readonly IScriptParser _parser;
 
     protected DatabaseBase(string name, DbConnection connection, IScriptParser parser)
     {

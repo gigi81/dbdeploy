@@ -1,6 +1,7 @@
 ﻿using DotNet.Testcontainers.Containers;
 using FluentAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
 
@@ -35,6 +36,24 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
 
         //assert
         migrations.Count.Should().Be(0);
+    }
+
+    [Fact]
+    [Trait(nameof(DockerPlatform), nameof(DockerPlatform.Linux))]
+    public async Task InitializeMigrations_Then_AddMigration_ShouldHaveOneMigration()
+    {
+        //arrange
+        var sut = this.CreateDatabase();
+        var expected = new DatabaseMigration("test", DateTimeOffset.Now, "user", "1234");
+
+        //act
+        await sut.InitializeMigrations(_cancellationToken);
+        await sut.AddMigration(expected, _cancellationToken);
+        var migrations = await sut.GetMigrations(_cancellationToken);
+
+        //assert
+        migrations.Count.Should().Be(1);
+        migrations.First().Should().BeEquivalentTo(expected);
     }
 
     public Task InitializeAsync() => _container.StartAsync();

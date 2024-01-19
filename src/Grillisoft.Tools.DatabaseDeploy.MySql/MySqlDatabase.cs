@@ -1,6 +1,4 @@
-﻿using System.Data.Common;
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Database;
+﻿using Grillisoft.Tools.DatabaseDeploy.Database;
 using MySqlConnector;
 
 namespace Grillisoft.Tools.DatabaseDeploy.MySql;

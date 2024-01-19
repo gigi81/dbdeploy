@@ -70,7 +70,7 @@ public abstract class DatabaseBase : IDatabase
         await OpenConnection(cancellationToken);
         await using var command = CreateCommand(this.AddSql);
         command.AddParameter("name", migration.Name)
-               .AddParameter("datetime", migration.DateTime)
+               .AddParameter("deployed_utc", migration.DateTime)
                .AddParameter("user", migration.User)
                .AddParameter("hash", migration.Hash);
         

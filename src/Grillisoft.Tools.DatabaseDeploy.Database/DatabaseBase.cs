@@ -26,6 +26,8 @@ public abstract class DatabaseBase : IDatabase
     
     protected abstract string RemoveSql { get; }
     
+    protected abstract string ClearSql { get; }
+    
     public string Name => _name;
     
     public IScriptParser ScriptParser => _parser;
@@ -38,11 +40,7 @@ public abstract class DatabaseBase : IDatabase
     }
 
     public async virtual Task InitializeMigrations(CancellationToken cancellationToken)
-    {
-        await OpenConnection(cancellationToken);
-        await using var command = CreateCommand(this.InitSql);
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
+        => await RunScript(this.InitSql, cancellationToken);
 
     public async virtual Task<ICollection<DatabaseMigration>> GetMigrations(CancellationToken cancellationToken)
     {
@@ -70,7 +68,7 @@ public abstract class DatabaseBase : IDatabase
         await OpenConnection(cancellationToken);
         await using var command = CreateCommand(this.AddSql);
         command.AddParameter("name", migration.Name)
-               .AddParameter("deployed_utc", migration.DateTime)
+               .AddParameter("deployed_utc", migration.DateTime.UtcDateTime)
                .AddParameter("user", migration.User)
                .AddParameter("hash", migration.Hash);
         
@@ -84,7 +82,10 @@ public abstract class DatabaseBase : IDatabase
         command.AddParameter("name", migration.Name);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
-    
+
+    public async Task ClearMigrations(CancellationToken cancellationToken)
+        => await RunScript(this.ClearSql, cancellationToken);
+
     private DbCommand CreateCommand(string script)
     {
         var command = _connection.CreateCommand();

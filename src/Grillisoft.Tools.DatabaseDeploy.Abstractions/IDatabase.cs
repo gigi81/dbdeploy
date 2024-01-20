@@ -12,4 +12,5 @@ public interface IDatabase : IAsyncDisposable
     Task<ICollection<DatabaseMigration>> GetMigrations(CancellationToken cancellationToken);
     Task AddMigration(DatabaseMigration migration, CancellationToken cancellationToken);
     Task RemoveMigration(DatabaseMigration migration, CancellationToken cancellationToken);
+    Task ClearMigrations(CancellationToken cancellationToken);
 }

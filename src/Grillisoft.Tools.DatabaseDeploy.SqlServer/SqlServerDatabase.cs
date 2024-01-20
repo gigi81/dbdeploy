@@ -9,6 +9,7 @@ public class SqlServerDatabase : DatabaseBase
     private readonly string _addSql;
     private readonly string _removeSql;
     private readonly string _initSql;
+    private readonly string _clearSql;
 
     internal SqlServerDatabase(string name, string connectionString, string migrationTableName, SqlServerScriptParser parser)
         : base(name, new SqlConnection(connectionString), parser)
@@ -28,10 +29,12 @@ public class SqlServerDatabase : DatabaseBase
               CONSTRAINT [AK_{migrationTableName}_name] UNIQUE(name) 
             );
         ";
+        _clearSql = $"DROP TABLE IF EXISTS `{migrationTableName}`";
     }
     
     protected override string InitSql => _initSql;
     protected override string GetSql => _getSql;
     protected override string AddSql => _addSql;
     protected override string RemoveSql => _removeSql;
+    protected override string ClearSql => _clearSql;
 }

@@ -52,6 +52,12 @@ public class DatabaseMock : IDatabase
         return Task.CompletedTask;
     }
 
+    public Task ClearMigrations(CancellationToken cancellationToken)
+    {
+        _migrations.Clear();
+        return Task.CompletedTask;
+    }
+
     public ValueTask DisposeAsync()
     {
         return ValueTask.CompletedTask;

@@ -9,6 +9,7 @@ public class MySqlDatabase : DatabaseBase
     private readonly string _addSql;
     private readonly string _removeSql;
     private readonly string _initSql;
+    private readonly string _clearSql;
 
     public MySqlDatabase(string name, string connectionString, string migrationTableName, MySqlScriptParser parser)
         : base(name, new MySqlConnection(connectionString), parser)
@@ -25,10 +26,12 @@ public class MySqlDatabase : DatabaseBase
               PRIMARY KEY (`name`)
             );
         ";
+        _clearSql = $"DROP TABLE IF EXISTS `{migrationTableName}`";
     }
 
     protected override string InitSql => _initSql;
     protected override string GetSql => _getSql;
     protected override string AddSql => _addSql;
     protected override string RemoveSql => _removeSql;
+    protected override string ClearSql => _clearSql;
 }

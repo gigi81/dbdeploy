@@ -9,6 +9,9 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
     where TDatabase: IDatabase
     where TDatabaseContainer: DockerContainer, IDatabaseContainer
 {
+    private static readonly DatabaseMigration TestMigration =
+        new("test", DateTimeOffset.Now.TrimToSeconds(), "user", "1234");
+    
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly CancellationToken _cancellationToken;
     private readonly TDatabaseContainer _container;
@@ -44,16 +47,32 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
     {
         //arrange
         var sut = this.CreateDatabase();
-        var expected = new DatabaseMigration("test", DateTimeOffset.Now.TrimToSeconds(), "user", "1234");
 
         //act
         await sut.InitializeMigrations(_cancellationToken);
-        await sut.AddMigration(expected, _cancellationToken);
+        await sut.AddMigration(TestMigration, _cancellationToken);
         var migrations = await sut.GetMigrations(_cancellationToken);
 
         //assert
         migrations.Count.Should().Be(1);
-        migrations.First().Should().BeEquivalentTo(expected);
+        migrations.First().Should().BeEquivalentTo(TestMigration);
+    }
+
+    [Fact]
+    [Trait(nameof(DockerPlatform), nameof(DockerPlatform.Linux))]
+    public async Task InitializeMigrations_Then_AddAndRemoveMigration_ShouldBeEmpty()
+    {
+        //arrange
+        var sut = this.CreateDatabase();
+
+        //act
+        await sut.InitializeMigrations(_cancellationToken);
+        await sut.AddMigration(TestMigration, _cancellationToken);
+        await sut.RemoveMigration(TestMigration, _cancellationToken);
+        var migrations = await sut.GetMigrations(_cancellationToken);
+
+        //assert
+        migrations.Count.Should().Be(0);
     }
 
     public Task InitializeAsync() => _container.StartAsync();

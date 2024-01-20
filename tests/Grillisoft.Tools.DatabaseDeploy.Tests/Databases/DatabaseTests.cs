@@ -10,7 +10,7 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
     where TDatabaseContainer: DockerContainer, IDatabaseContainer
 {
     private static readonly DatabaseMigration TestMigration =
-        new("test", DateTimeOffset.Now.TrimToSeconds(), "user", "1234");
+        new("test", DateTimeOffset.Now.TrimToSeconds(), "user", "12345678123456781234567812345678");
     
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly CancellationToken _cancellationToken;
@@ -34,6 +34,7 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
         var sut = this.CreateDatabase();
 
         //act
+        await sut.ClearMigrations(_cancellationToken);
         await sut.InitializeMigrations(_cancellationToken);
         var migrations = await sut.GetMigrations(_cancellationToken);
 
@@ -43,12 +44,26 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
 
     [Fact]
     [Trait(nameof(DockerPlatform), nameof(DockerPlatform.Linux))]
-    public async Task InitializeMigrations_Then_AddMigration_ShouldHaveOneMigration()
+    public async Task ClearMigrations_ClearThenInitializeThenClearMigrations()
     {
         //arrange
         var sut = this.CreateDatabase();
 
         //act
+        await sut.ClearMigrations(_cancellationToken);
+        await sut.InitializeMigrations(_cancellationToken);
+        await sut.ClearMigrations(_cancellationToken);
+    }
+
+    [Fact]
+    [Trait(nameof(DockerPlatform), nameof(DockerPlatform.Linux))]
+    public async Task AddMigrations_InitializeThenAddMigration_ShouldHaveOneMigration()
+    {
+        //arrange
+        var sut = this.CreateDatabase();
+
+        //act
+        await sut.ClearMigrations(_cancellationToken);
         await sut.InitializeMigrations(_cancellationToken);
         await sut.AddMigration(TestMigration, _cancellationToken);
         var migrations = await sut.GetMigrations(_cancellationToken);
@@ -60,12 +75,13 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
 
     [Fact]
     [Trait(nameof(DockerPlatform), nameof(DockerPlatform.Linux))]
-    public async Task InitializeMigrations_Then_AddAndRemoveMigration_ShouldBeEmpty()
+    public async Task RemoveMigrations_Then_InitializeThenAddThenRemoveMigration_ShouldBeEmpty()
     {
         //arrange
         var sut = this.CreateDatabase();
 
         //act
+        await sut.ClearMigrations(_cancellationToken);
         await sut.InitializeMigrations(_cancellationToken);
         await sut.AddMigration(TestMigration, _cancellationToken);
         await sut.RemoveMigration(TestMigration, _cancellationToken);

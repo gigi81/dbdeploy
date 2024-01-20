@@ -44,7 +44,7 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
     {
         //arrange
         var sut = this.CreateDatabase();
-        var expected = new DatabaseMigration("test", DateTimeOffset.Now, "user", "1234");
+        var expected = new DatabaseMigration("test", DateTimeOffset.Now.TrimToSeconds(), "user", "1234");
 
         //act
         await sut.InitializeMigrations(_cancellationToken);

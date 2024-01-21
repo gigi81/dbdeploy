@@ -1,4 +1,5 @@
 ﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests.Mocks;
 
@@ -6,6 +7,8 @@ public class DatabaseFactoryMock : IDatabaseFactory
 {
     private readonly Dictionary<string, IDatabase> _databases = new();
 
+    public string Name => "mock";
+    
     public DatabaseFactoryMock()
     {
     }
@@ -18,10 +21,12 @@ public class DatabaseFactoryMock : IDatabaseFactory
             _databases.Add(database.Name, database);
         }
     }
-    
-    public Task<IDatabase?> GetDatabase(string name, CancellationToken cancellationToken)
+
+    public Task<IDatabase> GetDatabase(DatabaseConfig config, CancellationToken cancellationToken)
     {
-        _databases.TryGetValue(name, out var ret);
-        return Task.FromResult(ret);
+        if(_databases.TryGetValue(config.Name!, out var ret))
+            return Task.FromResult(ret);
+
+        throw new Exception($"Mock database {config.Name} not found");
     }
 }

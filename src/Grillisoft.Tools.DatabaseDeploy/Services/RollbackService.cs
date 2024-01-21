@@ -1,5 +1,6 @@
 ﻿using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
@@ -13,11 +14,12 @@ public class RollbackService : BaseService
 
     public RollbackService(
         RollbackOptions options,
+        IEnumerable<DatabaseConfig> databases,
         IFileSystem fileSystem,
         IEnumerable<IDatabaseFactory> databaseFactories,
         IProgress<int> progress,
         ILogger<RollbackService> logger
-     ) : base(true, fileSystem, databaseFactories, logger)
+     ) : base(true, databases, fileSystem, databaseFactories, logger)
     {
         _options = options;
         _progress = progress;

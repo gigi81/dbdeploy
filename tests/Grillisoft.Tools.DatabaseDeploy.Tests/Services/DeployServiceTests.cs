@@ -12,6 +12,9 @@ namespace Grillisoft.Tools.DatabaseDeploy.Tests.Services;
 
 public class DeployServiceTests
 {
+    private static readonly DatabaseConfig Database01Config = new() { Name = "Database01", Provider = "mock", ConnectionString = "" };
+    private static readonly DatabaseConfig Database02Config = new() { Name = "Database02", Provider = "mock", ConnectionString = "" };
+
     private readonly ITestOutputHelper _output;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly CancellationToken _cancellationToken;
@@ -37,6 +40,7 @@ public class DeployServiceTests
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
             .AddSingleton<IDatabaseFactory>(databaseFactory)
             .AddSingleton<IProgress<int>>(new Progress<int>())
+            .AddSingleton<IEnumerable<DatabaseConfig>>(new[] { Database01Config, Database02Config })
             .BuildServiceProvider()
             .GetRequiredService<DeployService>();
 
@@ -70,6 +74,7 @@ public class DeployServiceTests
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
             .AddSingleton<IDatabaseFactory>(databaseFactory)
             .AddSingleton<IProgress<int>>(new Progress<int>())
+            .AddSingleton<IEnumerable<DatabaseConfig>>(new[] { Database01Config, Database02Config })
             .BuildServiceProvider()
             .GetRequiredService<DeployService>();
 
@@ -104,6 +109,7 @@ public class DeployServiceTests
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
             .AddSingleton<IDatabaseFactory>(databaseFactory)
             .AddSingleton<IProgress<int>>(new Progress<int>())
+            .AddSingleton<IEnumerable<DatabaseConfig>>(new[] { Database01Config, Database02Config })
             .BuildServiceProvider()
             .GetRequiredService<DeployService>();
 

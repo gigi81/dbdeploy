@@ -9,16 +9,19 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 public abstract class BaseService : IExecutable, IAsyncDisposable
 {
     private readonly IFileSystem _fileSystem;
-    private readonly IEnumerable<IDatabaseFactory> _databaseFactories;
+    private readonly Dictionary<string, IDatabaseFactory> _databaseFactories;
+    private readonly Dictionary<string, DatabaseConfig> _databaseConfigs;
     private readonly Dictionary<string, DatabaseInfo> _databases = new(StringComparer.InvariantCultureIgnoreCase);
     private readonly bool _reverse = false;
     protected readonly ILogger _logger;
 
-    protected BaseService(bool reverse, IFileSystem fileSystem, IEnumerable<IDatabaseFactory> databaseFactories, ILogger logger)
+    protected BaseService(bool reverse, IEnumerable<DatabaseConfig> databases, IFileSystem fileSystem, IEnumerable<IDatabaseFactory> databaseFactories, ILogger logger)
     {
         _reverse = reverse;
+        _databaseConfigs = databases.Where(c => !string.IsNullOrWhiteSpace(c.Name))
+            .ToDictionary(c => c.Name!, c => c, StringComparer.InvariantCultureIgnoreCase);
         _fileSystem = fileSystem;
-        _databaseFactories = databaseFactories;
+        _databaseFactories = databaseFactories.ToDictionary(f => f.Name, f => f, StringComparer.InvariantCultureIgnoreCase);
         _logger = logger;
     }
 
@@ -69,20 +72,21 @@ public abstract class BaseService : IExecutable, IAsyncDisposable
     
     protected async Task<DatabaseInfo> CreateDatabase(string name, CancellationToken cancellationToken)
     {
-        foreach (var factory in _databaseFactories)
-        {
-            var database = await factory.GetDatabase(name, cancellationToken);
-            if (database != null)
-            {
-                IEnumerable<DatabaseMigration> migrations = await database.GetMigrations(cancellationToken);
-                if (_reverse)
-                    migrations = migrations.Reverse();
-                
-                return new(name, database, migrations.ToQueue());
-            }
-        }
+        if (!_databaseConfigs.TryGetValue(name, out var config))
+            throw new Exception($"Could not find configuration for database '{name}'");
 
-        throw new Exception($"Database '{name}' not found");
+        if (string.IsNullOrWhiteSpace(config.Provider) || !_databaseFactories.TryGetValue(config.Provider, out var factory))
+            throw new Exception($"Could not find factory '{config.Provider}' for database '{name}'");
+
+        var database = await factory.GetDatabase(config, cancellationToken);
+        if (database == null)
+            throw new Exception($"Database '{name}' not found");
+
+        IEnumerable<DatabaseMigration> migrations = await database.GetMigrations(cancellationToken);
+        if (_reverse)
+            migrations = migrations.Reverse();
+        
+        return new(name, database, migrations.ToQueue());
     }
     
     protected record DatabaseInfo(string Name, IDatabase Database, Queue<DatabaseMigration> Migrations);

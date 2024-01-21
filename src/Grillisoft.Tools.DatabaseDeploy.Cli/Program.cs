@@ -3,8 +3,10 @@ using CommandLine;
 using Grillisoft.Tools.DatabaseDeploy;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Cli;
+using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Grillisoft.Tools.DatabaseDeploy.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -45,8 +47,14 @@ static IHostBuilder CreateHostBuilder(object options, string[] args)
             loggerConfiguration.Enrich.FromLogContext()
                 .WriteTo.Console();
         })
+        .ConfigureAppConfiguration((hostContext, config) =>
+        {
+            config.AddJsonFile("dbsettings.json", optional: false);
+        })
         .ConfigureServices((hostContext, services) =>
         {
+            services.AddOptions<IEnumerable<DatabaseConfig>>().BindConfiguration("databases");
+
             services.AddSingleton<IFileSystem, FileSystem>()
                 .AddSingleton<IProgress<int>, ConsoleProgress>()
                 .AddSqlServer()

@@ -1,8 +1,11 @@
 ﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts;
 
-namespace Grillisoft.Tools.DatabaseDeploy;
+namespace Grillisoft.Tools.DatabaseDeploy.MySql;
 
 public class MySqlDatabaseFactory : IDatabaseFactory
 {
-    public Task<IDatabase?> GetDatabase(string name, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public string Name => "mySql";
+    
+    public Task<IDatabase> GetDatabase(DatabaseConfig config, CancellationToken cancellationToken) => throw new NotImplementedException();
 }

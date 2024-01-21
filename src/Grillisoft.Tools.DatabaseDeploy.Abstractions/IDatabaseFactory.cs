@@ -1,6 +1,9 @@
-﻿namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
+﻿using Grillisoft.Tools.DatabaseDeploy.Contracts;
+
+namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
 
 public interface IDatabaseFactory
 {
-    Task<IDatabase?> GetDatabase(string name, CancellationToken cancellationToken);
+    string Name { get; }
+    Task<IDatabase> GetDatabase(DatabaseConfig config, CancellationToken cancellationToken);
 }

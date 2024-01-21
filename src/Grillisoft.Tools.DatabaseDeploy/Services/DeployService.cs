@@ -14,11 +14,12 @@ public class DeployService : BaseService
 
     public DeployService(
         DeployOptions options,
+        IEnumerable<DatabaseConfig> databases,
         IFileSystem fileSystem,
         IEnumerable<IDatabaseFactory> databaseFactories,
         IProgress<int> progress,
         ILogger<DeployService> logger
-    ) : base(false, fileSystem, databaseFactories, logger)
+    ) : base(false, databases, fileSystem, databaseFactories, logger)
     {
         _options = options;
         _progress = progress;

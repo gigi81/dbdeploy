@@ -1,5 +1,4 @@
 ﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Microsoft.Extensions.Configuration;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests.Mocks;
@@ -23,9 +22,8 @@ public class DatabaseFactoryMock : IDatabaseFactory
         }
     }
 
-    public Task<IDatabase> GetDatabase(IConfigurationSection config, CancellationToken cancellationToken)
+    public Task<IDatabase> GetDatabase(string name, IConfigurationSection config, CancellationToken cancellationToken)
     {
-        var name = config["name"];
         if(!string.IsNullOrWhiteSpace(name) && _databases.TryGetValue(name, out var ret))
             return Task.FromResult(ret);
 

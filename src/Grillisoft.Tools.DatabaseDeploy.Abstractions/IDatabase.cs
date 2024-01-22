@@ -1,5 +1,4 @@
-﻿using System.IO.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Contracts;
+﻿using Grillisoft.Tools.DatabaseDeploy.Contracts;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
 

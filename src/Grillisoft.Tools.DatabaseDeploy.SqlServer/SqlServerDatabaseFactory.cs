@@ -1,5 +1,4 @@
 ﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Microsoft.Extensions.Configuration;
 
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer;
@@ -15,10 +14,10 @@ internal class SqlServerDatabaseFactory : IDatabaseFactory
     
     public string Name => "sqlServer";
     
-    public Task<IDatabase> GetDatabase(IConfigurationSection config, CancellationToken cancellationToken)
+    public Task<IDatabase> GetDatabase(string name, IConfigurationSection config, CancellationToken cancellationToken)
     {
         var database = new SqlServerDatabase(
-            config["name"] ?? "",
+            name,
             config["connectionString"] ?? "",
             config["migrationTable"] ?? "__Migration",
             _parser);

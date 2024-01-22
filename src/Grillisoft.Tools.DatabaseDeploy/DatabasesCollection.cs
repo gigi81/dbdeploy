@@ -33,7 +33,7 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
         if (string.IsNullOrWhiteSpace(provider) || !_databaseFactories.TryGetValue(provider, out var factory))
             throw new Exception($"Could not find factory '{provider}' for database '{name}'");
 
-        var database = await factory.GetDatabase(section, cancellationToken);
+        var database = await factory.GetDatabase(name, section, cancellationToken);
         if (database == null)
             throw new Exception($"Database '{name}' not found");
 

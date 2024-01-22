@@ -22,7 +22,7 @@ try
     }
     else
     {
-        await CreateHostBuilder(result.Value, args).RunConsoleAsync();
+        await CreateHostBuilder((OptionsBase)result.Value, args).RunConsoleAsync();
     }
 }
 catch(Exception ex)
@@ -31,10 +31,9 @@ catch(Exception ex)
         Environment.ExitCode = ExitCode.GenericError;
 
     Console.WriteLine(ex.Message);
-    Console.WriteLine(ex);
 }
 
-static IHostBuilder CreateHostBuilder(object options, string[] args)
+static IHostBuilder CreateHostBuilder(OptionsBase options, string[] args)
 {
     return Host.CreateDefaultBuilder(args)
         //ctrl+C support
@@ -49,33 +48,21 @@ static IHostBuilder CreateHostBuilder(object options, string[] args)
         })
         .ConfigureAppConfiguration((hostContext, config) =>
         {
-            config.AddJsonFile("dbsettings.json", optional: false);
+            var configRoot = Path.GetFullPath(options.Path);
+            config.AddJsonFile(Path.Combine(configRoot, "dbsettings.json"), optional: false);
         })
         .ConfigureServices((hostContext, services) =>
         {
             services.AddOptions<IEnumerable<DatabaseConfig>>().BindConfiguration("databases");
 
             services.AddSingleton<IFileSystem, FileSystem>()
+                .AddSingleton<IDatabasesCollection, DatabasesCollection>()
                 .AddSingleton<IProgress<int>, ConsoleProgress>()
                 .AddSqlServer()
                 .AddMySql()
-                .AddSingleton(options)
-                .AddSingleton(typeof(IExecutable), GetServiceType(options))
+                .AddExecutable(options)
                 .AddHostedService<ExecutableBackgroundService>();
         });
-}
-
-static Type GetServiceType(object options)
-{
-    switch (options)
-    {
-        case DeployOptions:
-            return typeof(DeployService);
-        case RollbackOptions:
-            return typeof(RollbackService);
-        default:
-            throw new Exception($"Options of type {options.GetType().Name} not supported");
-    }
 }
 
 internal static class ExitCode

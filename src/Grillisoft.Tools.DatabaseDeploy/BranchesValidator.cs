@@ -3,7 +3,7 @@ using Grillisoft.Tools.DatabaseDeploy.Contracts;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
 
-public sealed class BranchesValidator
+public static class BranchesValidator
 {
     public static List<string> Validate(IEnumerable<Branch> branches, IDirectoryInfo directory)
     {

@@ -14,15 +14,19 @@ public class RollbackService : BaseService
 
     public RollbackService(
         RollbackOptions options,
-        IEnumerable<DatabaseConfig> databases,
+        IDatabasesCollection databases,
         IFileSystem fileSystem,
-        IEnumerable<IDatabaseFactory> databaseFactories,
         IProgress<int> progress,
         ILogger<RollbackService> logger
-     ) : base(true, databases, fileSystem, databaseFactories, logger)
+     ) : base(databases, fileSystem, logger)
     {
         _options = options;
         _progress = progress;
+    }
+
+    protected override IEnumerable<DatabaseMigration> TransformMigrations(IEnumerable<DatabaseMigration> migrations)
+    {
+        return migrations.Reverse();
     }
 
     public async override Task Execute(CancellationToken stoppingToken)
@@ -43,7 +47,8 @@ public class RollbackService : BaseService
             if (step.IsInit)
                 break;
                 
-            var (_, database, migrations) = await GetDatabase(step.Database, stoppingToken);
+            var database = await GetDatabase(step.Database, stoppingToken);
+            var migrations = await GetMigrations(step.Database, stoppingToken);
             
             //if there are no more migrations to rollback, we are done
             if (!migrations.TryPeek(out var migration))

@@ -12,9 +12,6 @@ namespace Grillisoft.Tools.DatabaseDeploy.Tests.Services;
 
 public class DeployServiceTests
 {
-    private static readonly DatabaseConfig Database01Config = new() { Name = "Database01", Provider = "mock", ConnectionString = "" };
-    private static readonly DatabaseConfig Database02Config = new() { Name = "Database02", Provider = "mock", ConnectionString = "" };
-
     private readonly ITestOutputHelper _output;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly CancellationToken _cancellationToken;
@@ -31,16 +28,15 @@ public class DeployServiceTests
         //arrange
         var database01 = new DatabaseMock("Database01");
         var database02 = new DatabaseMock("Database02");
-        var databaseFactory = new DatabaseFactoryMock(database01, database02);
         var sut = new TestServiceCollection<DeployService>(_output)
             .AddSingleton(new DeployOptions
             {
                 Path = SampleFilesystems.Sample01RootPath
             })
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
-            .AddSingleton<IDatabaseFactory>(databaseFactory)
             .AddSingleton<IProgress<int>>(new Progress<int>())
-            .AddSingleton<IEnumerable<DatabaseConfig>>(new[] { Database01Config, Database02Config })
+            .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(database01, database02))
+            .AddSingleton<IDatabasesCollection>(new DatabasesCollectionMock(database01, database02))
             .BuildServiceProvider()
             .GetRequiredService<DeployService>();
 
@@ -63,7 +59,6 @@ public class DeployServiceTests
         //arrange
         var database01 = new DatabaseMock("Database01");
         var database02 = new DatabaseMock("Database02");
-        var databaseFactory = new DatabaseFactoryMock(database01, database02);
 
         var sut = new TestServiceCollection<DeployService>(_output)
             .AddSingleton(new DeployOptions
@@ -72,9 +67,9 @@ public class DeployServiceTests
                 Branch = "release/1.1"
             })
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
-            .AddSingleton<IDatabaseFactory>(databaseFactory)
             .AddSingleton<IProgress<int>>(new Progress<int>())
-            .AddSingleton<IEnumerable<DatabaseConfig>>(new[] { Database01Config, Database02Config })
+            .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(database01, database02))
+            .AddSingleton<IDatabasesCollection>(new DatabasesCollectionMock(database01, database02))
             .BuildServiceProvider()
             .GetRequiredService<DeployService>();
 
@@ -98,7 +93,6 @@ public class DeployServiceTests
         //arrange
         var database01 = new DatabaseMock("Database01");
         var database02 = new DatabaseMock("Database02");
-        var databaseFactory = new DatabaseFactoryMock(database01, database02);
 
         var sut = new TestServiceCollection<DeployService>(_output)
             .AddSingleton(new DeployOptions
@@ -107,9 +101,9 @@ public class DeployServiceTests
                 Branch = "release/1.2"
             })
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
-            .AddSingleton<IDatabaseFactory>(databaseFactory)
             .AddSingleton<IProgress<int>>(new Progress<int>())
-            .AddSingleton<IEnumerable<DatabaseConfig>>(new[] { Database01Config, Database02Config })
+            .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(database01, database02))
+            .AddSingleton<IDatabasesCollection>(new DatabasesCollectionMock(database01, database02))
             .BuildServiceProvider()
             .GetRequiredService<DeployService>();
 

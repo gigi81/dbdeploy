@@ -2,16 +2,14 @@
   "global": {
     
   },
-  "databases": [
-    {
-      "name": "Database01",
+  "databases":{
+    "Database01": {
       "connectionString": "Server=(local)",
       "provider": "sqlServer"
     },
-    {
-      "name": "Database02",
+    "Database02": {
       "connectionString": "Server=(local)",
       "provider": "sqlServer"
     }
-  ]
+  }
 }

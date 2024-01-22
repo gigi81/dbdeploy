@@ -12,9 +12,6 @@ namespace Grillisoft.Tools.DatabaseDeploy.Tests.Services;
 
 public class RollbackServiceTests
 {
-    private static readonly DatabaseConfig Database01Config = new() { Name = "Database01", Provider = "mock", ConnectionString = "" };
-    private static readonly DatabaseConfig Database02Config = new() { Name = "Database02", Provider = "mock", ConnectionString = "" };
-
     private readonly ITestOutputHelper _output;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly CancellationToken _cancellationToken;
@@ -38,8 +35,6 @@ public class RollbackServiceTests
         var database02 = new DatabaseMock("Database02");
         var migration0201 = new DatabaseMigration(Step.InitStepName, DateTimeOffset.Now, "", "");
         await database02.AddMigration(migration0201, _cancellationToken);
-        
-        var databaseFactory = new DatabaseFactoryMock(database01, database02);
 
         var sut = new TestServiceCollection<RollbackService>(_output)
             .AddSingleton(new RollbackOptions
@@ -48,9 +43,9 @@ public class RollbackServiceTests
                 Branch = "release/1.1"
             })
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
-            .AddSingleton<IDatabaseFactory>(databaseFactory)
             .AddSingleton<IProgress<int>>(new Progress<int>())
-            .AddSingleton<IEnumerable<DatabaseConfig>>(new[] { Database01Config, Database02Config })
+            .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(database01, database02))
+            .AddSingleton<IDatabasesCollection>(new DatabasesCollectionMock(database01, database02))
             .BuildServiceProvider()
             .GetRequiredService<RollbackService>();
 

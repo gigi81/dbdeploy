@@ -14,12 +14,11 @@ public class DeployService : BaseService
 
     public DeployService(
         DeployOptions options,
-        IEnumerable<DatabaseConfig> databases,
+        IDatabasesCollection databases,
         IFileSystem fileSystem,
-        IEnumerable<IDatabaseFactory> databaseFactories,
         IProgress<int> progress,
         ILogger<DeployService> logger
-    ) : base(false, databases, fileSystem, databaseFactories, logger)
+    ) : base(databases, fileSystem, logger)
     {
         _options = options;
         _progress = progress;
@@ -39,22 +38,23 @@ public class DeployService : BaseService
         
         foreach (var step in steps)
         {
-            var (_, database, migrations) = await GetDatabase(step.Database, stoppingToken);
+            var database = await GetDatabase(step.Database, stoppingToken);
+            var migrations = await GetMigrations(step.Database, stoppingToken);
             
             if (migrations.TryDequeue(out var migration))
             {
                 if (!migration.Name.EqualsIgnoreCase(step.Name))
                     throw new StepMigrationMismatchException(step, migration);
                 
-                _logger.LogInformation($"Database {database.Name} Step {step.Name} already deployed");
+                _logger.LogInformation($"Database {step.Database} Step {step.Name} already deployed");
             }
             else
             {
                 await RunScript(step.DeployScript, database, stoppingToken);
-                if(_options.UnitTest)
+                if(_options.Test)
                     await RunScript(step.TestScript, database, stoppingToken);
 
-                _logger.LogInformation($"Database {database.Name} Adding migration {step.Name}");
+                _logger.LogInformation($"Database {step.Database} Adding migration {step.Name}");
                 var migrationToAdd = new DatabaseMigration(
                     step.Name,
                     DateTimeOffset.UtcNow,

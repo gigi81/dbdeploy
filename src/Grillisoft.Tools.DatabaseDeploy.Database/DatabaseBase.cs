@@ -3,6 +3,7 @@ using System.Data.Common;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer;
+using Microsoft.Extensions.Logging;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Database;
 
@@ -11,18 +12,21 @@ public abstract class DatabaseBase : IDatabase
     private readonly string _name;
     private readonly DbConnection _connection;
     private readonly IScriptParser _parser;
+    private readonly ILogger _logger;
     private readonly ISqlScripts _sqlScripts;
 
     protected DatabaseBase(
         string name,
         DbConnection connection,
         ISqlScripts sqlScripts,
-        IScriptParser parser)
+        IScriptParser parser,
+        ILogger logger)
     {
         _name = name;
         _connection = connection;
         _sqlScripts = sqlScripts;
         _parser = parser;
+        _logger = logger;
     }
     
     public string Name => _name;
@@ -92,8 +96,16 @@ public abstract class DatabaseBase : IDatabase
 
     private async Task OpenConnection(CancellationToken cancellationToken)
     {
-        if (_connection.State != ConnectionState.Open)
-            await _connection.OpenAsync(cancellationToken);
+        try
+        {
+            if (_connection.State != ConnectionState.Open)
+                await _connection.OpenAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to open connection to database '{_name}'");
+            throw;
+        }
     }
 
     public async ValueTask DisposeAsync()

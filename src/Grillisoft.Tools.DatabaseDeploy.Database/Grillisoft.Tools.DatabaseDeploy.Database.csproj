@@ -2,4 +2,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.Abstractions\Grillisoft.Tools.DatabaseDeploy.Abstractions.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
 </Project>

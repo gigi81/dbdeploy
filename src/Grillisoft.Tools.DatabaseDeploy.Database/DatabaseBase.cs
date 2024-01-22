@@ -2,6 +2,7 @@
 using System.Data.Common;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Grillisoft.Tools.DatabaseDeploy.SqlServer;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Database;
 
@@ -10,23 +11,19 @@ public abstract class DatabaseBase : IDatabase
     private readonly string _name;
     private readonly DbConnection _connection;
     private readonly IScriptParser _parser;
+    private readonly ISqlScripts _sqlScripts;
 
-    protected DatabaseBase(string name, DbConnection connection, IScriptParser parser)
+    protected DatabaseBase(
+        string name,
+        DbConnection connection,
+        ISqlScripts sqlScripts,
+        IScriptParser parser)
     {
         _name = name;
-        _parser = parser;
         _connection = connection;
+        _sqlScripts = sqlScripts;
+        _parser = parser;
     }
-    
-    protected abstract string InitSql { get; }
-    
-    protected abstract string GetSql { get; }
-    
-    protected abstract string AddSql { get; }
-    
-    protected abstract string RemoveSql { get; }
-    
-    protected abstract string ClearSql { get; }
     
     public string Name => _name;
     
@@ -40,12 +37,12 @@ public abstract class DatabaseBase : IDatabase
     }
 
     public async virtual Task InitializeMigrations(CancellationToken cancellationToken)
-        => await RunScript(this.InitSql, cancellationToken);
+        => await RunScript(_sqlScripts.InitSql, cancellationToken);
 
     public async virtual Task<ICollection<DatabaseMigration>> GetMigrations(CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
-        await using var command = CreateCommand(this.GetSql);
+        await using var command = CreateCommand(_sqlScripts.GetSql);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var ret = new List<DatabaseMigration>();
         
@@ -66,7 +63,7 @@ public abstract class DatabaseBase : IDatabase
     public async virtual Task AddMigration(DatabaseMigration migration, CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
-        await using var command = CreateCommand(this.AddSql);
+        await using var command = CreateCommand(_sqlScripts.AddSql);
         command.AddParameter("name", migration.Name)
                .AddParameter("deployed_utc", migration.DateTime.UtcDateTime)
                .AddParameter("user", migration.User)
@@ -78,13 +75,13 @@ public abstract class DatabaseBase : IDatabase
     public async virtual Task RemoveMigration(DatabaseMigration migration, CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
-        await using var command = CreateCommand(this.RemoveSql);
+        await using var command = CreateCommand(_sqlScripts.RemoveSql);
         command.AddParameter("name", migration.Name);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     public async Task ClearMigrations(CancellationToken cancellationToken)
-        => await RunScript(this.ClearSql, cancellationToken);
+        => await RunScript(_sqlScripts.ClearSql, cancellationToken);
 
     private DbCommand CreateCommand(string script)
     {

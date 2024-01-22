@@ -24,7 +24,10 @@ public abstract class BaseService : IExecutable
 
     protected async Task<BranchesManager> LoadBranchesManager(string path)
     {
-        var manager = new BranchesManager(_fileSystem.DirectoryInfo.New(path));
+        var directory = _fileSystem.DirectoryInfo.New(path);
+        var manager = new BranchesManager(directory);
+        
+        _logger.LogInformation($"Loading branches from {directory.FullName}");
         var errors = await manager.Load();
 
         foreach (var error in errors)

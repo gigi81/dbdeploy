@@ -2,8 +2,16 @@
 
 namespace Grillisoft.Tools.DatabaseDeploy.MySql;
 
-public class MySqlScripts(string migrationTableName) : ISqlScripts
+public class MySqlScripts(string databaseName, string migrationTableName) : ISqlScripts
 {
+    public string ExistsSql { get; } = $@"
+            SELECT (CASE COUNT(*) WHEN 0 THEN false ELSE true END) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='{databaseName}'
+        ";
+
+    public string CreateSql { get; } = $@"
+            CREATE DATABASE `{databaseName}`
+        ";
+
     public string GetSql { get; } =
         $"SELECT `name`, `deployed_utc`, `user`, `hash` FROM `{migrationTableName}` ORDER BY `id` ASC";
     public string AddSql { get; } =
@@ -11,6 +19,7 @@ public class MySqlScripts(string migrationTableName) : ISqlScripts
                      VALUES(@name, @deployed_utc, @user, @hash)";
     public string RemoveSql { get; } =
         $"DELETE FROM `{migrationTableName}` WHERE `name` = @name";
+
     public string InitSql { get; } = $@"
             CREATE TABLE IF NOT EXISTS `{migrationTableName}` (
               `id` int NOT NULL AUTO_INCREMENT,

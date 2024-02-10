@@ -2,8 +2,13 @@
 
 public class SqlServerScripts(string databaseName, string migrationTableName) : ISqlScripts
 {
-    public string ExistsSql { get; }
-    public string CreateSql { get; }
+    public string ExistsSql { get; } = $@"
+            SELECT CONVERT(bit, COUNT(*)) FROM sys.databases where name='{databaseName}'
+        ";
+
+    public string CreateSql { get; } = $@"
+            CREATE DATABASE [{databaseName}]
+        ";
 
     public string InitSql { get; } = $@"
             IF OBJECT_ID(N'{migrationTableName}', N'U') IS NULL
@@ -14,7 +19,7 @@ public class SqlServerScripts(string databaseName, string migrationTableName) : 
               [user] NVARCHAR(100),
               [hash] char(32),
               CONSTRAINT [PK_{migrationTableName}] PRIMARY KEY CLUSTERED([id] ASC),
-              CONSTRAINT [AK_{migrationTableName}_name] UNIQUE([name]) 
+              CONSTRAINT [AK_{migrationTableName}_name] UNIQUE([name])
             );
         ";
 

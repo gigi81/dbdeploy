@@ -13,33 +13,35 @@ public abstract class DatabaseBase : IDatabase
     private readonly DbConnection _connection;
     private readonly IScriptParser _parser;
     private readonly ILogger _logger;
-    private readonly ISqlScripts _sqlScripts;
     private readonly string _databaseName;
+    private ISqlScripts? _sqlScripts;
     
     protected DatabaseBase(
         string name,
         DbConnection connection,
-        ISqlScripts sqlScripts,
         IScriptParser parser,
         ILogger logger)
     {
         _name = name;
         _connection = connection;
         _databaseName = !string.IsNullOrWhiteSpace(_connection.Database) ? _connection.Database : _name;
-        _sqlScripts = sqlScripts;
         _parser = parser;
         _logger = logger;
     }
+
+    protected abstract ISqlScripts CreateSqlScripts();
+
+    private ISqlScripts SqlScripts => _sqlScripts ??= CreateSqlScripts();
     
     public string Name => _name;
     public string DatabaseName => _databaseName;
     public IScriptParser ScriptParser => _parser;
     
     public async Task<bool> Exists(CancellationToken cancellationToken)
-        => await RunScript<bool>(_sqlScripts.ExistsSql, cancellationToken);
+        => await RunScript<bool>(this.SqlScripts.ExistsSql, cancellationToken);
 
     public async Task Create(CancellationToken cancellationToken)
-        => await RunScript(_sqlScripts.CreateSql, cancellationToken);
+        => await RunScript(this.SqlScripts.CreateSql, cancellationToken);
 
     public async virtual Task RunScript(string script, CancellationToken cancellationToken)
     {
@@ -60,12 +62,12 @@ public abstract class DatabaseBase : IDatabase
     }
 
     public async virtual Task InitializeMigrations(CancellationToken cancellationToken)
-        => await RunScript(_sqlScripts.InitSql, cancellationToken);
+        => await RunScript(this.SqlScripts.InitSql, cancellationToken);
 
     public async virtual Task<ICollection<DatabaseMigration>> GetMigrations(CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
-        await using var command = CreateCommand(_sqlScripts.GetSql);
+        await using var command = CreateCommand(this.SqlScripts.GetSql);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var ret = new List<DatabaseMigration>();
         
@@ -86,7 +88,7 @@ public abstract class DatabaseBase : IDatabase
     public async virtual Task AddMigration(DatabaseMigration migration, CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
-        await using var command = CreateCommand(_sqlScripts.AddSql);
+        await using var command = CreateCommand(this.SqlScripts.AddSql);
         command.AddParameter("name", migration.Name)
                .AddParameter("deployed_utc", migration.DateTime.UtcDateTime)
                .AddParameter("user", migration.User)
@@ -98,13 +100,13 @@ public abstract class DatabaseBase : IDatabase
     public async virtual Task RemoveMigration(DatabaseMigration migration, CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
-        await using var command = CreateCommand(_sqlScripts.RemoveSql);
+        await using var command = CreateCommand(this.SqlScripts.RemoveSql);
         command.AddParameter("name", migration.Name);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     public async Task ClearMigrations(CancellationToken cancellationToken)
-        => await RunScript(_sqlScripts.ClearSql, cancellationToken);
+        => await RunScript(this.SqlScripts.ClearSql, cancellationToken);
 
     private DbCommand CreateCommand(string script)
     {

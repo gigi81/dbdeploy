@@ -1,7 +1,10 @@
 ﻿namespace Grillisoft.Tools.DatabaseDeploy.SqlServer;
 
-public class SqlServerScripts(string migrationTableName) : ISqlScripts
+public class SqlServerScripts(string databaseName, string migrationTableName) : ISqlScripts
 {
+    public string ExistsSql { get; }
+    public string CreateSql { get; }
+
     public string InitSql { get; } = $@"
             IF OBJECT_ID(N'{migrationTableName}', N'U') IS NULL
             CREATE TABLE {migrationTableName} (

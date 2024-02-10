@@ -2,6 +2,8 @@
 
 public interface ISqlScripts
 {
+    string ExistsSql { get; }
+    string CreateSql { get; }
     string InitSql { get; }
     string GetSql { get; }
     string AddSql { get; }

@@ -3,11 +3,11 @@
     "defaultProvider": "sqlServer"
   },
   "databases":{
-    "Database01": {
+    "Northwind": {
       "connectionString": "Server=(local)",
       "provider": "sqlServer"
     },
-    "Database02": {
+    "Pubs": {
       "connectionString": "Server=(local)",
       "provider": "sqlServer"
     }

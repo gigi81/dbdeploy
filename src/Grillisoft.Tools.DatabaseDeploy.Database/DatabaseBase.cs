@@ -14,7 +14,8 @@ public abstract class DatabaseBase : IDatabase
     private readonly IScriptParser _parser;
     private readonly ILogger _logger;
     private readonly ISqlScripts _sqlScripts;
-
+    private readonly string _databaseName;
+    
     protected DatabaseBase(
         string name,
         DbConnection connection,
@@ -24,20 +25,38 @@ public abstract class DatabaseBase : IDatabase
     {
         _name = name;
         _connection = connection;
+        _databaseName = !string.IsNullOrWhiteSpace(_connection.Database) ? _connection.Database : _name;
         _sqlScripts = sqlScripts;
         _parser = parser;
         _logger = logger;
     }
     
     public string Name => _name;
-    
+    public string DatabaseName => _databaseName;
     public IScriptParser ScriptParser => _parser;
+    
+    public async Task<bool> Exists(CancellationToken cancellationToken)
+        => await RunScript<bool>(_sqlScripts.ExistsSql, cancellationToken);
+
+    public async Task Create(CancellationToken cancellationToken)
+        => await RunScript(_sqlScripts.CreateSql, cancellationToken);
 
     public async virtual Task RunScript(string script, CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
         await using var command = CreateCommand(script);
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    protected async virtual Task<T> RunScript<T>(string script, CancellationToken cancellationToken)
+    {
+        await OpenConnection(cancellationToken);
+        await using var command = CreateCommand(script);
+        var ret = await command.ExecuteScalarAsync(cancellationToken);
+        if (ret == null)
+            throw new Exception($"Expected return type {typeof(T)} but sql script return null");
+
+        return (T)ret;
     }
 
     public async virtual Task InitializeMigrations(CancellationToken cancellationToken)

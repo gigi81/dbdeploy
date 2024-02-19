@@ -50,7 +50,7 @@ public abstract class DatabaseBase : IDatabase
         if (ret == null)
             throw new Exception($"Expected return type {typeof(bool)} but sql script return null");
 
-        return (bool)ret;
+        return (int)ret == 1;
     }
 
     public async Task Create(CancellationToken cancellationToken)

@@ -3,7 +3,7 @@
 public class SqlServerScripts(string databaseName, string migrationTableName) : ISqlScripts
 {
     public string ExistsSql { get; } = $@"
-            SELECT CONVERT(bit, COUNT(*)) FROM sys.databases where name='{databaseName}'
+            SELECT COUNT(*) FROM sys.databases where name='{databaseName}'
         ";
 
     public string CreateSql { get; } = $@"

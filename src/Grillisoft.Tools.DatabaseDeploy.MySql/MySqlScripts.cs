@@ -5,7 +5,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.MySql;
 public class MySqlScripts(string databaseName, string migrationTableName) : ISqlScripts
 {
     public string ExistsSql { get; } = $@"
-            SELECT (CASE COUNT(*) WHEN 0 THEN false ELSE true END) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='{databaseName}'
+            SELECT COUNT(*) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='{databaseName}'
         ";
 
     public string CreateSql { get; } = $@"

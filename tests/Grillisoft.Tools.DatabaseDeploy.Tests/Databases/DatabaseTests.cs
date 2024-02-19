@@ -90,6 +90,20 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
         //assert
         migrations.Count.Should().Be(0);
     }
+    
+    [Fact]
+    [Trait(nameof(DockerPlatform), nameof(DockerPlatform.Linux))]
+    public async Task Exists_ShouldReturnTrue()
+    {
+        //arrange
+        var sut = this.CreateDatabase();
+
+        //act
+        var exists = await sut.Exists(_cancellationToken);
+
+        //assert
+        exists.Should().Be(true);
+    }
 
     public Task InitializeAsync() => _container.StartAsync();
 

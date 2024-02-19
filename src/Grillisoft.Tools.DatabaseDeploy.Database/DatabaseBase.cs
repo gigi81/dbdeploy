@@ -46,7 +46,8 @@ public abstract class DatabaseBase : IDatabase
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = this.SqlScripts.ExistsSql;
-        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)) == 1;
+        var exists = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(exists) == 1;
     }
 
     public async Task Create(CancellationToken cancellationToken)

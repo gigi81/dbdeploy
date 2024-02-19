@@ -46,11 +46,7 @@ public abstract class DatabaseBase : IDatabase
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = this.SqlScripts.ExistsSql;
-        var ret = await command.ExecuteScalarAsync(cancellationToken);
-        if (ret == null)
-            throw new Exception($"Expected return type {typeof(bool)} but sql script return null");
-
-        return (long)ret == 1;
+        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)) == 1;
     }
 
     public async Task Create(CancellationToken cancellationToken)

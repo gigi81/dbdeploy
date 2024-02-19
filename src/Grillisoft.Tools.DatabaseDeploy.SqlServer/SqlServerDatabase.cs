@@ -1,4 +1,5 @@
-﻿using Grillisoft.Tools.DatabaseDeploy.Database;
+﻿using System.Data.Common;
+using Grillisoft.Tools.DatabaseDeploy.Database;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 
@@ -22,5 +23,12 @@ public class SqlServerDatabase : DatabaseBase
     protected override ISqlScripts CreateSqlScripts()
     {
         return new SqlServerScripts(this.DatabaseName, _migrationTableName);
+    }
+
+    protected override DbConnection CreateConnectionWithoutDatabase()
+    {
+        var builder = new SqlConnectionStringBuilder(this.Connection.ConnectionString);
+        builder.InitialCatalog = "";
+        return new SqlConnection(builder.ConnectionString);
     }
 }

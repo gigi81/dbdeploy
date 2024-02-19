@@ -35,6 +35,9 @@ public class DeployService : BaseService
         var count = 0;
 
         _progress.Report(0);
+
+        if (await CheckAndCreateDatabases(steps.Select(s => s.Database).Distinct(), stoppingToken) > 0)
+            throw new Exception("One or more databases do not exists");
         
         foreach (var step in steps)
         {
@@ -68,5 +71,52 @@ public class DeployService : BaseService
         }
         
         _progress.Report(100);
+    }
+
+    private async Task<int> CheckAndCreateDatabases(IEnumerable<string> databases, CancellationToken stoppingToken)
+    {
+        var errors = 0;
+        
+        foreach (var database in databases)
+        {
+            if (!await CheckAndCreateDatabase(database, stoppingToken))
+                errors++;
+        }
+
+        return errors;
+    }
+
+    private async Task<bool> CheckAndCreateDatabase(string name, CancellationToken stoppingToken)
+    {
+        var database = await GetDatabase(name, stoppingToken);
+        try
+        {
+            if (await database.Exists(stoppingToken))
+                return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Database {name} failed to check if database exists");
+            return false;
+        }
+
+        if (!_options.Create)
+        {
+            _logger.LogError($"Database {name} does not exists");
+            return false;
+        }
+
+        try
+        {
+            _logger.LogInformation($"Database {name} does not exists");
+            await database.Create(stoppingToken);
+            _logger.LogInformation($"Database {name} created successfully");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Database {name} failed to create database");
+            return false;
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Grillisoft.Tools.DatabaseDeploy.Database;
+﻿using System.Data.Common;
+using Grillisoft.Tools.DatabaseDeploy.Database;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer;
 using Microsoft.Extensions.Logging;
 using MySqlConnector;
@@ -23,5 +24,12 @@ public class MySqlDatabase : DatabaseBase
     protected override ISqlScripts CreateSqlScripts()
     {
         return new MySqlScripts(this.DatabaseName, _migrationTableName);
+    }
+
+    protected override DbConnection CreateConnectionWithoutDatabase()
+    {
+        var builder = new MySqlConnectionStringBuilder(this.Connection.ConnectionString);
+        builder.Database = "";
+        return new MySqlConnection(builder.ConnectionString);
     }
 }

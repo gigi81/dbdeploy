@@ -30,18 +30,37 @@ public abstract class DatabaseBase : IDatabase
     }
 
     protected abstract ISqlScripts CreateSqlScripts();
+    
+    protected abstract DbConnection CreateConnectionWithoutDatabase();
 
     private ISqlScripts SqlScripts => _sqlScripts ??= CreateSqlScripts();
     
     public string Name => _name;
     public string DatabaseName => _databaseName;
     public IScriptParser ScriptParser => _parser;
+    protected DbConnection Connection => _connection;
     
     public async Task<bool> Exists(CancellationToken cancellationToken)
-        => await RunScript<bool>(this.SqlScripts.ExistsSql, cancellationToken);
+    {
+        await using var connection = this.CreateConnectionWithoutDatabase();
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = this.SqlScripts.ExistsSql;
+        var ret = await command.ExecuteScalarAsync(cancellationToken);
+        if (ret == null)
+            throw new Exception($"Expected return type {typeof(bool)} but sql script return null");
+
+        return (bool)ret;
+    }
 
     public async Task Create(CancellationToken cancellationToken)
-        => await RunScript(this.SqlScripts.CreateSql, cancellationToken);
+    {
+        await using var connection = this.CreateConnectionWithoutDatabase();
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = this.SqlScripts.CreateSql;
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
 
     public async virtual Task RunScript(string script, CancellationToken cancellationToken)
     {
@@ -129,6 +148,20 @@ public abstract class DatabaseBase : IDatabase
         }
     }
 
+    private async Task OpenConnectionToMaster(CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (_connection.State != ConnectionState.Open)
+                await _connection.OpenAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to open connection to database '{_name}'");
+            throw;
+        }
+    }
+    
     public async ValueTask DisposeAsync()
     {
         await _connection.DisposeAsync();

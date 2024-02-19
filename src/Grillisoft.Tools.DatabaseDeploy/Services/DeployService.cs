@@ -26,51 +26,53 @@ public class DeployService : BaseService
     
     public async override Task Execute(CancellationToken stoppingToken)
     {
+        var count = 0;
         var manager = await LoadBranchesManager(_options.Path);
-       
+        
         if (!manager.Branches.TryGetValue(_options.Branch, out var branch))
             throw new BranchNotFoundException(_options.Branch);
 
         var steps = manager.GetDeploySteps(branch).ToArray();
-        var count = 0;
-
-        _progress.Report(0);
 
         if (await CheckAndCreateDatabases(steps.Select(s => s.Database).Distinct(), stoppingToken) > 0)
             throw new Exception("One or more databases do not exists");
         
+        _progress.Report(0);
         foreach (var step in steps)
         {
-            var database = await GetDatabase(step.Database, stoppingToken);
-            var migrations = await GetMigrations(step.Database, stoppingToken);
-            
-            if (migrations.TryDequeue(out var migration))
-            {
-                if (!migration.Name.EqualsIgnoreCase(step.Name))
-                    throw new StepMigrationMismatchException(step, migration);
-                
-                _logger.LogInformation($"Database {step.Database} Step {step.Name} already deployed");
-            }
-            else
-            {
-                await RunScript(step.DeployScript, database, stoppingToken);
-                if(_options.Test)
-                    await RunScript(step.TestScript, database, stoppingToken);
-
-                _logger.LogInformation($"Database {step.Database} Adding migration {step.Name}");
-                var migrationToAdd = new DatabaseMigration(
-                    step.Name,
-                    DateTimeOffset.UtcNow,
-                    Environment.UserName,
-                    step.DeployScript.Name);
-                
-                await database.AddMigration(migrationToAdd, stoppingToken);
-            }
-            
+            await DeployStep(step, stoppingToken);
             _progress.Report(++count * 100 / steps.Length);
         }
-        
         _progress.Report(100);
+    }
+
+    private async Task DeployStep(Step step, CancellationToken stoppingToken)
+    {
+        var database = await GetDatabase(step.Database, stoppingToken);
+        var migrations = await GetMigrations(step.Database, stoppingToken);
+            
+        if (migrations.TryDequeue(out var migration))
+        {
+            if (!migration.Name.EqualsIgnoreCase(step.Name))
+                throw new StepMigrationMismatchException(step, migration);
+                
+            _logger.LogInformation($"Database {step.Database} Step {step.Name} already deployed");
+        }
+        else
+        {
+            await RunScript(step.DeployScript, database, stoppingToken);
+            if(_options.Test)
+                await RunScript(step.TestScript, database, stoppingToken);
+
+            _logger.LogInformation($"Database {step.Database} Adding migration {step.Name}");
+            var migrationToAdd = new DatabaseMigration(
+                step.Name,
+                DateTimeOffset.UtcNow,
+                Environment.UserName,
+                step.DeployScript.Name);
+                
+            await database.AddMigration(migrationToAdd, stoppingToken);
+        }
     }
 
     private async Task<int> CheckAndCreateDatabases(IEnumerable<string> databases, CancellationToken stoppingToken)

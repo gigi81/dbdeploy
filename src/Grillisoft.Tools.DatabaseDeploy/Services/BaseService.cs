@@ -42,13 +42,12 @@ public abstract class BaseService : IExecutable
     protected async Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken cancellationToken)
     {
         _logger.LogInformation($"Database {database.Name} Running script {scriptFile.FullName}");
+        var stopwatch = Stopwatch.StartNew();
         await foreach (var script in database.ScriptParser.Parse(scriptFile, cancellationToken))
         {
             try
             {
-                var stopwatch = Stopwatch.StartNew();
                 await database.RunScript(script, cancellationToken);
-                _logger.LogInformation($"Database {database.Name} Script {scriptFile.FullName} executed in {stopwatch.Elapsed}");
             }
             catch (Exception ex)
             {
@@ -56,6 +55,7 @@ public abstract class BaseService : IExecutable
                 throw;
             }
         }
+        _logger.LogInformation($"Database {database.Name} Script {scriptFile.FullName} executed in {stopwatch.Elapsed}");
     }
 
     protected async Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken)

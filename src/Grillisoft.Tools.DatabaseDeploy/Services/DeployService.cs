@@ -42,18 +42,24 @@ public class DeployService : BaseService
         if (await CheckAndCreateDatabases(databases, stoppingToken) > 0)
             throw new Exception("One or more databases do not exists");
 
-        await CreateMigrationTables(databases, stoppingToken);
+        await InitializeMigrations(databases, stoppingToken);
 
+        //get list of steps that will be deployed (this also checks consistency of migration table)
+        var deploySteps = await steps.WhereAsync((s) => CheckIsStepNotDeployed(s, stoppingToken))
+            .ToArrayAsync(stoppingToken);
+
+        _logger.LogInformation("Detected {0} steps to deploy", deploySteps.Length);
         _progress.Report(0);
-        foreach (var step in steps)
+        foreach (var step in deploySteps)
         {
             await DeployStep(step, stoppingToken);
             _progress.Report(++count * 100 / steps.Length);
         }
         _progress.Report(100);
+        _logger.LogInformation("Deployment completed successfully");
     }
 
-    private async Task CreateMigrationTables(IEnumerable<string> databases, CancellationToken stoppingToken)
+    private async Task InitializeMigrations(IEnumerable<string> databases, CancellationToken stoppingToken)
     {
         foreach (var database in databases)
         {
@@ -63,34 +69,36 @@ public class DeployService : BaseService
         }
     }
 
+    private async Task<bool> CheckIsStepNotDeployed(Step step, CancellationToken stoppingToken)
+    {
+        var migrations = await GetMigrations(step.Database, stoppingToken);
+        if (!migrations.TryDequeue(out var migration))
+            return true;
+
+        if (!migration.Name.EqualsIgnoreCase(step.Name))
+            throw new StepMigrationMismatchException(step, migration);
+            
+        //TODO: check hash and log warning if different
+        _logger.LogInformation($"Database {step.Database} Step {step.Name} already deployed");
+        return false;
+    }
+
     private async Task DeployStep(Step step, CancellationToken stoppingToken)
     {
         var database = await GetDatabase(step.Database, stoppingToken);
-        var migrations = await GetMigrations(step.Database, stoppingToken);
-            
-        if (migrations.TryDequeue(out var migration))
-        {
-            if (!migration.Name.EqualsIgnoreCase(step.Name))
-                throw new StepMigrationMismatchException(step, migration);
-                
-            _logger.LogInformation($"Database {step.Database} Step {step.Name} already deployed");
-        }
-        else
-        {
-            var hash = await GetHash(step.DeployScript);
-            await RunScript(step.DeployScript, database, stoppingToken);
-            if(_options.Test)
-                await RunScript(step.TestScript, database, stoppingToken);
+        var hash = await GetHash(step.DeployScript);
+        await RunScript(step.DeployScript, database, stoppingToken);
+        if(_options.Test)
+            await RunScript(step.TestScript, database, stoppingToken);
 
-            _logger.LogInformation($"Database {step.Database} Adding migration {step.Name}");
-            var migrationToAdd = new DatabaseMigration(
-                step.Name,
-                DateTimeOffset.UtcNow,
-                Environment.UserName,
-                hash);
-                
-            await database.AddMigration(migrationToAdd, stoppingToken);
-        }
+        _logger.LogInformation($"Database {step.Database} Adding migration {step.Name}");
+        var migrationToAdd = new DatabaseMigration(
+            step.Name,
+            DateTimeOffset.UtcNow,
+            Environment.UserName,
+            hash);
+            
+        await database.AddMigration(migrationToAdd, stoppingToken);
     }
 
     private static async Task<string> GetHash(IFileInfo file)

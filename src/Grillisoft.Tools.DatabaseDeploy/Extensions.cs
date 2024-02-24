@@ -16,4 +16,13 @@ internal static class Extensions
     {
         return obj.Equals(value, StringComparison.InvariantCultureIgnoreCase);
     }
+
+    public static async IAsyncEnumerable<T> WhereAsync<T>(this IEnumerable<T> source, Func<T, Task<bool>> filter)
+    {
+        foreach (var item in source)
+        {
+            if (await filter.Invoke(item))
+                yield return item;
+        }
+    }
 }

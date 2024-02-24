@@ -67,7 +67,7 @@ public class DeployService : BaseService
 
     private async Task CheckDatabasesExistsOrCreate(string[] databases, CancellationToken stoppingToken)
     {
-        var missingDatabases = await databases.WhereAsync(CheckDatabaseExistsOrCreate, stoppingToken)
+        var missingDatabases = await databases.WhereAsync(CheckDatabaseIsMissing, stoppingToken)
             .ToArrayAsync(stoppingToken);
         if (missingDatabases.Length > 0)
             throw new Exception("One or more database do not exists");
@@ -99,6 +99,7 @@ public class DeployService : BaseService
 
     private async Task DeployStep(Step step, CancellationToken stoppingToken)
     {
+        _logger.LogInformation($"Database {step.Database} Deploying {step.Name}");
         var database = await GetDatabase(step.Database, stoppingToken);
         var hash = await GetHash(step.DeployScript);
         await RunScript(step.DeployScript, database, stoppingToken);
@@ -106,13 +107,13 @@ public class DeployService : BaseService
             await RunScript(step.TestScript, database, stoppingToken);
 
         _logger.LogInformation($"Database {step.Database} Adding migration {step.Name}");
-        var migrationToAdd = new DatabaseMigration(
+        var migration = new DatabaseMigration(
             step.Name,
             DateTimeOffset.UtcNow,
             Environment.UserName,
             hash);
             
-        await database.AddMigration(migrationToAdd, stoppingToken);
+        await database.AddMigration(migration, stoppingToken);
     }
 
     private static async Task<string> GetHash(IFileInfo file)
@@ -130,24 +131,24 @@ public class DeployService : BaseService
         return builder.ToString();
     }
 
-    private async Task<bool> CheckDatabaseExistsOrCreate(string name, CancellationToken stoppingToken)
+    private async Task<bool> CheckDatabaseIsMissing(string name, CancellationToken stoppingToken)
     {
         var database = await GetDatabase(name, stoppingToken);
         try
         {
             if (await database.Exists(stoppingToken))
-                return true;
+                return false;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Database {name} failed to check if database exists");
-            return false;
+            return true;
         }
 
         if (!_options.Create)
         {
             _logger.LogError($"Database {name} does not exists");
-            return false;
+            return true;
         }
 
         try
@@ -155,12 +156,12 @@ public class DeployService : BaseService
             _logger.LogInformation($"Database {name} does not exists");
             await database.Create(stoppingToken);
             _logger.LogInformation($"Database {name} created successfully");
-            return true;
+            return false;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Database {name} failed to create database");
-            return false;
+            return true;
         }
     }
 }

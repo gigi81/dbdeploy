@@ -95,17 +95,17 @@ public class DeployService : BaseService
 
     private static async Task<string> GetHash(IFileInfo file)
     {
-        using var sha256 = MD5.Create();
-        await using var fileStream = file.OpenRead();
-        var hashBytes = await sha256.ComputeHashAsync(fileStream);
-        var hashBuilder = new StringBuilder();
+        using var md5 = MD5.Create();
+        await using var stream = file.OpenRead();
+        var data = await md5.ComputeHashAsync(stream);
+        var builder = new StringBuilder(32);
 
-        foreach (var b in hashBytes)
+        foreach (var b in data)
         {
-            hashBuilder.Append(b.ToString("x2")); // Convert to hexadecimal
+            builder.Append(b.ToString("x2")); // Convert to hexadecimal
         }
 
-        return hashBuilder.ToString();
+        return builder.ToString();
     }
     
     private async Task<int> CheckAndCreateDatabases(IEnumerable<string> databases, CancellationToken stoppingToken)

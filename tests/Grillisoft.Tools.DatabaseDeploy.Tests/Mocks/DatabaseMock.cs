@@ -20,6 +20,10 @@ public class DatabaseMock : IDatabase
     }
 
     public string Name { get; }
+    public Task<bool> Exists(CancellationToken cancellationToken) => Task.FromResult(true);
+
+    public Task Create(CancellationToken cancellationToken) => Task.CompletedTask;
+
     public IScriptParser ScriptParser { get; }
 
     public IList<string> Scripts => _scripts;

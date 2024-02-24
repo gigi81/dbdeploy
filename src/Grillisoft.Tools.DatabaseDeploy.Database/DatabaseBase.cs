@@ -13,25 +13,51 @@ public abstract class DatabaseBase : IDatabase
     private readonly DbConnection _connection;
     private readonly IScriptParser _parser;
     private readonly ILogger _logger;
-    private readonly ISqlScripts _sqlScripts;
-
+    private readonly string _databaseName;
+    private ISqlScripts? _sqlScripts;
+    
     protected DatabaseBase(
         string name,
         DbConnection connection,
-        ISqlScripts sqlScripts,
         IScriptParser parser,
         ILogger logger)
     {
         _name = name;
         _connection = connection;
-        _sqlScripts = sqlScripts;
+        _databaseName = !string.IsNullOrWhiteSpace(_connection.Database) ? _connection.Database : _name;
         _parser = parser;
         _logger = logger;
     }
+
+    protected abstract ISqlScripts CreateSqlScripts();
+    
+    protected abstract DbConnection CreateConnectionWithoutDatabase(ILogger logger);
+
+    private ISqlScripts SqlScripts => _sqlScripts ??= CreateSqlScripts();
     
     public string Name => _name;
-    
+    public string DatabaseName => _databaseName;
     public IScriptParser ScriptParser => _parser;
+    protected DbConnection Connection => _connection;
+    
+    public async Task<bool> Exists(CancellationToken cancellationToken)
+    {
+        await using var connection = this.CreateConnectionWithoutDatabase(_logger);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = this.SqlScripts.ExistsSql;
+        var exists = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(exists) == 1;
+    }
+
+    public async Task Create(CancellationToken cancellationToken)
+    {
+        await using var connection = this.CreateConnectionWithoutDatabase(_logger);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = this.SqlScripts.CreateSql;
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
 
     public async virtual Task RunScript(string script, CancellationToken cancellationToken)
     {
@@ -40,13 +66,24 @@ public abstract class DatabaseBase : IDatabase
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    protected async virtual Task<T> RunScript<T>(string script, CancellationToken cancellationToken)
+    {
+        await OpenConnection(cancellationToken);
+        await using var command = CreateCommand(script);
+        var ret = await command.ExecuteScalarAsync(cancellationToken);
+        if (ret == null)
+            throw new Exception($"Expected return type {typeof(T)} but sql script return null");
+
+        return (T)ret;
+    }
+
     public async virtual Task InitializeMigrations(CancellationToken cancellationToken)
-        => await RunScript(_sqlScripts.InitSql, cancellationToken);
+        => await RunScript(this.SqlScripts.InitSql, cancellationToken);
 
     public async virtual Task<ICollection<DatabaseMigration>> GetMigrations(CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
-        await using var command = CreateCommand(_sqlScripts.GetSql);
+        await using var command = CreateCommand(this.SqlScripts.GetSql);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var ret = new List<DatabaseMigration>();
         
@@ -67,7 +104,7 @@ public abstract class DatabaseBase : IDatabase
     public async virtual Task AddMigration(DatabaseMigration migration, CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
-        await using var command = CreateCommand(_sqlScripts.AddSql);
+        await using var command = CreateCommand(this.SqlScripts.AddSql);
         command.AddParameter("name", migration.Name)
                .AddParameter("deployed_utc", migration.DateTime.UtcDateTime)
                .AddParameter("user", migration.User)
@@ -79,13 +116,13 @@ public abstract class DatabaseBase : IDatabase
     public async virtual Task RemoveMigration(DatabaseMigration migration, CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
-        await using var command = CreateCommand(_sqlScripts.RemoveSql);
+        await using var command = CreateCommand(this.SqlScripts.RemoveSql);
         command.AddParameter("name", migration.Name);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     public async Task ClearMigrations(CancellationToken cancellationToken)
-        => await RunScript(_sqlScripts.ClearSql, cancellationToken);
+        => await RunScript(this.SqlScripts.ClearSql, cancellationToken);
 
     private DbCommand CreateCommand(string script)
     {
@@ -108,6 +145,20 @@ public abstract class DatabaseBase : IDatabase
         }
     }
 
+    private async Task OpenConnectionToMaster(CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (_connection.State != ConnectionState.Open)
+                await _connection.OpenAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to open connection to database '{_name}'");
+            throw;
+        }
+    }
+    
     public async ValueTask DisposeAsync()
     {
         await _connection.DisposeAsync();

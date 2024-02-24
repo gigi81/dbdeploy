@@ -1,14 +1,14 @@
 ﻿{
   "global": {
-    
+    "defaultProvider": "sqlServer"
   },
   "databases":{
     "Database01": {
-      "connectionString": "Server=(local)",
+      "connectionString": "Server=127.0.0.1;Database=Database01;User Id=sa;Password=TestSql1234!;Trusted_Connection=False;TrustServerCertificate=True",
       "provider": "sqlServer"
     },
     "Database02": {
-      "connectionString": "Server=(local)",
+      "connectionString": "Server=127.0.0.1;Database=Database02;User Id=sa;Password=TestSql1234!;Trusted_Connection=False;TrustServerCertificate=True",
       "provider": "sqlServer"
     }
   }

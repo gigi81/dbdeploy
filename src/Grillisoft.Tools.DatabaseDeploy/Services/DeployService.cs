@@ -29,24 +29,14 @@ public class DeployService : BaseService
     
     public async override Task Execute(CancellationToken stoppingToken)
     {
-        var stopwatch = Stopwatch.StartNew();
         var count = 0;
-        var manager = await LoadBranchesManager(_options.Path);
-        
-        if (!manager.Branches.TryGetValue(_options.Branch, out var branch))
-            throw new BranchNotFoundException(_options.Branch);
-
-        var steps = manager.GetDeploySteps(branch).ToArray();
+        var stopwatch = Stopwatch.StartNew();
+        var steps = await GetBranchSteps();
         var databases = steps.Select(s => s.Database).Distinct().ToArray();
 
-        if (await CheckAndCreateDatabases(databases, stoppingToken) > 0)
-            throw new Exception("One or more databases do not exists");
-
+        await CheckDatabasesExistsOrCreate(databases, stoppingToken);
         await InitializeMigrations(databases, stoppingToken);
-
-        //get list of steps that will be deployed (this also checks consistency of migration table)
-        var deploySteps = await steps.WhereAsync((s) => CheckIsStepNotDeployed(s, stoppingToken))
-            .ToArrayAsync(stoppingToken);
+        var deploySteps = await ValidateSequenceAndGetDeploySteps(steps, stoppingToken);
 
         _logger.LogInformation("Detected {0} steps to deploy", deploySteps.Length);
         _progress.Report(0);
@@ -56,7 +46,31 @@ public class DeployService : BaseService
             _progress.Report(++count * 100 / steps.Length);
         }
         _progress.Report(100);
-        _logger.LogInformation("Deployment completed successfully");
+        _logger.LogInformation("Deployment completed successfully in {0}", stopwatch.Elapsed);
+    }
+
+    private async Task<Step[]> GetBranchSteps()
+    {
+        var manager = await LoadBranchesManager(_options.Path);
+        if (!manager.Branches.TryGetValue(_options.Branch, out var branch))
+            throw new BranchNotFoundException(_options.Branch);
+
+        return manager.GetDeploySteps(branch).ToArray();
+    }
+
+    private async Task<Step[]> ValidateSequenceAndGetDeploySteps(Step[] steps, CancellationToken stoppingToken)
+    {
+        var deploySteps = await steps.WhereAsync(CheckIsStepNotDeployed, stoppingToken)
+            .ToArrayAsync(stoppingToken);
+        return deploySteps;
+    }
+
+    private async Task CheckDatabasesExistsOrCreate(string[] databases, CancellationToken stoppingToken)
+    {
+        var missingDatabases = await databases.WhereAsync(CheckDatabaseExistsOrCreate, stoppingToken)
+            .ToArrayAsync(stoppingToken);
+        if (missingDatabases.Length > 0)
+            throw new Exception("One or more database do not exists");
     }
 
     private async Task InitializeMigrations(IEnumerable<string> databases, CancellationToken stoppingToken)
@@ -115,21 +129,8 @@ public class DeployService : BaseService
 
         return builder.ToString();
     }
-    
-    private async Task<int> CheckAndCreateDatabases(IEnumerable<string> databases, CancellationToken stoppingToken)
-    {
-        var errors = 0;
-        
-        foreach (var database in databases)
-        {
-            if (!await CheckAndCreateDatabase(database, stoppingToken))
-                errors++;
-        }
 
-        return errors;
-    }
-
-    private async Task<bool> CheckAndCreateDatabase(string name, CancellationToken stoppingToken)
+    private async Task<bool> CheckDatabaseExistsOrCreate(string name, CancellationToken stoppingToken)
     {
         var database = await GetDatabase(name, stoppingToken);
         try

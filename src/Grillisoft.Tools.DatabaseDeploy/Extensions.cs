@@ -1,4 +1,6 @@
-﻿namespace Grillisoft.Tools.DatabaseDeploy;
+﻿using System.Runtime.CompilerServices;
+
+namespace Grillisoft.Tools.DatabaseDeploy;
 
 internal static class Extensions
 {
@@ -17,11 +19,11 @@ internal static class Extensions
         return obj.Equals(value, StringComparison.InvariantCultureIgnoreCase);
     }
 
-    public static async IAsyncEnumerable<T> WhereAsync<T>(this IEnumerable<T> source, Func<T, Task<bool>> filter)
+    public static async IAsyncEnumerable<T> WhereAsync<T>(this IEnumerable<T> source, Func<T, CancellationToken, Task<bool>> filter, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         foreach (var item in source)
         {
-            if (await filter.Invoke(item))
+            if (await filter.Invoke(item, cancellationToken))
                 yield return item;
         }
     }

@@ -36,7 +36,7 @@ public class RollbackService : BaseService
         if (!manager.Branches.TryGetValue(_options.Branch, out var branch))
             throw new BranchNotFoundException(_options.Branch);
         
-        var steps = manager.GetRollbackSteps(branch).ToArray();
+        var steps = branch.Steps.Reverse().ToArray();
         var count = 0;
         
         _progress.Report(0);

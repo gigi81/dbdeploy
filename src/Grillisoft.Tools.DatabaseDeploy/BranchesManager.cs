@@ -30,11 +30,6 @@ public class BranchesManager
         return _mainBranch.Steps.Concat(branch.Steps);
     }
 
-    public IEnumerable<Step> GetRollbackSteps(Branch branch)
-    {
-        return branch.Steps.Reverse();
-    }
-
     public async Task<List<string>> Load()
     {
         _directory.ThrowIfNotFound();

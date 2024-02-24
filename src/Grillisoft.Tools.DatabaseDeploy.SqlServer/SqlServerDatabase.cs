@@ -15,7 +15,7 @@ public class SqlServerDatabase : DatabaseBase
         string migrationTableName,
         SqlServerScriptParser parser,
         ILogger<SqlServerDatabase> logger
-    ) : base(name, new SqlConnection(connectionString), parser, logger)
+    ) : base(name, CreateConnection(connectionString, logger), parser, logger)
     {
         _migrationTableName = migrationTableName;
     }
@@ -25,10 +25,17 @@ public class SqlServerDatabase : DatabaseBase
         return new SqlServerScripts(this.DatabaseName, _migrationTableName);
     }
 
-    protected override DbConnection CreateConnectionWithoutDatabase()
+    protected override DbConnection CreateConnectionWithoutDatabase(ILogger logger)
     {
         var builder = new SqlConnectionStringBuilder(this.Connection.ConnectionString);
         builder.InitialCatalog = "";
-        return new SqlConnection(builder.ConnectionString);
+        return CreateConnection(builder.ConnectionString, logger);
+    }
+
+    private static DbConnection CreateConnection(string connectionString, ILogger logger)
+    {
+        var connection = new SqlConnection(connectionString);
+        connection.InfoMessage += (sender, args) => { logger.LogInformation(args.Message); };
+        return connection;
     }
 }

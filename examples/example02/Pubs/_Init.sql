@@ -6,67 +6,10 @@
 ** All Rights Reserved.
 */
 
-SET NOCOUNT ON
-GO
-
-set nocount    on
-set dateformat mdy
-
-USE master
-
-declare @dttm varchar(55)
-select  @dttm=convert(varchar,getdate(),113)
-raiserror('Beginning InstPubs.SQL at %s ....',1,1,@dttm) with nowait
-
-GO
-
-if exists (select * from sysdatabases where name='pubs')
-begin
-  raiserror('Dropping existing pubs database ....',0,1)
-  DROP database pubs
-end
-GO
-
-CHECKPOINT
-go
-
-raiserror('Creating pubs database....',0,1)
-go
-/*
-   Use default size with autogrow
-*/
-
-CREATE DATABASE pubs
-GO
-
-CHECKPOINT
-
-GO
-
-USE pubs
-
-GO
-
-if db_name() <> 'pubs'
-   raiserror('Error in InstPubs.SQL, ''USE pubs'' failed!  Killing the SPID now.'
-            ,22,127) with log
-
-GO
-
-if CAST(SERVERPROPERTY('ProductMajorVersion') AS INT)<12
-BEGIN
-  exec sp_dboption 'pubs','trunc. log on chkpt.','true'
-  exec sp_dboption 'pubs','select into/bulkcopy','true'
-END
-ELSE ALTER DATABASE [pubs] SET RECOVERY SIMPLE WITH NO_WAIT
-GO
 
 execute sp_addtype id      ,'varchar(11)' ,'NOT NULL'
 execute sp_addtype tid     ,'varchar(6)'  ,'NOT NULL'
 execute sp_addtype empid   ,'char(9)'     ,'NOT NULL'
-
-raiserror('Now at the create table section ....',0,1)
-
 GO
 
 CREATE TABLE authors
@@ -2146,23 +2089,3 @@ UPDATE STATISTICS stores
 UPDATE STATISTICS discounts
 
 GO
-
-CHECKPOINT
-
-GO
-
-USE master
-
-GO
-
-CHECKPOINT
-
-GO
-
-declare @dttm varchar(55)
-select  @dttm=convert(varchar,getdate(),113)
-raiserror('Ending InstPubs.SQL at %s ....',1,1,@dttm) with nowait
-
-GO
--- -
-

@@ -31,7 +31,7 @@ public abstract class DatabaseBase : IDatabase
 
     protected abstract ISqlScripts CreateSqlScripts();
     
-    protected abstract DbConnection CreateConnectionWithoutDatabase();
+    protected abstract DbConnection CreateConnectionWithoutDatabase(ILogger logger);
 
     private ISqlScripts SqlScripts => _sqlScripts ??= CreateSqlScripts();
     
@@ -42,7 +42,7 @@ public abstract class DatabaseBase : IDatabase
     
     public async Task<bool> Exists(CancellationToken cancellationToken)
     {
-        await using var connection = this.CreateConnectionWithoutDatabase();
+        await using var connection = this.CreateConnectionWithoutDatabase(_logger);
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = this.SqlScripts.ExistsSql;
@@ -52,7 +52,7 @@ public abstract class DatabaseBase : IDatabase
 
     public async Task Create(CancellationToken cancellationToken)
     {
-        await using var connection = this.CreateConnectionWithoutDatabase();
+        await using var connection = this.CreateConnectionWithoutDatabase(_logger);
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = this.SqlScripts.CreateSql;

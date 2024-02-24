@@ -1,4 +1,5 @@
-﻿using System.IO.Abstractions;
+﻿using System.Diagnostics;
+using System.IO.Abstractions;
 using System.Security.Cryptography;
 using System.Text;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
@@ -28,6 +29,7 @@ public class DeployService : BaseService
     
     public async override Task Execute(CancellationToken stoppingToken)
     {
+        var stopwatch = Stopwatch.StartNew();
         var count = 0;
         var manager = await LoadBranchesManager(_options.Path);
         

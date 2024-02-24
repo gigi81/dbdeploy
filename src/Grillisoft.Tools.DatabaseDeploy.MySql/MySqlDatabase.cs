@@ -16,7 +16,7 @@ public class MySqlDatabase : DatabaseBase
         string migrationTableName,
         MySqlScriptParser parser,
         ILogger<MySqlDatabase> logger
-    ) : base(name, new MySqlConnection(connectionString), parser, logger)
+    ) : base(name, CreateConnection(connectionString, logger), parser, logger)
     {
         _migrationTableName = migrationTableName;
     }
@@ -26,10 +26,24 @@ public class MySqlDatabase : DatabaseBase
         return new MySqlScripts(this.DatabaseName, _migrationTableName);
     }
 
-    protected override DbConnection CreateConnectionWithoutDatabase()
+    protected override DbConnection CreateConnectionWithoutDatabase(ILogger logger)
     {
         var builder = new MySqlConnectionStringBuilder(this.Connection.ConnectionString);
         builder.Database = "";
-        return new MySqlConnection(builder.ConnectionString);
+        return CreateConnection(builder.ConnectionString, logger);
+    }
+
+    private static DbConnection CreateConnection(string connectionString, ILogger logger)
+    {
+        var connection = new MySqlConnection(connectionString);
+        connection.InfoMessage += (sender, args) =>
+        {
+            foreach (var error in args.Errors)
+            {
+                logger.LogInformation(error.Message);    
+            }
+            
+        };
+        return connection;
     }
 }

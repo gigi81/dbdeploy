@@ -8,7 +8,6 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
 public abstract class BaseService : IExecutable
 {
-    private readonly Dictionary<string, Queue<DatabaseMigration>> _queues = new(StringComparer.InvariantCultureIgnoreCase);
     private readonly IDatabasesCollection _databases;
     private readonly IFileSystem _fileSystem;
     protected readonly ILogger _logger;
@@ -58,25 +57,31 @@ public abstract class BaseService : IExecutable
         _logger.LogInformation($"Database {database.Name} Script {scriptFile.FullName} executed in {stopwatch.Elapsed}");
     }
 
+    protected async Task<Strategy> GetStrategy(Step[] steps, CancellationToken cancellationToken)
+    {
+        var tasks = steps.Select(s => s.Database)
+            .Distinct()
+            .Select(name => GetMigrations(name, cancellationToken))
+            .ToArray();
+
+        var tuples = await Task.WhenAll(tasks);
+        
+        var migrations = tuples.ToDictionary(
+            m => m.Item1,
+            m => m.Item2
+        );
+
+        return new Strategy(steps, migrations, _logger);
+    }
     protected async Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken)
     {
         return await _databases.GetDatabase(name, cancellationToken);
     }
 
-    protected virtual IEnumerable<DatabaseMigration> TransformMigrations(IEnumerable<DatabaseMigration> migrations)
+    protected async Task<(string, DatabaseMigration[])> GetMigrations(string name, CancellationToken cancellationToken)
     {
-        return migrations;
-    }
-
-    protected async Task<Queue<DatabaseMigration>> GetMigrations(string name, CancellationToken cancellationToken)
-    {
-        if (_queues.TryGetValue(name, out var ret))
-            return ret;
-        
         var database = await _databases.GetDatabase(name, cancellationToken);
         var migrations = await database.GetMigrations(cancellationToken);
-        var queue = new Queue<DatabaseMigration>(TransformMigrations(migrations));
-        _queues.Add(name, queue);
-        return queue;
+        return (name, migrations.ToArray());
     }
 }

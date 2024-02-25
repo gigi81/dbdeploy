@@ -36,7 +36,9 @@ public class DeployService : BaseService
 
         await CheckDatabasesExistsOrCreate(databases, stoppingToken);
         await InitializeMigrations(databases, stoppingToken);
-        var deploySteps = await ValidateSequenceAndGetDeploySteps(steps, stoppingToken);
+        
+        var strategy = await GetStrategy(steps, stoppingToken);
+        var deploySteps = strategy.GetDeploySteps().ToArray();
 
         _logger.LogInformation("Detected {0} steps to deploy", deploySteps.Length);
         _progress.Report(0);
@@ -57,14 +59,7 @@ public class DeployService : BaseService
 
         return manager.GetDeploySteps(branch).ToArray();
     }
-
-    private async Task<Step[]> ValidateSequenceAndGetDeploySteps(Step[] steps, CancellationToken stoppingToken)
-    {
-        var deploySteps = await steps.WhereAsync(CheckIsStepNotDeployed, stoppingToken)
-            .ToArrayAsync(stoppingToken);
-        return deploySteps;
-    }
-
+    
     private async Task CheckDatabasesExistsOrCreate(string[] databases, CancellationToken stoppingToken)
     {
         var missingDatabases = await databases.WhereAsync(CheckDatabaseIsMissing, stoppingToken)
@@ -82,21 +77,7 @@ public class DeployService : BaseService
             await db.InitializeMigrations(stoppingToken);
         }
     }
-
-    private async Task<bool> CheckIsStepNotDeployed(Step step, CancellationToken stoppingToken)
-    {
-        var migrations = await GetMigrations(step.Database, stoppingToken);
-        if (!migrations.TryDequeue(out var migration))
-            return true;
-
-        if (!migration.Name.EqualsIgnoreCase(step.Name))
-            throw new StepMigrationMismatchException(step, migration);
-            
-        //TODO: check hash and log warning if different
-        _logger.LogInformation($"Database {step.Database} Step {step.Name} already deployed");
-        return false;
-    }
-
+    
     private async Task DeployStep(Step step, CancellationToken stoppingToken)
     {
         _logger.LogInformation($"Database {step.Database} Deploying {step.Name}");

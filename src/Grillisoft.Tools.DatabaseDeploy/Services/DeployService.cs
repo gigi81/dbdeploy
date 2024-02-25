@@ -37,7 +37,7 @@ public class DeployService : BaseService
         await InitializeMigrations(databases, stoppingToken);
         
         var strategy = await GetStrategy(steps, stoppingToken);
-        var deploySteps = strategy.GetDeploySteps().ToArray();
+        var deploySteps = strategy.GetDeploySteps(_options.Branch).ToArray();
 
         _logger.LogInformation("Detected {0} steps to deploy", deploySteps.Length);
         _progress.Report(0);

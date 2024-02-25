@@ -20,17 +20,23 @@ public class Strategy
         _logger = logger;
     }
 
-    public IEnumerable<Step> GetDeploySteps()
+    public IEnumerable<Step> GetDeploySteps(string branch)
     {
         var migrations = GetMigrationsQueues();
         
         foreach (var step in _steps)
         {
             if (!IsStepDeployed(step, migrations[step.Database], out _))
+            {
                 yield return step;
-            
-            //TODO: check hash and log warning if different
-            _logger.LogInformation($"Database {step.Database} Step {step.Name} already deployed");
+            }
+            else
+            {
+                //TODO: check hash and log warning if different
+                
+                if(step.Branch.EqualsIgnoreCase(branch))
+                    _logger.LogInformation($"Database {step.Database} Step {step.Name} already deployed");
+            }
         }
     }
     

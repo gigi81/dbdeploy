@@ -1,5 +1,4 @@
-﻿using Divergic.Logging.Xunit;
-using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
+﻿using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
 using Microsoft.Extensions.Logging;
 using Testcontainers.MsSql;
 using Xunit.Abstractions;

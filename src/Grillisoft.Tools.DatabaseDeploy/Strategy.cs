@@ -34,9 +34,15 @@ public class Strategy
         }
     }
     
-    public IEnumerable<(Step, DatabaseMigration)> GetRollbackSteps()
+    public IEnumerable<(Step, DatabaseMigration)> GetRollbackSteps(string branch)
     {
-        return GetRollbackStepsInternal().Reverse();
+        foreach (var (step, migration) in GetRollbackStepsInternal().Reverse())
+        {
+            if (!step.Branch.EqualsIgnoreCase(branch))
+                yield break;
+            
+            yield return (step, migration);
+        }
     }
 
     private IEnumerable<(Step, DatabaseMigration)> GetRollbackStepsInternal()

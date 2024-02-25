@@ -4,7 +4,6 @@ using System.Security.Cryptography;
 using System.Text;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
-using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
 
@@ -31,7 +30,7 @@ public class DeployService : BaseService
     {
         var count = 0;
         var stopwatch = Stopwatch.StartNew();
-        var steps = await GetBranchSteps();
+        var steps = await GetBranchSteps(_options.Path, _options.Branch);
         var databases = steps.Select(s => s.Database).Distinct().ToArray();
 
         await CheckDatabasesExistsOrCreate(databases, stoppingToken);
@@ -49,15 +48,6 @@ public class DeployService : BaseService
         }
         _progress.Report(100);
         _logger.LogInformation("Deployment completed successfully in {0}", stopwatch.Elapsed);
-    }
-
-    private async Task<Step[]> GetBranchSteps()
-    {
-        var manager = await LoadBranchesManager(_options.Path);
-        if (!manager.Branches.TryGetValue(_options.Branch, out var branch))
-            throw new BranchNotFoundException(_options.Branch);
-
-        return manager.GetDeploySteps(branch).ToArray();
     }
     
     private async Task CheckDatabasesExistsOrCreate(string[] databases, CancellationToken stoppingToken)

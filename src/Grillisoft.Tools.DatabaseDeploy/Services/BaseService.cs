@@ -2,6 +2,7 @@
 using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
@@ -21,6 +22,15 @@ public abstract class BaseService : IExecutable
 
     public abstract Task Execute(CancellationToken cancellationToken);
 
+    protected async Task<Step[]> GetBranchSteps(string path, string branchName)
+    {
+        var manager = await LoadBranchesManager(path);
+        if (!manager.Branches.TryGetValue(branchName, out var branch))
+            throw new BranchNotFoundException(branchName);
+
+        return manager.GetSteps(branch).ToArray();
+    }
+
     protected async Task<BranchesManager> LoadBranchesManager(string path)
     {
         var directory = _fileSystem.DirectoryInfo.New(path);
@@ -37,7 +47,7 @@ public abstract class BaseService : IExecutable
 
         return manager;
     }
-
+    
     protected async Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken cancellationToken)
     {
         _logger.LogInformation($"Database {database.Name} Running script {scriptFile.FullName}");
@@ -78,7 +88,7 @@ public abstract class BaseService : IExecutable
         return await _databases.GetDatabase(name, cancellationToken);
     }
 
-    protected async Task<(string, DatabaseMigration[])> GetMigrations(string name, CancellationToken cancellationToken)
+    private async Task<(string, DatabaseMigration[])> GetMigrations(string name, CancellationToken cancellationToken)
     {
         var database = await _databases.GetDatabase(name, cancellationToken);
         var migrations = await database.GetMigrations(cancellationToken);

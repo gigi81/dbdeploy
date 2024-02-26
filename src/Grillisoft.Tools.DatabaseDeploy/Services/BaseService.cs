@@ -69,6 +69,11 @@ public abstract class BaseService : IExecutable
 
     protected async Task<Strategy> GetStrategy(Step[] steps, CancellationToken cancellationToken)
     {
+        return new Strategy(steps, await GetAllMigrations(steps, cancellationToken), _logger);
+    }
+
+    private async Task<Dictionary<string, DatabaseMigration[]>> GetAllMigrations(Step[] steps, CancellationToken cancellationToken)
+    {
         var tasks = steps.Select(s => s.Database)
             .Distinct()
             .Select(name => GetMigrations(name, cancellationToken))
@@ -76,13 +81,12 @@ public abstract class BaseService : IExecutable
 
         var tuples = await Task.WhenAll(tasks);
         
-        var migrations = tuples.ToDictionary(
+        return tuples.ToDictionary(
             m => m.Item1,
             m => m.Item2
         );
-
-        return new Strategy(steps, migrations, _logger);
     }
+
     protected async Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken)
     {
         return await _databases.GetDatabase(name, cancellationToken);

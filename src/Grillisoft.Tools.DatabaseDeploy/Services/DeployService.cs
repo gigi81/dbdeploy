@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
 using System.IO.Abstractions;
-using System.Security.Cryptography;
-using System.Text;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
@@ -26,7 +24,7 @@ public class DeployService : BaseService
         _progress = progress;
     }
     
-    public async override Task Execute(CancellationToken stoppingToken)
+    public async override Task<int> Execute(CancellationToken stoppingToken)
     {
         var count = 0;
         var stopwatch = Stopwatch.StartNew();
@@ -48,6 +46,7 @@ public class DeployService : BaseService
         }
         _progress.Report(100);
         _logger.LogInformation("Deployment completed successfully in {0}", stopwatch.Elapsed);
+        return 0;
     }
     
     private async Task CheckDatabasesExistsOrCreate(string[] databases, CancellationToken stoppingToken)
@@ -72,7 +71,7 @@ public class DeployService : BaseService
     {
         _logger.LogInformation($"Database {step.Database} Deploying {step.Name}");
         var database = await GetDatabase(step.Database, stoppingToken);
-        var hash = await GetHash(step.DeployScript);
+        var hash = await step.DeployScript.ComputeHash();
         await RunScript(step.DeployScript, database, stoppingToken);
         if(_options.Test)
             await RunScript(step.TestScript, database, stoppingToken);
@@ -86,22 +85,7 @@ public class DeployService : BaseService
             
         await database.AddMigration(migration, stoppingToken);
     }
-
-    private static async Task<string> GetHash(IFileInfo file)
-    {
-        using var md5 = MD5.Create();
-        await using var stream = file.OpenRead();
-        var data = await md5.ComputeHashAsync(stream);
-        var builder = new StringBuilder(32);
-
-        foreach (var b in data)
-        {
-            builder.Append(b.ToString("x2")); // Convert to hexadecimal
-        }
-
-        return builder.ToString();
-    }
-
+    
     private async Task<bool> CheckDatabaseIsMissing(string name, CancellationToken stoppingToken)
     {
         var database = await GetDatabase(name, stoppingToken);

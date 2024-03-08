@@ -23,7 +23,7 @@ public class RollbackService : BaseService
         _progress = progress;
     }
 
-    public async override Task Execute(CancellationToken stoppingToken)
+    public async override Task<int> Execute(CancellationToken stoppingToken)
     {
         var count = 0;
         var stopwatch = Stopwatch.StartNew();
@@ -42,5 +42,6 @@ public class RollbackService : BaseService
         }
         _progress.Report(100);
         _logger.LogInformation("Rollback completed successfully in {0}", stopwatch.Elapsed);
+        return 0;
     }
 }

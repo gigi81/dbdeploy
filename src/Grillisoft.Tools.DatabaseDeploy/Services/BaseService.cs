@@ -20,7 +20,7 @@ public abstract class BaseService : IExecutable
         _logger = logger;
     }
 
-    public abstract Task Execute(CancellationToken cancellationToken);
+    public abstract Task<int> Execute(CancellationToken cancellationToken);
 
     protected async Task<Step[]> GetBranchSteps(string path, string branchName)
     {

@@ -2,5 +2,5 @@
 
 public interface IExecutable
 {
-    public Task Execute(CancellationToken cancellationToken);
+    public Task<int> Execute(CancellationToken cancellationToken);
 }

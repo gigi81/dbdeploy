@@ -2,7 +2,7 @@
 
 namespace Grillisoft.Tools.DatabaseDeploy.Contracts;
 
-public record Step(string Database, string Name, IDirectoryInfo Directory)
+public record Step(string Database, string Name, string Branch, IDirectoryInfo Directory)
 {
     public const string InitStepName = "_Init";
 

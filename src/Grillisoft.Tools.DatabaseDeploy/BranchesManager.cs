@@ -22,17 +22,12 @@ public class BranchesManager
 
     public IDirectoryInfo Directory => _directory;
 
-    public IEnumerable<Step> GetDeploySteps(Branch branch)
+    public IEnumerable<Step> GetSteps(Branch branch)
     {
         if (branch.Name.EqualsIgnoreCase(MainBranch) || _mainBranch == null)
             return branch.Steps;
 
         return _mainBranch.Steps.Concat(branch.Steps);
-    }
-
-    public IEnumerable<Step> GetRollbackSteps(Branch branch)
-    {
-        return branch.Steps.Reverse();
     }
 
     public async Task<List<string>> Load()
@@ -98,7 +93,7 @@ public class BranchesManager
                 continue;
             }
 
-            steps.Add(ReadStep(line, count++, directory));
+            steps.Add(ReadStep(line, branchName, count++, directory));
         }
 
         return new Branch(branchName, steps);
@@ -115,12 +110,12 @@ public class BranchesManager
         return name;
     }
 
-    private static Step ReadStep(string line, int count, IDirectoryInfo directory)
+    private static Step ReadStep(string line, string branchName, int count, IDirectoryInfo directory)
     {
         var split = line.Split(',');
         if (split.Length != 2)
             throw new ArgumentException($"Invalid format '{line}' on line {count}");
 
-        return new Step(split[0].Trim(), split[1].Trim(), directory.SubDirectory(split[0].Trim()));
+        return new Step(split[0].Trim(), split[1].Trim(), branchName, directory.SubDirectory(split[0].Trim()));
     }
 }

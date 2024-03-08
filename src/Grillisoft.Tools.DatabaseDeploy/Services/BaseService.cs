@@ -2,13 +2,13 @@
 using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
 public abstract class BaseService : IExecutable
 {
-    private readonly Dictionary<string, Queue<DatabaseMigration>> _queues = new(StringComparer.InvariantCultureIgnoreCase);
     private readonly IDatabasesCollection _databases;
     private readonly IFileSystem _fileSystem;
     protected readonly ILogger _logger;
@@ -20,7 +20,16 @@ public abstract class BaseService : IExecutable
         _logger = logger;
     }
 
-    public abstract Task Execute(CancellationToken cancellationToken);
+    public abstract Task<int> Execute(CancellationToken cancellationToken);
+
+    protected async Task<Step[]> GetBranchSteps(string path, string branchName)
+    {
+        var manager = await LoadBranchesManager(path);
+        if (!manager.Branches.TryGetValue(branchName, out var branch))
+            throw new BranchNotFoundException(branchName);
+
+        return manager.GetSteps(branch).ToArray();
+    }
 
     protected async Task<BranchesManager> LoadBranchesManager(string path)
     {
@@ -38,7 +47,7 @@ public abstract class BaseService : IExecutable
 
         return manager;
     }
-
+    
     protected async Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken cancellationToken)
     {
         _logger.LogInformation($"Database {database.Name} Running script {scriptFile.FullName}");
@@ -58,25 +67,35 @@ public abstract class BaseService : IExecutable
         _logger.LogInformation($"Database {database.Name} Script {scriptFile.FullName} executed in {stopwatch.Elapsed}");
     }
 
+    protected async Task<Strategy> GetStrategy(Step[] steps, CancellationToken cancellationToken)
+    {
+        return new Strategy(steps, await GetAllMigrations(steps, cancellationToken), _logger);
+    }
+
+    private async Task<Dictionary<string, DatabaseMigration[]>> GetAllMigrations(Step[] steps, CancellationToken cancellationToken)
+    {
+        var tasks = steps.Select(s => s.Database)
+            .Distinct()
+            .Select(name => GetMigrations(name, cancellationToken))
+            .ToArray();
+
+        var tuples = await Task.WhenAll(tasks);
+        
+        return tuples.ToDictionary(
+            m => m.Item1,
+            m => m.Item2
+        );
+    }
+
     protected async Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken)
     {
         return await _databases.GetDatabase(name, cancellationToken);
     }
 
-    protected virtual IEnumerable<DatabaseMigration> TransformMigrations(IEnumerable<DatabaseMigration> migrations)
+    private async Task<(string, DatabaseMigration[])> GetMigrations(string name, CancellationToken cancellationToken)
     {
-        return migrations;
-    }
-
-    protected async Task<Queue<DatabaseMigration>> GetMigrations(string name, CancellationToken cancellationToken)
-    {
-        if (_queues.TryGetValue(name, out var ret))
-            return ret;
-        
         var database = await _databases.GetDatabase(name, cancellationToken);
         var migrations = await database.GetMigrations(cancellationToken);
-        var queue = new Queue<DatabaseMigration>(TransformMigrations(migrations));
-        _queues.Add(name, queue);
-        return queue;
+        return (name, migrations.ToArray());
     }
 }

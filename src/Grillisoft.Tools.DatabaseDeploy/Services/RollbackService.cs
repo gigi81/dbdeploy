@@ -1,7 +1,6 @@
-﻿using System.IO.Abstractions;
+﻿using System.Diagnostics;
+using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Contracts;
-using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
 
@@ -24,51 +23,25 @@ public class RollbackService : BaseService
         _progress = progress;
     }
 
-    protected override IEnumerable<DatabaseMigration> TransformMigrations(IEnumerable<DatabaseMigration> migrations)
+    public async override Task<int> Execute(CancellationToken stoppingToken)
     {
-        return migrations.Reverse();
-    }
-
-    public async override Task Execute(CancellationToken stoppingToken)
-    {
-        var manager = await LoadBranchesManager(_options.Path);
-
-        if (!manager.Branches.TryGetValue(_options.Branch, out var branch))
-            throw new BranchNotFoundException(_options.Branch);
-        
-        var steps = manager.GetRollbackSteps(branch).ToArray();
         var count = 0;
+        var stopwatch = Stopwatch.StartNew();
+        var steps = await GetBranchSteps(_options.Path, _options.Branch);
+        var strategy = await GetStrategy(steps, stoppingToken);
+        var rollbackSteps = strategy.GetRollbackSteps(_options.Branch).ToArray();
         
+        _logger.LogInformation("Detected {0} steps to rollback", rollbackSteps.Length);
         _progress.Report(0);
-        
-        foreach (var step in steps)
+        foreach (var (step, migration) in rollbackSteps)
         {
-            //if we get to the init script, we are done
-            if (step.IsInit)
-                break;
-                
             var database = await GetDatabase(step.Database, stoppingToken);
-            var migrations = await GetMigrations(step.Database, stoppingToken);
-            
-            //if there are no more migrations to rollback, we are done
-            if (!migrations.TryPeek(out var migration))
-                break;
-
-            //step name does not match the migration step
-            if (!migration.Name.EqualsIgnoreCase(step.Name))
-            {
-                _logger.LogInformation($"Database {database.Name} Step {step.Name} was not deployed. Skipping rollback");
-            }
-            else
-            {
-                await RunScript(step.RollbackScript, database, stoppingToken);
-                await database.RemoveMigration(migration, stoppingToken);
-                migrations.Dequeue();
-            }
-            
+            await RunScript(step.RollbackScript, database, stoppingToken);
+            await database.RemoveMigration(migration, stoppingToken);
             _progress.Report(++count * 100 / steps.Length);
         }
-        
         _progress.Report(100);
+        _logger.LogInformation("Rollback completed successfully in {0}", stopwatch.Elapsed);
+        return 0;
     }
 }

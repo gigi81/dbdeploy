@@ -4,7 +4,7 @@
     <AssemblyVersion>1.0.0</AssemblyVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Authors>Luigi Grilli</Authors>
-    <Product>dotnet tool to deploy/rollback database changes</Product>
+    <Product>dotnet tool to deploy/rollback database changes/migrations</Product>
     <PackageProjectUrl>https://github.com/gigi81/dbdeploy</PackageProjectUrl>
     <RepositoryUrl>https://github.com/gigi81/dbdeploy</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

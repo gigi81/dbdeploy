@@ -5,7 +5,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Authors>Luigi Grilli</Authors>
     <Product>dotnet tool to deploy/rollback database changes/migrations</Product>
-    <PackageProjectUrl>https://github.com/gigi81/dbdeploy</PackageProjectUrl>
+    <PackageProjectUrl>https://dbdeploy.dev</PackageProjectUrl>
     <RepositoryUrl>https://github.com/gigi81/dbdeploy</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
@@ -17,4 +17,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
 </Project>

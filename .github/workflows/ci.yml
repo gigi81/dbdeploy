@@ -101,6 +101,8 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: [pack]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
@@ -116,13 +118,18 @@ jobs:
         run: dotnet nuget push "packages/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
       - uses: dotnet/nbgv@v0.4.0
         id: nbgv
-      - name: Create GitHub release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.1
         with:
-          tag_name: v${{ steps.nbgv.outputs.SemVer2 }}
-          release_name: v${{ steps.nbgv.outputs.SemVer2 }}
+          custom_tag: v${{ steps.nbgv.outputs.SemVer2 }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create a GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ steps.nbgv.outputs.SemVer2 }}
+          name: Release v${{ steps.nbgv.outputs.SemVer2 }}
+          body: ${{ steps.tag_version.outputs.changelog }}
       - name: Comment relevant issues and merge requests
         uses: apexskier/github-release-commenter@v1.3.2
         with:

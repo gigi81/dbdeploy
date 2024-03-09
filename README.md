@@ -1,5 +1,9 @@
 > [!CAUTION]
-> The tool is in early stage of development and it is **not recommended** for production use yet. Constructive feedback is welcome.
+> The tool is in early stage of development. Use with caution. Constructive feedback is welcome.
+
+![NuGet Version](https://img.shields.io/nuget/v/dbdeploy)
+[![Renovate enabled](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://renovatebot.com/)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/gigi81/dbdeploy/ci.yml)
 
 # dbdeploy
 
@@ -7,7 +11,7 @@
 
 ## Install
 ```shell
-dotnet tool install dbdeploy
+dotnet tool install --global dbdeploy
 ```
 
 ## Deploy

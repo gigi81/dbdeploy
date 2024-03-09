@@ -20,19 +20,21 @@ public class Strategy
         _logger = logger;
     }
 
-    public IEnumerable<Step> GetDeploySteps(string branch)
+    public async IAsyncEnumerable<Step> GetDeploySteps(string branch)
     {
         var migrations = GetMigrationsQueues();
         
         foreach (var step in _steps)
         {
-            if (!IsStepDeployed(step, migrations[step.Database], out _))
+            if (!IsStepDeployed(step, migrations[step.Database], out var migration))
             {
                 yield return step;
             }
             else
             {
-                //TODO: check hash and log warning if different
+                var hash = await step.GetStepHash();
+                if(!hash.Equals(migration?.Hash))
+                    _logger.LogWarning($"Database {step.Database} Step {step.Name} hash mismatch detected, deploy script was changed after deployment");
                 
                 if(step.Branch.EqualsIgnoreCase(branch))
                     _logger.LogInformation($"Database {step.Database} Step {step.Name} already deployed");

@@ -1,9 +1,9 @@
 > [!CAUTION]
 > The tool is in early stage of development. Use with caution. Constructive feedback is welcome.
 
-![NuGet Version](https://img.shields.io/nuget/v/dbdeploy)
+[![NuGet Version](https://img.shields.io/nuget/v/dbdeploy)](https://www.nuget.org/packages/dbdeploy)
 [![Renovate enabled](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://renovatebot.com/)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/gigi81/dbdeploy/ci.yml)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/gigi81/dbdeploy/ci.yml)](https://github.com/gigi81/dbdeploy/actions)
 
 # dbdeploy
 

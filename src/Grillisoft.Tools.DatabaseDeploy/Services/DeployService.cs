@@ -35,7 +35,7 @@ public class DeployService : BaseService
         await InitializeMigrations(databases, stoppingToken);
         
         var strategy = await GetStrategy(steps, stoppingToken);
-        var deploySteps = strategy.GetDeploySteps(_options.Branch).ToArray();
+        var deploySteps = await strategy.GetDeploySteps(_options.Branch).ToArrayAsync(stoppingToken);
 
         _logger.LogInformation("Detected {0} steps to deploy", deploySteps.Length);
         _progress.Report(0);
@@ -71,7 +71,7 @@ public class DeployService : BaseService
     {
         _logger.LogInformation($"Database {step.Database} Deploying {step.Name}");
         var database = await GetDatabase(step.Database, stoppingToken);
-        var hash = await step.DeployScript.ComputeHash();
+        var hash = await step.GetStepHash();
         await RunScript(step.DeployScript, database, stoppingToken);
         if(_options.Test)
             await RunScript(step.TestScript, database, stoppingToken);

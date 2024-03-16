@@ -56,6 +56,7 @@ public abstract class DatabaseBase : IDatabase
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = this.SqlScripts.CreateSql;
+        command.CommandTimeout = 60 * 60;
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
@@ -128,6 +129,7 @@ public abstract class DatabaseBase : IDatabase
     {
         var command = _connection.CreateCommand();
         command.CommandText = script;
+        command.CommandTimeout = 60 * 60;
         return command;
     }
 

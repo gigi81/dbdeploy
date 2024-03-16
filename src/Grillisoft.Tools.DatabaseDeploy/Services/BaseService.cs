@@ -56,7 +56,7 @@ public abstract class BaseService : IExecutable
         {
             try
             {
-                await database.RunScript(script, cancellationToken);
+                await database.RunScript(script, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

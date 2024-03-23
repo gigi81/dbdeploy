@@ -17,25 +17,25 @@ public static class BranchesValidator
         
         var mandatoryFiles = (settings.RollbackRequired ? deploy.Concat(rollback) : deploy)
             .Distinct()
-            .ToHashSet();
+            .ToHashSet(StringComparer.InvariantCultureIgnoreCase);
             
         var extraFiles = (settings.RollbackRequired ? test : test.Concat(rollback))
             .Distinct()
-            .ToHashSet();
+            .ToHashSet(StringComparer.InvariantCultureIgnoreCase);
         
         var found = directory.EnumerateFiles("*.sql", SearchOption.AllDirectories)
             .Select(s => s.FullName)
-            .ToHashSet();
-            
-        var missing = mandatoryFiles.ExceptIgnoreCase(found).ToArray();
+            .ToHashSet(StringComparer.InvariantCultureIgnoreCase);
+
+        var missing = mandatoryFiles.Where(m => !found.Contains(m)).ToArray();
+        var untracked = found.Where(f => !mandatoryFiles.Contains(f) && !extraFiles.Contains(f))
+            .ToArray();
+
         foreach (var file in missing)
             errors.Add($"Could not find mandatory file {file}");
-               
-        var untracked = found.ExceptIgnoreCase(mandatoryFiles)
-            .ExceptIgnoreCase(extraFiles)
-            .ToArray();
-        
-        errors.AddRange(untracked.Select(file => $"Untracked file detected {file}"));
+
+        foreach (var file in untracked)
+            errors.Add($"Untracked file detected {file}");
 
         if (!string.IsNullOrWhiteSpace(settings.StepsNameRegex))
         {

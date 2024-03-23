@@ -4,6 +4,7 @@ using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
@@ -11,12 +12,18 @@ public abstract class BaseService : IExecutable
 {
     private readonly IDatabasesCollection _databases;
     private readonly IFileSystem _fileSystem;
+    private readonly IOptions<GlobalSettings> _globalSettings;
     protected readonly ILogger _logger;
 
-    protected BaseService(IDatabasesCollection databases, IFileSystem fileSystem, ILogger logger)
+    protected BaseService(
+        IDatabasesCollection databases,
+        IFileSystem fileSystem,
+        IOptions<GlobalSettings> globalSettings,
+        ILogger logger)
     {
         _databases = databases;
         _fileSystem = fileSystem;
+        _globalSettings = globalSettings;
         _logger = logger;
     }
 
@@ -34,7 +41,7 @@ public abstract class BaseService : IExecutable
     protected async Task<BranchesManager> LoadBranchesManager(string path)
     {
         var directory = _fileSystem.DirectoryInfo.New(path);
-        var manager = new BranchesManager(directory);
+        var manager = new BranchesManager(directory, _globalSettings.Value);
         
         _logger.LogInformation($"Loading branches from {directory.FullName}");
         var errors = await manager.Load();

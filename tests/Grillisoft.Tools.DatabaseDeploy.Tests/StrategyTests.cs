@@ -12,6 +12,7 @@ public class StrategyTests
     private const string Database01 = "database";
     private const string MainBranch = "main";
 
+    private static readonly GlobalSettings GlobalSettings = new();
     private readonly IDirectoryInfo _directory;
     private readonly ILogger<Strategy> _logger;
     private readonly Step[] _steps;
@@ -57,7 +58,7 @@ public class StrategyTests
                 Database01,
                 new []
                 {
-                    new DatabaseMigration(Step.InitStepName, DateTimeOffset.Now, "", ""),
+                    new DatabaseMigration(GlobalSettings.InitStepName, DateTimeOffset.Now, "", ""),
                     new DatabaseMigration("TKT-001.SampleDescription", DateTimeOffset.Now, "", "")
                 }.Take(count).ToArray()
             }
@@ -68,8 +69,8 @@ public class StrategyTests
     {
         return new[]
         {
-            new Step(Database01, Step.InitStepName, MainBranch, databaseDirectory),
-            new Step(Database01, "TKT-001.SampleDescription", MainBranch, databaseDirectory)
+            new Step(Database01, GlobalSettings.InitStepName, MainBranch, true, databaseDirectory),
+            new Step(Database01, "TKT-001.SampleDescription", MainBranch, false, databaseDirectory)
         };
     }
 
@@ -77,7 +78,7 @@ public class StrategyTests
     {
         var filesystem = new MockFileSystem();
         var directory = filesystem.Directory.CreateDirectory(database);
-        var deploy01 = directory.File($@"{Step.InitStepName}.sql");
+        var deploy01 = directory.File($@"{GlobalSettings.InitStepName}.sql");
         deploy01.WriteAllText("Step1 Deploy");
         var deploy02 = directory.File("TKT-001.SampleDescription.Deploy.sql");
         deploy02.WriteAllText("Step2 Deploy");

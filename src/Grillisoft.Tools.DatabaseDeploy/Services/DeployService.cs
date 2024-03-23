@@ -4,6 +4,7 @@ using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
@@ -16,9 +17,10 @@ public class DeployService : BaseService
         DeployOptions options,
         IDatabasesCollection databases,
         IFileSystem fileSystem,
+        IOptions<GlobalSettings> globalOptions,
         IProgress<int> progress,
         ILogger<DeployService> logger
-    ) : base(databases, fileSystem, logger)
+    ) : base(databases, fileSystem, globalOptions, logger)
     {
         _options = options;
         _progress = progress;

@@ -19,13 +19,12 @@
 # in the templates via {{ site.myvariable }}.
 
 title: dbdeploy
-email: luigi.grilli@gmail.com
 description: >-
   dbdeploy is a cli tool to manage database migrations.
   It supports deployments, rollbacks, multiple branches, creation of databases.
   It works on Windows, Linux and Mac
-baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
+baseurl: "/dbdeploy" # the subpath of your site, e.g. /blog
+url: "https://gigi81.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: gigifun
 github_username:  gigi81
 

@@ -29,8 +29,10 @@ twitter_username: gigifun
 github_username:  gigi81
 
 # Build settings
-theme: minima
+remote_theme: pages-themes/architect@v0.2.0
+show_downloads: false
 plugins:
+  - jekyll-remote-theme
   - jekyll-feed
 
 # Exclude from processing.

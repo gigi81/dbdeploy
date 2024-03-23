@@ -10,7 +10,7 @@ public class GlobalSettings
 
     public string StepsNameRegex { get; set; } = string.Empty;
 
-    public string MigrationTableName { get; set; } = "__Migrations";
+    public string MigrationTableName { get; set; } = "_Migration";
 
     public string InitStepName { get; set; } = "_Init";
 

@@ -41,16 +41,22 @@ static IHostBuilder CreateHostBuilder(OptionsBase options, string[] args)
         })
         .UseSerilog((hostingContext, services, loggerConfiguration) =>
         {
-            loggerConfiguration.Enrich.FromLogContext()
+            loggerConfiguration
+                .Enrich.FromLogContext()
                 .WriteTo.Console();
         })
-        .ConfigureAppConfiguration((hostContext, config) =>
+        .ConfigureAppConfiguration((builder, config) =>
         {
+            var environmentName = builder.HostingEnvironment.EnvironmentName;
             var configRoot = Path.GetFullPath(options.Path);
             config.AddJsonFile(Path.Combine(configRoot, "dbsettings.json"), optional: false);
+            config.AddJsonFile(Path.Combine(configRoot, $"dbsettings.{environmentName}.json"), optional: true);
         })
-        .ConfigureServices((hostContext, services) =>
+        .ConfigureServices((builder, services) =>
         {
+            services.Configure<GlobalSettings>(
+                builder.Configuration.GetSection(GlobalSettings.SectionName));
+            
             services.AddSingleton<IFileSystem, FileSystem>()
                 .AddSingleton<IDatabasesCollection, DatabasesCollection>()
                 .AddSingleton<IProgress<int>, ConsoleProgress>()

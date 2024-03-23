@@ -19,6 +19,11 @@ internal static class Extensions
         return obj.Equals(value, StringComparison.InvariantCultureIgnoreCase);
     }
 
+    public static string OverrideWith(this string defaultValue, string? value)
+    {
+        return string.IsNullOrEmpty(value) ? defaultValue : value;
+    }
+
     public static async IAsyncEnumerable<T> WhereAsync<T>(this IEnumerable<T> source, Func<T, CancellationToken, Task<bool>> filter, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         foreach (var item in source)

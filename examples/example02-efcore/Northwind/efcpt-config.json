@@ -1,0 +1,158 @@
+﻿{
+  "$schema": "https://raw.githubusercontent.com/ErikEJ/EFCorePowerTools/master/samples/efcpt-schema.json",
+  "code-generation": {
+    "enable-on-configuring": false,
+    "type": "all",
+    "use-database-names": false,
+    "use-data-annotations": false,
+    "use-nullable-reference-types": true,
+    "use-inflector": true,
+    "use-legacy-inflector": false,
+    "use-many-to-many-entity": false,
+    "use-t4": false,
+    "t4-template-path": null,
+    "remove-defaultsql-from-bool-properties": false,
+    "soft-delete-obsolete-files": false,
+    "use-alternate-stored-procedure-resultset-discovery": false,
+    "merge-dacpacs": false,
+    "use-decimal-data-annotation-for-sproc-results": true,
+    "generate-mermaid-diagram": false,
+    "refresh-object-lists": true,
+    "use-prefix-navigation-naming": false
+  },
+  "names": {
+    "root-namespace": "Northwind",
+    "dbcontext-name": "NorthwindDbContext",
+    "dbcontext-namespace": null,
+    "model-namespace": "Models"
+  },
+  "file-layout": {
+    "output-path": "Models",
+    "output-dbcontext-path": ""
+  },
+  "type-mappings": {
+    "use-DateOnly-TimeOnly": true,
+    "use-HierarchyId": false,
+    "use-spatial": false,
+    "use-NodaTime": false
+  },
+  "tables": [
+    {
+      "name": "[dbo].[__Migration]",
+      "exclude": true
+    },
+    {
+      "name": "[dbo].[Categories]"
+    },
+    {
+      "name": "[dbo].[CustomerCustomerDemo]"
+    },
+    {
+      "name": "[dbo].[CustomerDemographics]"
+    },
+    {
+      "name": "[dbo].[Customers]"
+    },
+    {
+      "name": "[dbo].[Employees]"
+    },
+    {
+      "name": "[dbo].[EmployeeTerritories]"
+    },
+    {
+      "name": "[dbo].[Order Details]"
+    },
+    {
+      "name": "[dbo].[Orders]"
+    },
+    {
+      "name": "[dbo].[Products]"
+    },
+    {
+      "name": "[dbo].[Region]"
+    },
+    {
+      "name": "[dbo].[Shippers]"
+    },
+    {
+      "name": "[dbo].[Suppliers]"
+    },
+    {
+      "name": "[dbo].[Territories]"
+    }
+  ],
+  "views": [
+    {
+      "name": "[dbo].[Alphabetical list of products]"
+    },
+    {
+      "name": "[dbo].[Category Sales for 1997]"
+    },
+    {
+      "name": "[dbo].[Current Product List]"
+    },
+    {
+      "name": "[dbo].[Customer and Suppliers by City]"
+    },
+    {
+      "name": "[dbo].[Invoices]"
+    },
+    {
+      "name": "[dbo].[Order Details Extended]"
+    },
+    {
+      "name": "[dbo].[Order Subtotals]"
+    },
+    {
+      "name": "[dbo].[Orders Qry]"
+    },
+    {
+      "name": "[dbo].[Product Sales for 1997]"
+    },
+    {
+      "name": "[dbo].[Products Above Average Price]"
+    },
+    {
+      "name": "[dbo].[Products by Category]"
+    },
+    {
+      "name": "[dbo].[Quarterly Orders]"
+    },
+    {
+      "name": "[dbo].[Sales by Category]"
+    },
+    {
+      "name": "[dbo].[Sales Totals by Amount]"
+    },
+    {
+      "name": "[dbo].[Summary of Sales by Quarter]"
+    },
+    {
+      "name": "[dbo].[Summary of Sales by Year]"
+    }
+  ],
+  "stored-procedures": [
+    {
+      "name": "[dbo].[CustOrderHist]"
+    },
+    {
+      "name": "[dbo].[CustOrdersDetail]"
+    },
+    {
+      "name": "[dbo].[CustOrdersOrders]"
+    },
+    {
+      "name": "[dbo].[Employee Sales by Country]"
+    },
+    {
+      "name": "[dbo].[Sales by Year]"
+    },
+    {
+      "name": "[dbo].[SalesByCategory]"
+    },
+    {
+      "name": "[dbo].[Ten Most Expensive Products]"
+    }
+  ],
+  "functions": []
+}

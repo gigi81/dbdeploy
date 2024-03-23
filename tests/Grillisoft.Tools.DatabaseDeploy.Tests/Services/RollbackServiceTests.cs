@@ -58,7 +58,7 @@ public class RollbackServiceTests
     
     private RollbackService CreateService(RollbackOptions deployOptions, params IDatabase[] databases)
     {
-        var provider = new TestServiceCollection<DeployService>(_output)
+        var provider = new TestServiceCollection<RollbackService>(_output)
             .AddSingleton(deployOptions)
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
             .AddSingleton<IProgress<int>>(new Progress<int>())

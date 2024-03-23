@@ -12,7 +12,7 @@ public static class BranchesValidator
         var steps = branches.SelectMany(b => b.Steps).Distinct().ToArray();
 
         var deploy = steps.Select(s => s.DeployScript.FullName);
-        var rollback = steps.Select(s => s.RollbackScript.FullName).ToArray();
+        var rollback = steps.Where(s => !s.IsInit).Select(s => s.RollbackScript.FullName).ToArray();
         var test = steps.Select(s => s.TestScript.FullName);
         
         var mandatoryFiles = (settings.RollbackRequired ? deploy.Concat(rollback) : deploy)

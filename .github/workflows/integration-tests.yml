@@ -37,11 +37,11 @@ jobs:
         run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/example02 -c
 
       - name: Deploy release
-        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/example02 --branch release/1.1 -c
+        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/example02 --branch release/1.1
 
       - name: Rollback release
-        run: dotnet run --configuration Release --project $PROJECT -- rollback --path examples/example02 --branch release/1.1 -c
+        run: dotnet run --configuration Release --project $PROJECT -- rollback --path examples/example02 --branch release/1.1
 
       # make sure scripts are re-runnable
       - name: Re-deploy release
-        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/example02 --branch release/1.1 -c
+        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/example02 --branch release/1.1

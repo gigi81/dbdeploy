@@ -38,14 +38,15 @@ public abstract class DatabaseBase : IDatabase
     public string Name => _name;
     public string DatabaseName => _databaseName;
     public IScriptParser ScriptParser => _parser;
+    public int ScriptTimeout { get; set; } = 60 * 60;
+    
     protected DbConnection Connection => _connection;
     
     public async Task<bool> Exists(CancellationToken cancellationToken)
     {
         await using var connection = this.CreateConnectionWithoutDatabase(_logger);
         await connection.OpenAsync(cancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = this.SqlScripts.ExistsSql;
+        await using var command = this.CreateCommand(this.SqlScripts.ExistsSql, connection);
         var exists = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt32(exists) == 1;
     }
@@ -54,9 +55,7 @@ public abstract class DatabaseBase : IDatabase
     {
         await using var connection = this.CreateConnectionWithoutDatabase(_logger);
         await connection.OpenAsync(cancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = this.SqlScripts.CreateSql;
-        command.CommandTimeout = 60 * 60;
+        await using var command = this.CreateCommand(this.SqlScripts.CreateSql, connection);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
@@ -125,11 +124,11 @@ public abstract class DatabaseBase : IDatabase
     public async Task ClearMigrations(CancellationToken cancellationToken)
         => await RunScript(this.SqlScripts.ClearSql, cancellationToken);
 
-    private DbCommand CreateCommand(string script)
+    private DbCommand CreateCommand(string script, DbConnection? connection = null)
     {
-        var command = _connection.CreateCommand();
+        var command = (connection ?? _connection).CreateCommand();
         command.CommandText = script;
-        command.CommandTimeout = 60 * 60;
+        command.CommandTimeout = this.ScriptTimeout;
         return command;
     }
 

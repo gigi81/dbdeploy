@@ -1,6 +1,7 @@
 ﻿{
   "global": {
-    "defaultProvider": "sqlServer"
+    "defaultProvider": "sqlServer",
+    "scriptTimeout": 600
   },
   "databases":{
     "Northwind": {

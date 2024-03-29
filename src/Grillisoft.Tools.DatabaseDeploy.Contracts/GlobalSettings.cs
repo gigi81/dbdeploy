@@ -6,7 +6,7 @@ public class GlobalSettings
     
     public string DefaultProvider { get; set; } = string.Empty;
 
-    public int ScriptsTimeout { get; set; } = 60 * 60;
+    public int ScriptTimeout { get; set; } = 60 * 60;
 
     public string StepsNameRegex { get; set; } = string.Empty;
 

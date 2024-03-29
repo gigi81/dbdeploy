@@ -1,4 +1,5 @@
-﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+﻿using CommandLine.Text;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -27,9 +28,7 @@ public class ExecutableBackgroundService : BackgroundService
     {
         try
         {
-            if(!string.IsNullOrWhiteSpace(_hostEnvironment.EnvironmentName))
-                _logger.LogInformation("Environment {environment}", _hostEnvironment.EnvironmentName);
-            
+            LogStartupInformation();
             await _executable.Execute(stoppingToken);
             Environment.ExitCode = ExitCode.Ok;
         }
@@ -43,5 +42,16 @@ public class ExecutableBackgroundService : BackgroundService
             // Stop the application once the work is done
             _appLifetime.StopApplication();
         }
+    }
+
+    private void LogStartupInformation()
+    {
+        _logger.LogInformation(HeadingInfo.Default.ToString());
+        _logger.LogInformation(CopyrightInfo.Default.ToString());
+
+        if(!string.IsNullOrWhiteSpace(_hostEnvironment.EnvironmentName))
+            _logger.LogInformation("Environment {environment}", _hostEnvironment.EnvironmentName);
+        else
+            _logger.LogInformation("Environment was not specified. Using default");
     }
 }

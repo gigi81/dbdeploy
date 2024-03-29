@@ -17,12 +17,10 @@ try
     if (result.Errors.Any())
     {
         Environment.ExitCode = ExitCode.InvalidArguments;
-        //TODO: print errors
+        return;
     }
-    else
-    {
-        await CreateHostBuilder((OptionsBase)result.Value, args).RunConsoleAsync();
-    }
+    
+    await CreateHostBuilder((OptionsBase)result.Value, args).RunConsoleAsync();
 }
 catch(Exception ex)
 {

@@ -19,8 +19,8 @@ jobs:
       mssql:
         image: mcr.microsoft.com/mssql/server:2022-latest
         env:
-          ACCEPT_EULA: Y
-          SA_PASSWORD: SqlServer2019!
+          ACCEPT_EULA: 'Y'
+          SA_PASSWORD: 'SqlServer2019!'
         ports:
           - 1433:1433
 

@@ -47,7 +47,6 @@ public class ExecutableBackgroundService : BackgroundService
     private void LogStartupInformation()
     {
         _logger.LogInformation(HeadingInfo.Default.ToString());
-        _logger.LogInformation(CopyrightInfo.Default.ToString());
 
         if(!string.IsNullOrWhiteSpace(_hostEnvironment.EnvironmentName))
             _logger.LogInformation("Environment {environment}", _hostEnvironment.EnvironmentName);

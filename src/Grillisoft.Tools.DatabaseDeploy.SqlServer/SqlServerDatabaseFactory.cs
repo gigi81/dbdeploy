@@ -28,7 +28,7 @@ internal class SqlServerDatabaseFactory : IDatabaseFactory
         var database = new SqlServerDatabase(
             name,
             config.GetValue("connectionString", string.Empty)!,
-            config.GetValue("migrationTable", _globalSettings.MigrationTableName)!,
+            config.GetValue("migrationTable", _globalSettings.MigrationsTable)!,
             config.GetValue("scriptTimeout", _globalSettings.ScriptTimeout),
             _parser,
             _loggerFactory.CreateLogger<SqlServerDatabase>());

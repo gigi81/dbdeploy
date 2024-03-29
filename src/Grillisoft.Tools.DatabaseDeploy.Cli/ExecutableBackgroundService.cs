@@ -8,15 +8,18 @@ public class ExecutableBackgroundService : BackgroundService
 {
     private readonly IExecutable _executable;
     private readonly IHostApplicationLifetime _appLifetime;
+    private readonly IHostEnvironment _hostEnvironment;
     private readonly ILogger<ExecutableBackgroundService> _logger;
 
     public ExecutableBackgroundService(
         IExecutable executable,
         IHostApplicationLifetime appLifetime,
+        IHostEnvironment hostEnvironment,
         ILogger<ExecutableBackgroundService> logger)
     {
         _executable = executable;
         _appLifetime = appLifetime;
+        _hostEnvironment = hostEnvironment;
         _logger = logger;
     }
     
@@ -24,6 +27,9 @@ public class ExecutableBackgroundService : BackgroundService
     {
         try
         {
+            if(!string.IsNullOrWhiteSpace(_hostEnvironment.EnvironmentName))
+                _logger.LogInformation("Environment {environment}", _hostEnvironment.EnvironmentName);
+            
             await _executable.Execute(stoppingToken);
             Environment.ExitCode = ExitCode.Ok;
         }

@@ -33,5 +33,15 @@ jobs:
       - name: Dotnet restore
         run: dotnet restore
 
-      - name: Run Integration Test
+      - name: Create databases
         run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/example02 -c
+
+      - name: Deploy release
+        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/example02 --branch release/1.1 -c
+
+      - name: Rollback release
+        run: dotnet run --configuration Release --project $PROJECT -- rollback --path examples/example02 --branch release/1.1 -c
+
+      # make sure scripts are re-runnable
+      - name: Re-deploy release
+        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/example02 --branch release/1.1 -c

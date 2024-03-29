@@ -32,5 +32,10 @@ jobs:
       - name: Dotnet build
         run: dotnet build --configuration Release
         
+      - name: Wait for mssql service
+        uses: juliangruber/sleep-action@v2.0.0
+        with:
+          time: 20s
+ 
       - name: Run Integration Test
-        run: src/Grillisoft.Tools.DatabaseDeploy.Cli/bin/Release/net8.0/dbdeploy deploy --path examples/example02 -c
+        run: dotnet run --configuration Release --project src/Grillisoft.Tools.DatabaseDeploy.Cli/Grillisoft.Tools.DatabaseDeploy.Cli.csproj -- deploy --path examples/example02 -c

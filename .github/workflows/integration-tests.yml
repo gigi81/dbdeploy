@@ -7,6 +7,10 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  DOTNET_ENVIRONMENT: ci
+  PROJECT: src/Grillisoft.Tools.DatabaseDeploy.Cli/Grillisoft.Tools.DatabaseDeploy.Cli.csproj
+  
 jobs:
   container-job:
     runs-on: ubuntu-latest
@@ -29,13 +33,5 @@ jobs:
       - name: Dotnet restore
         run: dotnet restore
 
-      - name: Dotnet build
-        run: dotnet build --configuration Release
-        
-      - name: Wait for mssql service
-        uses: juliangruber/sleep-action@v2.0.0
-        with:
-          time: 20s
- 
       - name: Run Integration Test
-        run: dotnet run --configuration Release --project src/Grillisoft.Tools.DatabaseDeploy.Cli/Grillisoft.Tools.DatabaseDeploy.Cli.csproj -- deploy --path examples/example02 -c
+        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/example02 -c

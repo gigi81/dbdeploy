@@ -1,0 +1,36 @@
+name: Integration Tests
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+    branches: [main]
+
+jobs:
+  container-job:
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/dotnet/sdk:8.0
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          SA_PASSWORD: SqlServer2019!
+        ports:
+          - 1433:1433
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Dotnet restore
+        run: dotnet restore
+
+      - name: Dotnet build
+        run: dotnet build --configuration Release
+        
+      - name: Run Integration Test
+        run: src/Grillisoft.Tools.DatabaseDeploy.Cli/bin/Release/net8.0/dbdeploy deploy --path examples/example02 -c

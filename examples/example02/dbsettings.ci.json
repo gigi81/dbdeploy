@@ -5,11 +5,11 @@
   },
   "databases":{
     "Northwind": {
-      "connectionString": "Server=localhost;Database=Northwind;User Id=sa;Password=SqlServer2019!;Trusted_Connection=False;TrustServerCertificate=True",
+      "connectionString": "Server=localhost,1433;Database=Northwind;User Id=sa;Password=SqlServer2019!;Trusted_Connection=False;TrustServerCertificate=True",
       "provider": "sqlServer"
     },
     "Pubs": {
-      "connectionString": "Server=localhost;Database=Pubs;User Id=sa;Password=SqlServer2019!;Trusted_Connection=False;TrustServerCertificate=True",
+      "connectionString": "Server=localhost,1433;Database=Pubs;User Id=sa;Password=SqlServer2019!;Trusted_Connection=False;TrustServerCertificate=True",
       "provider": "sqlServer"
     }
   }

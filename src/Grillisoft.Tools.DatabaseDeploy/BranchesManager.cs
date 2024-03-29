@@ -1,5 +1,6 @@
 ﻿using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Microsoft.Extensions.Options;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
 
@@ -10,12 +11,14 @@ public class BranchesManager
     private const string MainBranchFilename = "main.csv";
     
     private readonly IDirectoryInfo _directory;
+    private readonly GlobalSettings _globalSettings;
     private readonly Dictionary<string, Branch> _branches = new(StringComparer.InvariantCultureIgnoreCase);
     private Branch? _mainBranch;
 
-    public BranchesManager(IDirectoryInfo directory)
+    public BranchesManager(IDirectoryInfo directory, GlobalSettings globalSettings)
     {
         _directory = directory;
+        _globalSettings = globalSettings;
     }
 
     public IReadOnlyDictionary<string, Branch> Branches => _branches;
@@ -47,7 +50,7 @@ public class BranchesManager
             _branches.Add(branch.Name, branch);
         }
 
-        return BranchesValidator.Validate(_branches.Values, _directory);
+        return BranchesValidator.Validate(_branches.Values, _globalSettings, _directory);
     }
 
     private async Task<Branch> Load(IFileInfo file)
@@ -110,12 +113,17 @@ public class BranchesManager
         return name;
     }
 
-    private static Step ReadStep(string line, string branchName, int count, IDirectoryInfo directory)
+    private Step ReadStep(string line, string branchName, int count, IDirectoryInfo directory)
     {
         var split = line.Split(',');
         if (split.Length != 2)
             throw new ArgumentException($"Invalid format '{line}' on line {count}");
 
-        return new Step(split[0].Trim(), split[1].Trim(), branchName, directory.SubDirectory(split[0].Trim()));
+        return new Step(
+            split[0].Trim(),
+            split[1].Trim(),
+            branchName,
+            split[1].Trim().EqualsIgnoreCase(_globalSettings.InitStepName),
+            directory.SubDirectory(split[0].Trim()));
     }
 }

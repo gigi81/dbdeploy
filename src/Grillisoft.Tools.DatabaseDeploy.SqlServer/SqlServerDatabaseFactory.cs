@@ -1,17 +1,24 @@
 ﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer;
 
 internal class SqlServerDatabaseFactory : IDatabaseFactory
 {
     private readonly SqlServerScriptParser _parser;
+    private readonly IOptions<GlobalSettings> _globalSettings;
     private readonly ILoggerFactory _loggerFactory;
 
-    public SqlServerDatabaseFactory(SqlServerScriptParser parser, ILoggerFactory loggerFactory)
+    public SqlServerDatabaseFactory(
+        SqlServerScriptParser parser,
+        IOptions<GlobalSettings> globalSettings,
+        ILoggerFactory loggerFactory)
     {
         _parser = parser;
+        _globalSettings = globalSettings;
         _loggerFactory = loggerFactory;
     }
     
@@ -21,8 +28,9 @@ internal class SqlServerDatabaseFactory : IDatabaseFactory
     {
         var database = new SqlServerDatabase(
             name,
-            config["connectionString"] ?? "",
-            config["migrationTable"] ?? "__Migration",
+            config.GetValue("connectionString", string.Empty)!,
+            config.GetValue("migrationTable", _globalSettings.Value.MigrationsTable)!,
+            config.GetValue("scriptTimeout", _globalSettings.Value.ScriptTimeout),
             _parser,
             _loggerFactory.CreateLogger<SqlServerDatabase>());
 

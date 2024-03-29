@@ -14,11 +14,13 @@ public class MySqlDatabase : DatabaseBase
         string name,
         string connectionString,
         string migrationTableName,
+        int scriptTimeout,
         MySqlScriptParser parser,
         ILogger<MySqlDatabase> logger
     ) : base(name, CreateConnection(connectionString, logger), parser, logger)
     {
         _migrationTableName = migrationTableName;
+        this.ScriptTimeout = scriptTimeout;
     }
 
     protected override ISqlScripts CreateSqlScripts()

@@ -13,11 +13,13 @@ public class SqlServerDatabase : DatabaseBase
         string name,
         string connectionString,
         string migrationTableName,
+        int scriptTimeout,
         SqlServerScriptParser parser,
         ILogger<SqlServerDatabase> logger
     ) : base(name, CreateConnection(connectionString, logger), parser, logger)
     {
         _migrationTableName = migrationTableName;
+        this.ScriptTimeout = scriptTimeout;
     }
 
     protected override ISqlScripts CreateSqlScripts()

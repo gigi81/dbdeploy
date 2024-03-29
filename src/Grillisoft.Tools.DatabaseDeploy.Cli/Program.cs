@@ -3,6 +3,7 @@ using CommandLine;
 using Grillisoft.Tools.DatabaseDeploy;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Cli;
+using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,12 +17,10 @@ try
     if (result.Errors.Any())
     {
         Environment.ExitCode = ExitCode.InvalidArguments;
-        //TODO: print errors
+        return;
     }
-    else
-    {
-        await CreateHostBuilder((OptionsBase)result.Value, args).RunConsoleAsync();
-    }
+    
+    await CreateHostBuilder((OptionsBase)result.Value, args).RunConsoleAsync();
 }
 catch(Exception ex)
 {
@@ -41,16 +40,22 @@ static IHostBuilder CreateHostBuilder(OptionsBase options, string[] args)
         })
         .UseSerilog((hostingContext, services, loggerConfiguration) =>
         {
-            loggerConfiguration.Enrich.FromLogContext()
+            loggerConfiguration
+                .Enrich.FromLogContext()
                 .WriteTo.Console();
         })
-        .ConfigureAppConfiguration((hostContext, config) =>
+        .ConfigureAppConfiguration((builder, config) =>
         {
+            var environmentName = builder.HostingEnvironment.EnvironmentName;
             var configRoot = Path.GetFullPath(options.Path);
             config.AddJsonFile(Path.Combine(configRoot, "dbsettings.json"), optional: false);
+            config.AddJsonFile(Path.Combine(configRoot, $"dbsettings.{environmentName}.json"), optional: true);
         })
-        .ConfigureServices((hostContext, services) =>
+        .ConfigureServices((builder, services) =>
         {
+            services.Configure<GlobalSettings>(
+                builder.Configuration.GetSection(GlobalSettings.SectionName));
+            
             services.AddSingleton<IFileSystem, FileSystem>()
                 .AddSingleton<IDatabasesCollection, DatabasesCollection>()
                 .AddSingleton<IProgress<int>, ConsoleProgress>()

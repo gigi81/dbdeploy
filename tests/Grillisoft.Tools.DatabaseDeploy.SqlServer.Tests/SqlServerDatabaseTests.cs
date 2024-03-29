@@ -24,6 +24,7 @@ public class SqlServerDatabaseTests : DatabaseTest<SqlServerDatabase, MsSqlConta
             "test",
             this.ConnectionString,
             "__Migrations",
+            60,
             new SqlServerScriptParser(),
             _logger);
     }

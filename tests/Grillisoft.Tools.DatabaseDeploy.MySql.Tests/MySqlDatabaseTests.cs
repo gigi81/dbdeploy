@@ -21,6 +21,7 @@ public class MySqlDatabaseTests : DatabaseTest<MySqlDatabase, MySqlContainer>
             "test",
             this.ConnectionString,
             "__Migrations",
+            60,
             new MySqlScriptParser(),
             _logger);
     }

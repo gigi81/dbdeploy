@@ -13,6 +13,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.Tests.Services;
 public class DeployServiceTests
 {
     private readonly ITestOutputHelper _output;
+    private readonly GlobalSettings _globalSettings = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly CancellationToken _cancellationToken;
 
@@ -28,17 +29,11 @@ public class DeployServiceTests
         //arrange
         var database01 = new DatabaseMock("Database01");
         var database02 = new DatabaseMock("Database02");
-        var sut = new TestServiceCollection<DeployService>(_output)
-            .AddSingleton(new DeployOptions
-            {
-                Path = SampleFilesystems.Sample01RootPath
-            })
-            .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
-            .AddSingleton<IProgress<int>>(new Progress<int>())
-            .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(database01, database02))
-            .AddSingleton<IDatabasesCollection>(new DatabasesCollectionMock(database01, database02))
-            .BuildServiceProvider()
-            .GetRequiredService<DeployService>();
+        var deployOptions = new DeployOptions
+        {
+            Path = SampleFilesystems.Sample01RootPath
+        };
+        var sut = CreateService(deployOptions, database01, database02);
 
         //act
         await sut.Execute(_cancellationToken);
@@ -49,8 +44,8 @@ public class DeployServiceTests
 
         migrations01.Count.Should().Be(1);
         migrations02.Count.Should().Be(1);
-        migrations01.First().Name.Should().Be(Step.InitStepName);
-        migrations02.First().Name.Should().Be(Step.InitStepName);
+        migrations01.First().Name.Should().Be(_globalSettings.InitStepName);
+        migrations02.First().Name.Should().Be(_globalSettings.InitStepName);
     }
     
     [Fact]
@@ -59,19 +54,12 @@ public class DeployServiceTests
         //arrange
         var database01 = new DatabaseMock("Database01");
         var database02 = new DatabaseMock("Database02");
-
-        var sut = new TestServiceCollection<DeployService>(_output)
-            .AddSingleton(new DeployOptions
-            {
-                Path = SampleFilesystems.Sample01RootPath,
-                Branch = "release/1.1"
-            })
-            .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
-            .AddSingleton<IProgress<int>>(new Progress<int>())
-            .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(database01, database02))
-            .AddSingleton<IDatabasesCollection>(new DatabasesCollectionMock(database01, database02))
-            .BuildServiceProvider()
-            .GetRequiredService<DeployService>();
+        var deployOptions = new DeployOptions
+        {
+            Path = SampleFilesystems.Sample01RootPath,
+            Branch = "release/1.1"
+        };
+        var sut = CreateService(deployOptions, database01, database02);
 
         //act
         await sut.Execute(_cancellationToken);
@@ -82,9 +70,9 @@ public class DeployServiceTests
 
         migrations01.Count.Should().Be(2);
         migrations02.Count.Should().Be(1);
-        migrations01.First().Name.Should().Be(Step.InitStepName);
+        migrations01.First().Name.Should().Be(_globalSettings.InitStepName);
         migrations01.Skip(1).First().Name.Should().Be("TKT-001.SampleDescription");
-        migrations02.First().Name.Should().Be(Step.InitStepName);
+        migrations02.First().Name.Should().Be(_globalSettings.InitStepName);
     }
     
     [Fact]
@@ -93,19 +81,12 @@ public class DeployServiceTests
         //arrange
         var database01 = new DatabaseMock("Database01");
         var database02 = new DatabaseMock("Database02");
-
-        var sut = new TestServiceCollection<DeployService>(_output)
-            .AddSingleton(new DeployOptions
-            {
-                Path = SampleFilesystems.Sample01RootPath,
-                Branch = "release/1.2"
-            })
-            .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
-            .AddSingleton<IProgress<int>>(new Progress<int>())
-            .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(database01, database02))
-            .AddSingleton<IDatabasesCollection>(new DatabasesCollectionMock(database01, database02))
-            .BuildServiceProvider()
-            .GetRequiredService<DeployService>();
+        var deployOptions = new DeployOptions
+        {
+            Path = SampleFilesystems.Sample01RootPath,
+            Branch = "release/1.2"
+        };
+        var sut = CreateService(deployOptions, database01, database02);
 
         //act
         await sut.Execute(_cancellationToken);
@@ -115,11 +96,25 @@ public class DeployServiceTests
         var migrations02 = await database02.GetMigrations(_cancellationToken);
 
         migrations01.Count.Should().Be(2);
-        migrations01.First().Name.Should().Be(Step.InitStepName);
+        migrations01.First().Name.Should().Be(_globalSettings.InitStepName);
         migrations01.Skip(1).First().Name.Should().Be("TKT-001.SampleDescription");
         
         migrations02.Count.Should().Be(2);
-        migrations02.First().Name.Should().Be(Step.InitStepName);
+        migrations02.First().Name.Should().Be(_globalSettings.InitStepName);
         migrations02.Skip(1).First().Name.Should().Be("TKT-002.SampleDescription");
+    }
+
+    private DeployService CreateService(DeployOptions deployOptions, params IDatabase[] databases)
+    {
+        var provider = new TestServiceCollection<DeployService>(_output)
+            .AddSingleton(deployOptions)
+            .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
+            .AddSingleton<IProgress<int>>(new Progress<int>())
+            .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(databases))
+            .AddSingleton<IDatabasesCollection>(new DatabasesCollectionMock(databases))
+            .Configure<GlobalSettings>(options => {})
+            .BuildServiceProvider();
+
+        return provider.GetRequiredService<DeployService>();
     }
 }

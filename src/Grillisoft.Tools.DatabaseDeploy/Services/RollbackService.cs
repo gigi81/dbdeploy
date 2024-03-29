@@ -40,6 +40,7 @@ public class RollbackService : BaseService
         {
             var database = await GetDatabase(step.Database, stoppingToken);
             await RunScript(step.RollbackScript, database, stoppingToken);
+            _logger.LogInformation($"Database {step.Database} Removing migration {step.Name}");
             await database.RemoveMigration(migration, stoppingToken);
             _progress.Report(++count * 100 / steps.Length);
         }

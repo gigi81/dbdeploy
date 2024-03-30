@@ -5,6 +5,7 @@ using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Cli;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
+using Grillisoft.Tools.DatabaseDeploy.Oracle;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -61,6 +62,7 @@ static IHostBuilder CreateHostBuilder(OptionsBase options, string[] args)
                 .AddSingleton<IProgress<int>, ConsoleProgress>()
                 .AddSqlServer()
                 .AddMySql()
+                .AddOracle()
                 .AddExecutable(options)
                 .AddHostedService<ExecutableBackgroundService>();
         });

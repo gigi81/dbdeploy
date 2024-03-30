@@ -44,18 +44,20 @@ public abstract class DatabaseBase : IDatabase
     
     public async Task<bool> Exists(CancellationToken cancellationToken)
     {
+        var script = this.SqlScripts.ExistsSql;
         await using var connection = this.CreateConnectionWithoutDatabase(_logger);
         await connection.OpenAsync(cancellationToken);
-        await using var command = this.CreateCommand(this.SqlScripts.ExistsSql, connection);
+        await using var command = this.CreateCommand(script, connection);
         var exists = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt32(exists) == 1;
     }
 
     public async Task Create(CancellationToken cancellationToken)
     {
+        var script = this.SqlScripts.CreateSql;
         await using var connection = this.CreateConnectionWithoutDatabase(_logger);
         await connection.OpenAsync(cancellationToken);
-        await using var command = this.CreateCommand(this.SqlScripts.CreateSql, connection);
+        await using var command = this.CreateCommand(script, connection);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
@@ -129,24 +131,13 @@ public abstract class DatabaseBase : IDatabase
         var command = (connection ?? _connection).CreateCommand();
         command.CommandText = script;
         command.CommandTimeout = this.ScriptTimeout;
+        if (_logger.IsEnabled(LogLevel.Debug))
+            _logger.LogDebug("Database {0} running script: {1}", this.Name, script);
+
         return command;
     }
 
     private async Task OpenConnection(CancellationToken cancellationToken)
-    {
-        try
-        {
-            if (_connection.State != ConnectionState.Open)
-                await _connection.OpenAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Failed to open connection to database '{_name}'");
-            throw;
-        }
-    }
-
-    private async Task OpenConnectionToMaster(CancellationToken cancellationToken)
     {
         try
         {

@@ -17,12 +17,16 @@ public class OracleScriptParser : IScriptParser
 
         while (line != null)
         {
-            if (!CanIgnore(line))
+            var trim = line?.Trim();
+            
+            if (trim is not null && !CanIgnore(trim))
             {
-                buffer.AppendLine(line);
-                if (line.Trim().EndsWith(";")) //TODO: improve this
+                buffer.AppendLine(trim);
+                //TODO: improve this
+                if (trim.EndsWith(";"))
                 {
-                    yield return buffer.ToString();
+                    //TODO: improve this
+                    yield return buffer.ToString().Replace(";", "");
                     buffer.Clear();
                 }
             }
@@ -34,11 +38,10 @@ public class OracleScriptParser : IScriptParser
             yield return buffer.ToString();
     }
 
-    private bool CanIgnore(string line)
+    private bool CanIgnore(string trim)
     {
-        var trim = line.Trim();
-
-        return trim.StartsWith("rem", StringComparison.InvariantCultureIgnoreCase)
+        return string.IsNullOrEmpty(trim)
+               || trim.StartsWith("rem", StringComparison.InvariantCultureIgnoreCase)
                || trim.StartsWith("prompt", StringComparison.InvariantCultureIgnoreCase);
     }
 }

@@ -13,7 +13,6 @@ public abstract class DatabaseBase : IDatabase
     private readonly DbConnection _connection;
     private readonly IScriptParser _parser;
     private readonly ILogger _logger;
-    private readonly string _databaseName;
     private ISqlScripts? _sqlScripts;
     
     protected DatabaseBase(
@@ -24,7 +23,6 @@ public abstract class DatabaseBase : IDatabase
     {
         _name = name;
         _connection = connection;
-        _databaseName = !string.IsNullOrWhiteSpace(_connection.Database) ? _connection.Database : _name;
         _parser = parser;
         _logger = logger;
     }
@@ -36,13 +34,16 @@ public abstract class DatabaseBase : IDatabase
     private ISqlScripts SqlScripts => _sqlScripts ??= CreateSqlScripts();
     
     public string Name => _name;
-    public string DatabaseName => _databaseName;
+
+    public virtual string DatabaseName => !string.IsNullOrWhiteSpace(_connection.Database) ? _connection.Database : _name;
+    
     public IScriptParser ScriptParser => _parser;
+    
     public int ScriptTimeout { get; set; } = 60 * 60;
     
     protected DbConnection Connection => _connection;
     
-    public async Task<bool> Exists(CancellationToken cancellationToken)
+    public async virtual Task<bool> Exists(CancellationToken cancellationToken)
     {
         var script = this.SqlScripts.ExistsSql;
         await using var connection = this.CreateConnectionWithoutDatabase(_logger);
@@ -52,7 +53,7 @@ public abstract class DatabaseBase : IDatabase
         return Convert.ToInt32(exists) == 1;
     }
 
-    public async Task Create(CancellationToken cancellationToken)
+    public async virtual Task Create(CancellationToken cancellationToken)
     {
         var script = this.SqlScripts.CreateSql;
         await using var connection = this.CreateConnectionWithoutDatabase(_logger);
@@ -123,16 +124,16 @@ public abstract class DatabaseBase : IDatabase
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    public async Task ClearMigrations(CancellationToken cancellationToken)
+    public async virtual Task ClearMigrations(CancellationToken cancellationToken)
         => await RunScript(this.SqlScripts.ClearSql, cancellationToken);
 
-    private DbCommand CreateCommand(string script, DbConnection? connection = null)
+    protected virtual DbCommand CreateCommand(string script, DbConnection? connection = null)
     {
         var command = (connection ?? _connection).CreateCommand();
         command.CommandText = script;
         command.CommandTimeout = this.ScriptTimeout;
-        if (_logger.IsEnabled(LogLevel.Debug))
-            _logger.LogDebug("Database {0} running script: {1}", this.Name, script);
+        //if (_logger.IsEnabled(LogLevel.Debug))
+            _logger.LogInformation("Database {0} running script: {1}", this.Name, script);
 
         return command;
     }
@@ -151,7 +152,7 @@ public abstract class DatabaseBase : IDatabase
         }
     }
     
-    public async ValueTask DisposeAsync()
+    public async virtual ValueTask DisposeAsync()
     {
         await _connection.DisposeAsync();
     }

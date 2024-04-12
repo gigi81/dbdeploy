@@ -29,8 +29,8 @@ public class ExecutableBackgroundService : BackgroundService
         try
         {
             LogStartupInformation();
-            await _executable.Execute(stoppingToken);
-            Environment.ExitCode = ExitCode.Ok;
+            var exitCode = await _executable.Execute(stoppingToken);
+            Environment.ExitCode = exitCode;
         }
         catch (Exception ex)
         {

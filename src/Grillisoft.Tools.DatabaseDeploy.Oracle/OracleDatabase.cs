@@ -31,7 +31,7 @@ public class OracleDatabase : DatabaseBase
     protected override DbConnection CreateConnectionWithoutDatabase(ILogger logger)
     {
         var builder = new OracleConnectionStringBuilder(this.Connection.ConnectionString);
-        builder.DataSource = "";
+        builder.UserID = builder.UserID?.Split("/").First();
         return CreateConnection(builder.ConnectionString, logger);
     }
 
@@ -48,4 +48,9 @@ public class OracleDatabase : DatabaseBase
         };
         return connection;
     }
+
+    //TODO: fixme
+    public override Task<bool> Exists(CancellationToken cancellationToken) => Task.FromResult(true);
+
+    public override Task InitializeMigrations(CancellationToken cancellationToken) => Task.CompletedTask;
 }

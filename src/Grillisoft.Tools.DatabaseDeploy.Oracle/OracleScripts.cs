@@ -9,16 +9,16 @@ public class OracleScripts(string databaseName, string migrationTableName) : ISq
         ";
 
     public string CreateSql { get; } = $@"
-            CREATE DATABASE `{databaseName}`
+            CREATE DATABASE {databaseName}
         ";
 
     public string GetSql { get; } =
-        $"SELECT `name`, `deployed_utc`, `user_name`, `hash` FROM `{migrationTableName}` ORDER BY `id` ASC";
+        $"SELECT name, deployed_utc, user_name, hash FROM {migrationTableName} ORDER BY id ASC";
     public string AddSql { get; } =
-        $@"INSERT INTO `{migrationTableName}`(`name`, `deployed_utc`, `user_name`, `hash`)
+        $@"INSERT INTO {migrationTableName}(name, deployed_utc, user_name, hash)
                      VALUES(@name, @deployed_utc, @user, @hash)";
     public string RemoveSql { get; } =
-        $"DELETE FROM `{migrationTableName}` WHERE `name` = @name";
+        $"DELETE FROM {migrationTableName} WHERE name = @name";
 
     public string InitSql { get; } = $@"
             CREATE TABLE {migrationTableName} (

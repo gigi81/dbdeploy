@@ -110,7 +110,7 @@ public abstract class DatabaseBase : IDatabase
         await using var command = CreateCommand(this.SqlScripts.AddSql);
         command.AddParameter("name", migration.Name)
                .AddParameter("deployed_utc", migration.DateTime.UtcDateTime)
-               .AddParameter("user", migration.User)
+               .AddParameter("user_name", migration.User)
                .AddParameter("hash", migration.Hash);
         
         await command.ExecuteNonQueryAsync(cancellationToken);

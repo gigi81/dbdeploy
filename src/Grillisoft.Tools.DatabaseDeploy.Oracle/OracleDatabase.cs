@@ -51,6 +51,4 @@ public class OracleDatabase : DatabaseBase
 
     //TODO: fixme
     public override Task<bool> Exists(CancellationToken cancellationToken) => Task.FromResult(true);
-
-    public override Task InitializeMigrations(CancellationToken cancellationToken) => Task.CompletedTask;
 }

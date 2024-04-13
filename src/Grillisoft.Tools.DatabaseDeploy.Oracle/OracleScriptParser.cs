@@ -1,6 +1,7 @@
 ﻿using System.IO.Abstractions;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
@@ -42,6 +43,13 @@ public class OracleScriptParser : IScriptParser
     {
         return string.IsNullOrEmpty(trim)
                || trim.StartsWith("rem", StringComparison.InvariantCultureIgnoreCase)
+               || trim.StartsWith("set", StringComparison.InvariantCultureIgnoreCase)
                || trim.StartsWith("prompt", StringComparison.InvariantCultureIgnoreCase);
     }
+
+    private readonly Regex[] IgnoreKeywords =
+    [
+        new Regex(""),
+        new Regex("")
+    ];
 }

@@ -4,16 +4,19 @@ namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
 
 public class OracleScripts(string databaseName, string migrationTableName) : ISqlScripts
 {
+    public string SetSchemaSql { get; } = $"SET SCHEMA {databaseName.ToUpperInvariant()}";
+    
     public string ExistsSql { get; } = $@"
-            SELECT CAST(COUNT(*) AS INT) AS count
-            FROM dba_users WHERE username = '{databaseName}'
+        SELECT CAST(COUNT(*) as INT) AS count FROM all_users WHERE username = '{databaseName.ToUpperInvariant()}'
         ";
 
     public string CreateSql { get; } = $@"
             CREATE USER {databaseName} IDENTIFIED BY ""{databaseName}""
                            DEFAULT TABLESPACE users
-                           QUOTA UNLIMITED ON users;
+                           QUOTA UNLIMITED ON users
+        ";
 
+    public string GrantSql { get; } = $@"
             GRANT CREATE MATERIALIZED VIEW,
                   CREATE PROCEDURE,
                   CREATE SEQUENCE,
@@ -25,7 +28,7 @@ public class OracleScripts(string databaseName, string migrationTableName) : ISq
                   CREATE VIEW
               TO {databaseName};
         ";
-
+    
     public string GetSql { get; } =
         $"SELECT name, deployed_utc, user_name, hash FROM {migrationTableName} ORDER BY id ASC";
     public string AddSql { get; } =
@@ -45,7 +48,7 @@ public class OracleScripts(string databaseName, string migrationTableName) : ISq
             )
         ";
 
-    public string ClearSqlCheck { get; } = $@"
+    public string MigrationTableExistsSql { get; } = $@"
             SELECT CAST(COUNT(*) AS INT) AS count
             FROM user_tables
             WHERE table_name = '{migrationTableName}'

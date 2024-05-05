@@ -144,7 +144,7 @@ public abstract class DatabaseBase : IDatabase
         return command;
     }
 
-    private async Task OpenConnection(CancellationToken cancellationToken)
+    protected async virtual Task OpenConnection(CancellationToken cancellationToken)
     {
         try
         {

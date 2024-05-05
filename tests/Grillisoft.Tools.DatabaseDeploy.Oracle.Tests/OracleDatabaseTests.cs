@@ -17,8 +17,10 @@ public class OracleDatabaseTests : DatabaseTest<OracleDatabase, OracleContainer>
 
     protected override OracleDatabase CreateDatabase()
     {
+        _logger.LogInformation(this.ConnectionString);
+        
         return new OracleDatabase(
-            "test",
+            "oracle", //NOTE: this is the same as the connection string
             this.ConnectionString,
             "Migrations",
             60,

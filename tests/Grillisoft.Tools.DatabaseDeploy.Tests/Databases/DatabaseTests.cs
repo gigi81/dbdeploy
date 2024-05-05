@@ -10,7 +10,7 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
     where TDatabaseContainer: DockerContainer, IDatabaseContainer
 {
     private static readonly DatabaseMigration TestMigration =
-        new("test", DateTimeOffset.Now.TrimToSeconds(), "user", "12345678123456781234567812345678");
+        new("test", DateTimeOffset.UtcNow.TrimToSeconds(), "user", "12345678123456781234567812345678");
     
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly CancellationToken _cancellationToken;
@@ -70,7 +70,8 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
 
         //assert
         migrations.Count.Should().Be(1);
-        migrations.First().Should().BeEquivalentTo(TestMigration);
+        var firstMigration = migrations.First();
+        firstMigration.Should().BeEquivalentTo(TestMigration);
     }
 
     [Fact]

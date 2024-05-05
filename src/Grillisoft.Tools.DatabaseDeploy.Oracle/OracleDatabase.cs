@@ -1,4 +1,5 @@
 ﻿using System.Data.Common;
+using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Database;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer;
 using Microsoft.Extensions.Logging;
@@ -32,6 +33,7 @@ public class OracleDatabase : DatabaseBase
     {
         var builder = new OracleConnectionStringBuilder(this.Connection.ConnectionString);
         builder.UserID = builder.UserID?.Split("/").First();
+        this.Logger.LogWarning("Setting connection user id to {UserId}", builder.UserID);
         return CreateConnection(builder.ConnectionString, logger);
     }
 
@@ -49,6 +51,22 @@ public class OracleDatabase : DatabaseBase
         return connection;
     }
 
-    //TODO: fixme
-    public override Task<bool> Exists(CancellationToken cancellationToken) => Task.FromResult(true);
+    public async override Task ClearMigrations(CancellationToken cancellationToken)
+    {
+        var exists = await RunScript<decimal>(((OracleScripts)this.SqlScripts).ClearSqlCheck, cancellationToken);
+        if(exists > 0)
+            await base.ClearMigrations(cancellationToken);
+    }
+    
+    protected override DatabaseMigration ReadMigration(DbDataReader reader)
+    {
+        var oracleReader = (OracleDataReader)reader;
+        
+        return new DatabaseMigration(
+            reader.GetString(0),
+            oracleReader.GetDateTimeOffset(1),
+            reader.GetString(2),
+            reader.GetString(3)
+        );
+    }
 }

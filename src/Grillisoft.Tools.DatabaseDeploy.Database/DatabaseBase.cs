@@ -31,7 +31,7 @@ public abstract class DatabaseBase : IDatabase
     
     protected abstract DbConnection CreateConnectionWithoutDatabase(ILogger logger);
 
-    private ISqlScripts SqlScripts => _sqlScripts ??= CreateSqlScripts();
+    protected ISqlScripts SqlScripts => _sqlScripts ??= CreateSqlScripts();
     
     public string Name => _name;
 
@@ -42,6 +42,8 @@ public abstract class DatabaseBase : IDatabase
     public int ScriptTimeout { get; set; } = 60 * 60;
     
     protected DbConnection Connection => _connection;
+
+    protected ILogger Logger => _logger;
     
     public async virtual Task<bool> Exists(CancellationToken cancellationToken)
     {
@@ -92,16 +94,20 @@ public abstract class DatabaseBase : IDatabase
         
         while (await reader.ReadAsync(cancellationToken))
         {
-            ret.Add(new DatabaseMigration
-            (
-                reader.GetString(0),
-                reader.GetDateTime(1),
-                reader.GetString(2),
-                reader.GetString(3))
-            );
+            ret.Add(ReadMigration(reader));
         }
 
         return ret;
+    }
+
+    protected virtual DatabaseMigration ReadMigration(DbDataReader reader)
+    {
+        return new DatabaseMigration(
+            reader.GetString(0),
+            reader.GetDateTime(1),
+            reader.GetString(2),
+            reader.GetString(3)
+        );
     }
 
     public async virtual Task AddMigration(DatabaseMigration migration, CancellationToken cancellationToken)
@@ -109,7 +115,7 @@ public abstract class DatabaseBase : IDatabase
         await OpenConnection(cancellationToken);
         await using var command = CreateCommand(this.SqlScripts.AddSql);
         command.AddParameter("name", migration.Name)
-               .AddParameter("deployed_utc", migration.DateTime.UtcDateTime)
+               .AddParameter("deployed_utc", migration.DateTime)
                .AddParameter("user_name", migration.User)
                .AddParameter("hash", migration.Hash);
         

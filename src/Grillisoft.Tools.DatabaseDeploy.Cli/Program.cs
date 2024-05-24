@@ -43,6 +43,7 @@ static IHost CreateHostBuilder(OptionsBase options, string[] args)
     builder.Services.AddSerilog(config =>
     {
         config.Enrich.FromLogContext()
+            .ReadFrom.Configuration(builder.Configuration)
             .WriteTo.Console();
     });
     

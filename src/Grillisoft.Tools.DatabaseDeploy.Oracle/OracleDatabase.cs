@@ -24,11 +24,11 @@ public class OracleDatabase : DatabaseBase
     ) : base(name, CreateConnection(connectionString, logger), parser, logger)
     {
         _migrationTableName = migrationTableName;
-        _schema = schema;
+        _schema = string.IsNullOrEmpty(schema) ? name : schema;
         this.ScriptTimeout = scriptTimeout;
     }
-    
-    public override string DatabaseName => !string.IsNullOrWhiteSpace(_schema) ? _schema : base.DatabaseName;
+
+    public override string DatabaseName => _schema;
     
     protected override ISqlScripts CreateSqlScripts()
     {
@@ -99,6 +99,9 @@ public class OracleDatabase : DatabaseBase
 
     protected async override Task OpenConnection(CancellationToken cancellationToken)
     {
+        if (this.Connection.State == ConnectionState.Open)
+            return;
+        
         await base.OpenConnection(cancellationToken);
         await using var command = CreateCommand(((OracleScripts)this.SqlScripts).SetSchemaSql);
         await command.ExecuteNonQueryAsync(cancellationToken);

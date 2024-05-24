@@ -28,7 +28,7 @@ public class OracleDatabaseFactory : IDatabaseFactory
     { 
         var database = new OracleDatabase(
             name,
-            config.GetValue("schema", string.Empty)!,
+            config.GetValue("schema", name)!,
             config.GetValue("connectionString", string.Empty)!,
             config.GetValue("migrationTable", _globalSettings.Value.MigrationsTable)!,
             config.GetValue("scriptTimeout", _globalSettings.Value.ScriptTimeout),

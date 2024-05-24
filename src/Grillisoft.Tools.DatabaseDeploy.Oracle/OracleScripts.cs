@@ -50,7 +50,7 @@ public class OracleScripts(string schema, string migrationTableName) : ISqlScrip
 
     public string MigrationTableExistsSql { get; } = $@"
         SELECT CAST(COUNT(*) AS INT) AS count 
-        FROM DBA_OBJECTS
+        FROM ALL_OBJECTS
         WHERE OBJECT_TYPE = 'TABLE'
             AND OWNER = '{schema.ToUpperInvariant()}'
             AND OBJECT_NAME = '{migrationTableName.ToUpperInvariant()}'

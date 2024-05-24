@@ -138,8 +138,8 @@ public abstract class DatabaseBase : IDatabase
         var command = (connection ?? _connection).CreateCommand();
         command.CommandText = script;
         command.CommandTimeout = this.ScriptTimeout;
-        //if (_logger.IsEnabled(LogLevel.Debug))
-            _logger.LogInformation("Database {0} running script: {1}", this.Name, script);
+        if (_logger.IsEnabled(LogLevel.Debug))
+            _logger.LogDebug("Database {0} running script: {1}", this.Name, script);
 
         return command;
     }

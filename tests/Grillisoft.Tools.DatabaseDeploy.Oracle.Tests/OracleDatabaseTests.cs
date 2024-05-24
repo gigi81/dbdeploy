@@ -21,6 +21,7 @@ public class OracleDatabaseTests : DatabaseTest<OracleDatabase, OracleContainer>
         
         return new OracleDatabase(
             "oracle", //NOTE: this is the same as the connection string
+            "oracle",
             this.ConnectionString,
             "Migrations",
             60,

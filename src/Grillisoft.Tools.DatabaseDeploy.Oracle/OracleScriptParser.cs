@@ -16,20 +16,20 @@ public class OracleScriptParser : IScriptParser
         foreach (var line in lines)
         {
             var trim = line?.Trim();
-            
-            if (trim is not null)
-            {
-                if (!(buffer.Length <= 0 && CanIgnore(trim)))
-                    buffer.AppendLine(line);
 
-                if (trim.EndsWith(sqlTerminator))
-                {
-                    var command = CleanSql(buffer.ToString());
-                    if (!string.IsNullOrWhiteSpace(command))
-                        yield return command;
+            if (trim is null)
+                continue;
+
+            if (!(buffer.Length <= 0 && CanIgnore(trim)))
+                buffer.AppendLine(line);
+
+            if (trim.EndsWith(sqlTerminator))
+            {
+                var command = CleanSql(buffer.ToString());
+                if (!string.IsNullOrWhiteSpace(command))
+                    yield return command;
                     
-                    buffer.Clear();
-                }
+                buffer.Clear();
             }
         }
 

@@ -11,10 +11,12 @@
   },
   "databases":{
     "customer_orders": {
-      "connectionString": "Data Source=//127.0.0.1:1521/FREEPDB1;User Id=co;Password=co;"
+      "connectionString": "Data Source=//127.0.0.1:1521/FREEPDB1;User Id=system;Password=oracle2019!;",
+      "schema": "CO"
     },
     "human_resources": {
-      "connectionString": "Data Source=//127.0.0.1:1521/FREEPDB1;User Id=hr;Password=hr;"
+      "connectionString": "Data Source=//127.0.0.1:1521/FREEPDB1;User Id=system;Password=oracle2019!;",
+      "schema": "HR"
     }
   }
 }

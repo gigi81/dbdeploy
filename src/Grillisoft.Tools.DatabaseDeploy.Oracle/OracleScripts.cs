@@ -2,31 +2,31 @@
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
 
-public class OracleScripts(string databaseName, string migrationTableName) : ISqlScripts
+public class OracleScripts(string schema, string migrationTableName) : ISqlScripts
 {
-    public string SetSchemaSql { get; } = $"SET SCHEMA {databaseName.ToUpperInvariant()}";
+    public string SetSchemaSql { get; } = $"alter session set current_schema = {schema.ToUpperInvariant()}";
     
     public string ExistsSql { get; } = $@"
-        SELECT CAST(COUNT(*) as INT) AS count FROM all_users WHERE username = '{databaseName.ToUpperInvariant()}'
+        SELECT CAST(COUNT(*) as INT) AS count FROM all_users WHERE username = '{schema.ToUpperInvariant()}'
         ";
 
     public string CreateSql { get; } = $@"
-            CREATE USER {databaseName} IDENTIFIED BY ""{databaseName}""
-                           DEFAULT TABLESPACE users
-                           QUOTA UNLIMITED ON users
+        CREATE USER {schema} IDENTIFIED BY ""{schema}""
+                       DEFAULT TABLESPACE users
+                       QUOTA UNLIMITED ON users
         ";
 
     public string GrantSql { get; } = $@"
-            GRANT CREATE MATERIALIZED VIEW,
-                  CREATE PROCEDURE,
-                  CREATE SEQUENCE,
-                  CREATE SESSION,
-                  CREATE SYNONYM,
-                  CREATE TABLE,
-                  CREATE TRIGGER,
-                  CREATE TYPE,
-                  CREATE VIEW
-              TO {databaseName};
+        GRANT CREATE MATERIALIZED VIEW,
+              CREATE PROCEDURE,
+              CREATE SEQUENCE,
+              CREATE SESSION,
+              CREATE SYNONYM,
+              CREATE TABLE,
+              CREATE TRIGGER,
+              CREATE TYPE,
+              CREATE VIEW
+          TO {schema}
         ";
     
     public string GetSql { get; } =
@@ -49,12 +49,14 @@ public class OracleScripts(string databaseName, string migrationTableName) : ISq
         ";
 
     public string MigrationTableExistsSql { get; } = $@"
-            SELECT CAST(COUNT(*) AS INT) AS count
-            FROM user_tables
-            WHERE table_name = '{migrationTableName}'
+        SELECT CAST(COUNT(*) AS INT) AS count 
+        FROM DBA_OBJECTS
+        WHERE OBJECT_TYPE = 'TABLE'
+            AND OWNER = '{schema.ToUpperInvariant()}'
+            AND OBJECT_NAME = '{migrationTableName.ToUpperInvariant()}'
         ";
     
     public string ClearSql { get; } = $@"
-            DROP TABLE {migrationTableName}
+        DROP TABLE {migrationTableName}
         ";
 }

@@ -82,6 +82,7 @@ END secure_employees;
 /
 
 ALTER TRIGGER secure_employees DISABLE;
+/
 
 REM **************************************************************************
 REM procedure to add a row to the JOB_HISTORY table and row trigger 
@@ -111,6 +112,3 @@ BEGIN
                   :old.job_id, :old.department_id);
 END;
 /
-
-COMMIT;
-

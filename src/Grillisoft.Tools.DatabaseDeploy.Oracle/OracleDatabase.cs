@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System.Data;
+using System.Data.Common;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Database;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer;
@@ -10,9 +11,11 @@ namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
 public class OracleDatabase : DatabaseBase
 {
     private readonly string _migrationTableName;
+    private readonly string _schema;
 
     public OracleDatabase(
         string name,
+        string schema,
         string connectionString,
         string migrationTableName,
         int scriptTimeout,
@@ -21,11 +24,15 @@ public class OracleDatabase : DatabaseBase
     ) : base(name, CreateConnection(connectionString, logger), parser, logger)
     {
         _migrationTableName = migrationTableName;
+        _schema = schema;
         this.ScriptTimeout = scriptTimeout;
     }
-
+    
+    public override string DatabaseName => !string.IsNullOrWhiteSpace(_schema) ? _schema : base.DatabaseName;
+    
     protected override ISqlScripts CreateSqlScripts()
     {
+        this.Logger.LogWarning("Database is {Database}", this.DatabaseName);
         return new OracleScripts(this.DatabaseName, _migrationTableName);
     }
 
@@ -60,20 +67,24 @@ public class OracleDatabase : DatabaseBase
         await using var command2 = this.CreateCommand(((OracleScripts)this.SqlScripts).GrantSql, connection);
         await command2.ExecuteNonQueryAsync(cancellationToken);
     }
-
-    protected async override Task OpenConnection(CancellationToken cancellationToken)
-    {
-        await base.OpenConnection(cancellationToken);
-        await RunScript(((OracleScripts)this.SqlScripts).SetSchemaSql, cancellationToken);
-    }
-
+    
     public async override Task ClearMigrations(CancellationToken cancellationToken)
     {
         var exists = await RunScript<decimal>(((OracleScripts)this.SqlScripts).MigrationTableExistsSql, cancellationToken);
         if(exists > 0)
             await base.ClearMigrations(cancellationToken);
     }
-    
+
+    public async override Task InitializeMigrations(CancellationToken cancellationToken)
+    {
+        var count = await this.RunScript<decimal>(((OracleScripts)this.SqlScripts).MigrationTableExistsSql, cancellationToken);
+        this.Logger.LogWarning("Count {Count}", count);
+        if (count > 0)
+            return;
+        
+        await base.InitializeMigrations(cancellationToken);
+    }
+
     protected override DatabaseMigration ReadMigration(DbDataReader reader)
     {
         var oracleReader = (OracleDataReader)reader;
@@ -84,5 +95,12 @@ public class OracleDatabase : DatabaseBase
             reader.GetString(2),
             reader.GetString(3)
         );
+    }
+
+    protected async override Task OpenConnection(CancellationToken cancellationToken)
+    {
+        await base.OpenConnection(cancellationToken);
+        await using var command = CreateCommand(((OracleScripts)this.SqlScripts).SetSchemaSql);
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 }

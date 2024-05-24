@@ -20,12 +20,14 @@
       <PackageReference Include="Serilog" />
       <PackageReference Include="Serilog.Extensions.Hosting" />
       <PackageReference Include="Serilog.Extensions.Logging" />
+      <PackageReference Include="Serilog.Settings.Configuration" />
       <PackageReference Include="Serilog.Sinks.Console" />
       <PackageReference Include="TestableIO.System.IO.Abstractions.Wrappers" />
 	</ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.MySql\Grillisoft.Tools.DatabaseDeploy.MySql.csproj" />
+      <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.Oracle\Grillisoft.Tools.DatabaseDeploy.Oracle.csproj" />
       <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.SqlServer\Grillisoft.Tools.DatabaseDeploy.SqlServer.csproj" />
       <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy\Grillisoft.Tools.DatabaseDeploy.csproj" />
     </ItemGroup>

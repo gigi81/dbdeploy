@@ -29,5 +29,8 @@ internal class SqlServerScriptParser : IScriptParser
             
             line = await stream.ReadLineAsync(cancellationToken);
         }
+        
+        if (buffer.Length > 0)
+            yield return buffer.ToString();
     }
 }

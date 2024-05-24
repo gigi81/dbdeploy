@@ -28,7 +28,7 @@ public class SqlServerScripts(string databaseName, string migrationTableName) : 
 
     public string AddSql { get; } =
         $@"INSERT INTO {migrationTableName}([name], [deployed_utc], [user], [hash])
-           VALUES(@name, @deployed_utc, @user, @hash)";
+           VALUES(@name, @deployed_utc, @user_name, @hash)";
 
     public string RemoveSql { get; } =
         $"DELETE FROM {migrationTableName} WHERE [name] = @name";

@@ -5,6 +5,7 @@ using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Cli;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
+using Grillisoft.Tools.DatabaseDeploy.Oracle;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,8 +20,8 @@ try
         Environment.ExitCode = ExitCode.InvalidArguments;
         return;
     }
-    
-    await CreateHostBuilder((OptionsBase)result.Value, args).RunConsoleAsync();
+
+    await CreateHostBuilder((OptionsBase)result.Value, args).RunAsync();
 }
 catch(Exception ex)
 {
@@ -30,40 +31,35 @@ catch(Exception ex)
     Console.WriteLine(ex.Message);
 }
 
-static IHostBuilder CreateHostBuilder(OptionsBase options, string[] args)
+static IHost CreateHostBuilder(OptionsBase options, string[] args)
 {
-    return Host.CreateDefaultBuilder(args)
-        //ctrl+C support
-        .UseConsoleLifetime(options =>
-        {
-            options.SuppressStatusMessages = true;
-        })
-        .UseSerilog((hostingContext, services, loggerConfiguration) =>
-        {
-            loggerConfiguration
-                .Enrich.FromLogContext()
-                .WriteTo.Console();
-        })
-        .ConfigureAppConfiguration((builder, config) =>
-        {
-            var environmentName = builder.HostingEnvironment.EnvironmentName;
-            var configRoot = Path.GetFullPath(options.Path);
-            config.AddJsonFile(Path.Combine(configRoot, "dbsettings.json"), optional: false);
-            config.AddJsonFile(Path.Combine(configRoot, $"dbsettings.{environmentName}.json"), optional: true);
-        })
-        .ConfigureServices((builder, services) =>
-        {
-            services.Configure<GlobalSettings>(
-                builder.Configuration.GetSection(GlobalSettings.SectionName));
+    var builder = Host.CreateApplicationBuilder(args);
+    var environmentName = builder.Environment.EnvironmentName;
+    var configRoot = Path.GetFullPath(options.Path);
+
+    builder.Configuration.AddJsonFile(Path.Combine(configRoot, "dbsettings.json"), optional: false);
+    builder.Configuration.AddJsonFile(Path.Combine(configRoot, $"dbsettings.{environmentName}.json"), optional: true);
+
+    builder.Services.AddSerilog(config =>
+    {
+        config.Enrich.FromLogContext()
+            .ReadFrom.Configuration(builder.Configuration)
+            .WriteTo.Console();
+    });
+    
+    builder.Services.Configure<GlobalSettings>(
+        builder.Configuration.GetSection(GlobalSettings.SectionName));
             
-            services.AddSingleton<IFileSystem, FileSystem>()
-                .AddSingleton<IDatabasesCollection, DatabasesCollection>()
-                .AddSingleton<IProgress<int>, ConsoleProgress>()
-                .AddSqlServer()
-                .AddMySql()
-                .AddExecutable(options)
-                .AddHostedService<ExecutableBackgroundService>();
-        });
+    builder.Services.AddSingleton<IFileSystem, FileSystem>()
+        .AddSingleton<IDatabasesCollection, DatabasesCollection>()
+        .AddSingleton<IProgress<int>, ConsoleProgress>()
+        .AddSqlServer()
+        .AddMySql()
+        .AddOracle()
+        .AddExecutable(options)
+        .AddHostedService<ExecutableBackgroundService>();
+    
+    return builder.Build();
 }
 
 internal static class ExitCode

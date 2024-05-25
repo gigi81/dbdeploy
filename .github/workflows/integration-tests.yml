@@ -32,7 +32,7 @@ jobs:
 
     strategy:
       matrix:
-        example: ['example02', 'oracle']
+        example: ['mssql-02', 'oracle-01']
 
     steps:
       - name: Checkout sources

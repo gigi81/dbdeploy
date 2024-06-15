@@ -54,6 +54,14 @@ public abstract class BaseService : IExecutable
 
         return manager;
     }
+
+    protected async Task RunScripts(IEnumerable<IFileInfo> scriptFiles, IDatabase database, CancellationToken cancellationToken)
+    {
+        foreach (var scriptFile in scriptFiles)
+        {
+            await RunScript(scriptFile, database, cancellationToken);
+        }
+    }
     
     protected async Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken cancellationToken)
     {
@@ -67,7 +75,7 @@ public abstract class BaseService : IExecutable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Database {database.Name} Failed to run script {{0}}", script);
+                _logger.LogError(ex, $"Database {database.Name} Failed to run script {{0}}", script.Truncate(20_000));
                 throw;
             }
         }

@@ -19,6 +19,14 @@ internal static class Extensions
         return string.IsNullOrEmpty(value) ? defaultValue : value;
     }
 
+    public static string Truncate(this string value, int maxLength)
+    {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+        
+        return value.Substring(0, Math.Min(maxLength, value.Length));
+    }
+
     public static async IAsyncEnumerable<T> WhereAsync<T>(this IEnumerable<T> source, Func<T, CancellationToken, Task<bool>> filter, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         foreach (var item in source)

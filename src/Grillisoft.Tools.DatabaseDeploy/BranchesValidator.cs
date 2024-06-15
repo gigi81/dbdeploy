@@ -12,6 +12,7 @@ public static class BranchesValidator
         var steps = branches.SelectMany(b => b.Steps).Distinct().ToArray();
 
         var deploy = steps.Select(s => s.DeployScript.FullName);
+        var data = steps.SelectMany(s => s.DataScripts).Select(s => s.FullName);
         var rollback = steps.Where(s => !s.IsInit).Select(s => s.RollbackScript.FullName).ToArray();
         var test = steps.Select(s => s.TestScript.FullName);
         
@@ -20,6 +21,7 @@ public static class BranchesValidator
             .ToHashSet(StringComparer.InvariantCultureIgnoreCase);
             
         var extraFiles = (settings.RollbackRequired ? test : test.Concat(rollback))
+            .Concat(data)
             .Distinct()
             .ToHashSet(StringComparer.InvariantCultureIgnoreCase);
         

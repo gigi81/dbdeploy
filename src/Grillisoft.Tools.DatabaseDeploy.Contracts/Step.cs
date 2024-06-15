@@ -7,6 +7,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.Contracts;
 public record Step(string Database, string Name, string Branch, bool IsInit, IDirectoryInfo Directory)
 {
     private string? _hash;
+    private IList<IFileInfo>? _dataFiles;
 
     public IFileInfo DeployScript =>
         this.Directory.File(IsInit ? $"{Name}.sql" : $"{Name}.Deploy.sql");
@@ -15,6 +16,15 @@ public record Step(string Database, string Name, string Branch, bool IsInit, IDi
         this.Directory.File($"{Name}.Rollback.sql");
     
     public IFileInfo TestScript => this.Directory.File($"{Name}.Test.sql");
+
+    public IList<IFileInfo> DataScripts => _dataFiles ??= GetDataFilesList();
+
+    private IList<IFileInfo> GetDataFilesList()
+    {
+        return this.Directory.GetFiles($"{Name}.Data*.sql", SearchOption.TopDirectoryOnly)
+            .OrderBy(f => f.Name)
+            .ToList();
+    }
 
     public async Task<string> GetStepHash() => _hash ??= await ComputeHash(this.DeployScript);
     

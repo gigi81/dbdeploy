@@ -75,6 +75,7 @@ public class DeployService : BaseService
         var database = await GetDatabase(step.Database, stoppingToken);
         var hash = await step.GetStepHash();
         await RunScript(step.DeployScript, database, stoppingToken);
+        await RunScripts(step.DataScripts, database, stoppingToken);
         if(_options.Test)
             await RunScript(step.TestScript, database, stoppingToken);
 

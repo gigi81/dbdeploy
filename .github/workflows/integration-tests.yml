@@ -29,10 +29,16 @@ jobs:
           ORACLE_PASSWORD: 'oracle2019!'
         ports:
           - 1521:1521
+      mariadb:
+        image: mariadb:latest
+        env:
+          MARIADB_ROOT_PASSWORD: mariadb2019!
+        ports:
+          - 3306:3306
 
     strategy:
       matrix:
-        example: ['mssql-02', 'oracle-01']
+        example: ['mssql-02', 'oracle-01', 'mysql-01'']
 
     steps:
       - name: Checkout sources

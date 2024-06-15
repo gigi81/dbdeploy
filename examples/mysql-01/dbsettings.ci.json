@@ -4,10 +4,10 @@
   },
   "databases":{
     "employees": {
-      "connectionString": "Server=mysql;Port=3306;Database=employees;Uid=root;Pwd=mariadb2019!;SslMode=None;"
+      "connectionString": "Server=mariadb;Port=3306;Database=employees;Uid=root;Pwd=mariadb2019!;SslMode=None;"
     },
     "sakila": {
-      "connectionString": "Server=mysql;Port=3306;Database=sakila;Uid=root;Pwd=mariadb2019!;SslMode=None;Allow User Variables=true"
+      "connectionString": "Server=mariadb;Port=3306;Database=sakila;Uid=root;Pwd=mariadb2019!;SslMode=None;Allow User Variables=true"
     }
   }
 }

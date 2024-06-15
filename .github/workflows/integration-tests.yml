@@ -38,7 +38,7 @@ jobs:
 
     strategy:
       matrix:
-        example: ['mssql-02', 'oracle-01', 'mysql-01'']
+        example: ['mssql-02', 'oracle-01', 'mysql-01']
 
     steps:
       - name: Checkout sources

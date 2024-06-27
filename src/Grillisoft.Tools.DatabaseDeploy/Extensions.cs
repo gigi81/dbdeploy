@@ -19,6 +19,25 @@ internal static class Extensions
         return string.IsNullOrEmpty(value) ? defaultValue : value;
     }
 
+    public static string Truncate(this string value, int maxLength)
+    {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+        
+        return value.Substring(0, Math.Min(maxLength, value.Length));
+    }
+    
+    internal static string BranchName(this string filename)
+    {
+        var name = filename;
+        var index = name.LastIndexOf('.');
+        if (index >= 0)
+            name = name.Substring(0, index);
+
+        name = name.Replace('_', '/');
+        return name;
+    }
+
     public static async IAsyncEnumerable<T> WhereAsync<T>(this IEnumerable<T> source, Func<T, CancellationToken, Task<bool>> filter, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         foreach (var item in source)

@@ -23,6 +23,22 @@ jobs:
           SA_PASSWORD: 'SqlServer2019!'
         ports:
           - 1433:1433
+      oracle:
+        image: gvenzl/oracle-free:latest
+        env:
+          ORACLE_PASSWORD: 'oracle2019!'
+        ports:
+          - 1521:1521
+      mariadb:
+        image: mariadb:latest
+        env:
+          MARIADB_ROOT_PASSWORD: mariadb2019!
+        ports:
+          - 3306:3306
+
+    strategy:
+      matrix:
+        example: ['mssql-02', 'oracle-01', 'mysql-01']
 
     steps:
       - name: Checkout sources
@@ -34,14 +50,14 @@ jobs:
         run: dotnet restore
 
       - name: Create databases
-        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/example02 -c
+        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/${{ matrix.example }} -c
 
       - name: Deploy release
-        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/example02 --branch release/1.1
+        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/${{ matrix.example }} --branch release/1.1
 
       - name: Rollback release
-        run: dotnet run --configuration Release --project $PROJECT -- rollback --path examples/example02 --branch release/1.1
+        run: dotnet run --configuration Release --project $PROJECT -- rollback --path examples/${{ matrix.example }} --branch release/1.1
 
       # make sure scripts are re-runnable
       - name: Re-deploy release
-        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/example02 --branch release/1.1
+        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/${{ matrix.example }} --branch release/1.1

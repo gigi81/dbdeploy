@@ -8,7 +8,7 @@ public class BranchesManager
 {
     private const string IncludeKeyword = "@include ";
     private const string MainBranch = "main";
-    private const string MainBranchFilename = "main.csv";
+    private const string MainBranchFilename = MainBranch + ".csv";
     
     private readonly IDirectoryInfo _directory;
     private readonly GlobalSettings _globalSettings;
@@ -70,7 +70,7 @@ public class BranchesManager
         if (!files.Add(file.Name))
             throw new Exception($"Circular include detected for file '{file.Name}'");
 
-        var branchName = GetBranchName(file);
+        var branchName = file.Name.BranchName();
         var directory = file.Directory ?? file.FileSystem.CurrentDirectory();
         var steps = new List<Step>();
         var count = 1;
@@ -101,29 +101,21 @@ public class BranchesManager
 
         return new Branch(branchName, steps);
     }
-
-    private static string GetBranchName(IFileInfo file)
-    {
-        var name = file.Name;
-        var index = name.LastIndexOf('.');
-        if (index >= 0)
-            name = name.Substring(0, index);
-
-        name = name.Replace('_', '/');
-        return name;
-    }
-
+    
     private Step ReadStep(string line, string branchName, int count, IDirectoryInfo directory)
     {
         var split = line.Split(',');
         if (split.Length != 2)
             throw new ArgumentException($"Invalid format '{line}' on line {count}");
 
+        var database = split[0].Trim();
+        var name = split[1].Trim();
+        
         return new Step(
-            split[0].Trim(),
-            split[1].Trim(),
+            database,
+            name,
             branchName,
-            split[1].Trim().EqualsIgnoreCase(_globalSettings.InitStepName),
-            directory.SubDirectory(split[0].Trim()));
+            name.EqualsIgnoreCase(_globalSettings.InitStepName),
+            directory.SubDirectory(database));
     }
 }

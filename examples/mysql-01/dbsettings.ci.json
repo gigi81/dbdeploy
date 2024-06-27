@@ -1,0 +1,13 @@
+﻿{
+  "global": {
+    "defaultProvider": "mysql"
+  },
+  "databases":{
+    "employees": {
+      "connectionString": "Server=mariadb;Port=3306;Database=employees;Uid=root;Pwd=mariadb2019!;SslMode=None;"
+    },
+    "sakila": {
+      "connectionString": "Server=mariadb;Port=3306;Database=sakila;Uid=root;Pwd=mariadb2019!;SslMode=None;Allow User Variables=true"
+    }
+  }
+}

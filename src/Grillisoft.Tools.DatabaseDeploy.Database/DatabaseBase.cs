@@ -104,7 +104,8 @@ public abstract class DatabaseBase : IDatabase
     {
         return new DatabaseMigration(
             reader.GetString(0),
-            reader.GetDateTime(1),
+            //note: some databases (ex mysql) return datetime with kind unspecified
+            DateTime.SpecifyKind(reader.GetDateTime(1), DateTimeKind.Utc),
             reader.GetString(2),
             reader.GetString(3)
         );

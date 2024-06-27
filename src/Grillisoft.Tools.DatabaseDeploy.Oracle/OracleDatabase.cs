@@ -1,6 +1,5 @@
 ﻿using System.Data;
 using System.Data.Common;
-using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Database;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer;
 using Microsoft.Extensions.Logging;
@@ -84,19 +83,7 @@ public class OracleDatabase : DatabaseBase
         
         await base.InitializeMigrations(cancellationToken);
     }
-
-    protected override DatabaseMigration ReadMigration(DbDataReader reader)
-    {
-        var oracleReader = (OracleDataReader)reader;
-        
-        return new DatabaseMigration(
-            reader.GetString(0),
-            oracleReader.GetDateTime(1),
-            reader.GetString(2),
-            reader.GetString(3)
-        );
-    }
-
+    
     protected async override Task OpenConnection(CancellationToken cancellationToken)
     {
         if (this.Connection.State == ConnectionState.Open)

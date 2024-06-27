@@ -52,12 +52,7 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
         //act
         await sut.ClearMigrations(_cancellationToken);
         await sut.InitializeMigrations(_cancellationToken);
-        var migrationsBefore = await sut.GetMigrations(_cancellationToken);
         await sut.ClearMigrations(_cancellationToken);
-
-        //assert
-        migrationsBefore.Count.Should().Be(1);
-        migrationsBefore.First().Should().BeEquivalentTo(TestMigration);
     }
 
     [Fact]

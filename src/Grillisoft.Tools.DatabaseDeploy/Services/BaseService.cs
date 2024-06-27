@@ -111,6 +111,7 @@ public abstract class BaseService : IExecutable
     {
         var database = await _databases.GetDatabase(name, cancellationToken);
         var migrations = await database.GetMigrations(cancellationToken);
+        _logger.LogInformation($"Database {database.Name} Found {migrations.Count} existing migrations in database");
         return (name, migrations.ToArray());
     }
 }

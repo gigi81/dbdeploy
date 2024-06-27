@@ -20,6 +20,9 @@ public record DatabaseMigration
         
         if (string.IsNullOrEmpty(hash))
             throw new ArgumentException("Null or empty hash", nameof(hash));
+
+        if (hash.Length != Step.HashLength)
+            throw new ArgumentException($"Invalid hash length, expected {Step.HashLength} but was {hash.Length}", nameof(hash));
         
         this.Name = name;
         this.DateTime = ((DateTimeOffset)dateTime).TrimToSeconds();

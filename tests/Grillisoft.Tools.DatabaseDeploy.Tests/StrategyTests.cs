@@ -69,6 +69,8 @@ public class StrategyTests
         deploySteps.Length.Should().Be(1);
         deploySteps.Should().BeEquivalentTo(releaseSteps);
     }
+
+    private static readonly string TestHash = new string('0', Step.HashLength);
     
     private static Dictionary<string, DatabaseMigration[]> GetMigrations(int count)
     {
@@ -78,9 +80,9 @@ public class StrategyTests
                 Database01,
                 new []
                 {
-                    new DatabaseMigration(GlobalSettings.InitStepName, "", ""),
-                    new DatabaseMigration("TKT-001.SampleDescription", "", ""),
-                    new DatabaseMigration("TKT-002.SampleDescription", "", "")
+                    new DatabaseMigration(GlobalSettings.InitStepName, "user", TestHash),
+                    new DatabaseMigration("TKT-001.SampleDescription", "user", TestHash),
+                    new DatabaseMigration("TKT-002.SampleDescription", "user", TestHash)
                 }.Take(count).ToArray()
             }
         };

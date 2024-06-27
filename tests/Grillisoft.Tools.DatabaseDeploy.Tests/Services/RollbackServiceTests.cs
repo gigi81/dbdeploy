@@ -12,6 +12,8 @@ namespace Grillisoft.Tools.DatabaseDeploy.Tests.Services;
 
 public class RollbackServiceTests
 {
+    private static readonly string TestHash = new string('0', Step.HashLength);
+    
     private readonly ITestOutputHelper _output;
     private readonly GlobalSettings _globalSettings = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
@@ -28,13 +30,13 @@ public class RollbackServiceTests
     {
         //arrange
         var database01 = new DatabaseMock("Database01");
-        var migration0101 = new DatabaseMigration(_globalSettings.InitStepName,"", "");
-        var migration0102 = new DatabaseMigration("TKT-001.SampleDescription", "", "");
+        var migration0101 = new DatabaseMigration(_globalSettings.InitStepName,"user", TestHash);
+        var migration0102 = new DatabaseMigration("TKT-001.SampleDescription", "user", TestHash);
         await database01.AddMigration(migration0101, _cancellationToken);
         await database01.AddMigration(migration0102, _cancellationToken);
         
         var database02 = new DatabaseMock("Database02");
-        var migration0201 = new DatabaseMigration(_globalSettings.InitStepName, "", "");
+        var migration0201 = new DatabaseMigration(_globalSettings.InitStepName, "user", TestHash);
         await database02.AddMigration(migration0201, _cancellationToken);
         var rollbackOptions = new RollbackOptions
         {

@@ -6,6 +6,8 @@ namespace Grillisoft.Tools.DatabaseDeploy.Contracts;
 
 public record Step(string Database, string Name, string Branch, bool IsInit, IDirectoryInfo Directory)
 {
+    public const int HashLength = 32;
+    
     private string? _hash;
     private IList<IFileInfo>? _dataFiles;
 
@@ -33,7 +35,7 @@ public record Step(string Database, string Name, string Branch, bool IsInit, IDi
         using var md5 = MD5.Create();
         await using var stream = file.OpenRead();
         var data = await md5.ComputeHashAsync(stream);
-        var builder = new StringBuilder(32);
+        var builder = new StringBuilder(HashLength);
 
         foreach (var b in data)
         {

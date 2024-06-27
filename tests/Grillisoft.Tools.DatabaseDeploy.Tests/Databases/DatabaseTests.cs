@@ -10,7 +10,7 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
     where TDatabaseContainer: DockerContainer, IDatabaseContainer
 {
     private static readonly DatabaseMigration TestMigration =
-        new("test", DateTimeOffset.UtcNow.TrimToSeconds(), "user", "12345678123456781234567812345678");
+        new("test", "user", "12345678123456781234567812345678");
     
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly CancellationToken _cancellationToken;
@@ -52,7 +52,12 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
         //act
         await sut.ClearMigrations(_cancellationToken);
         await sut.InitializeMigrations(_cancellationToken);
+        var migrationsBefore = await sut.GetMigrations(_cancellationToken);
         await sut.ClearMigrations(_cancellationToken);
+
+        //assert
+        migrationsBefore.Count.Should().Be(1);
+        migrationsBefore.First().Should().BeEquivalentTo(TestMigration);
     }
 
     [Fact]
@@ -70,8 +75,7 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
 
         //assert
         migrations.Count.Should().Be(1);
-        var firstMigration = migrations.First();
-        firstMigration.Should().BeEquivalentTo(TestMigration);
+        migrations.First().Should().BeEquivalentTo(TestMigration);
     }
 
     [Fact]
@@ -85,11 +89,14 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
         await sut.ClearMigrations(_cancellationToken);
         await sut.InitializeMigrations(_cancellationToken);
         await sut.AddMigration(TestMigration, _cancellationToken);
+        var migrationsBefore = await sut.GetMigrations(_cancellationToken);
         await sut.RemoveMigration(TestMigration, _cancellationToken);
-        var migrations = await sut.GetMigrations(_cancellationToken);
+        var migrationsAfter = await sut.GetMigrations(_cancellationToken);
 
         //assert
-        migrations.Count.Should().Be(0);
+        migrationsBefore.Count.Should().Be(1);
+        migrationsBefore.First().Should().BeEquivalentTo(TestMigration);
+        migrationsAfter.Count.Should().Be(0);
     }
     
     [Fact]

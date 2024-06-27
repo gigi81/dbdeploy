@@ -15,12 +15,10 @@ public class StrategyTests
     private static readonly GlobalSettings GlobalSettings = new();
     private readonly IDirectoryInfo _directory;
     private readonly ILogger<Strategy> _logger;
-    private readonly Step[] _steps;
 
     public StrategyTests(ITestOutputHelper output)
     {
         _directory = CreateDatabaseDirectory(Database01);
-        _steps = GetSteps(_directory);
         _logger = output.BuildLoggerFor<Strategy>();
     }
 
@@ -28,7 +26,8 @@ public class StrategyTests
     public async Task GetDeploySteps_WhenAllStepsAreDeployed_ShouldReturnEmptyCollection()
     {
         //arrange
-        var sut = new Strategy(_steps, GetMigrations(_steps.Length), _logger);
+        var steps = GetSteps(_directory);
+        var sut = new Strategy(steps, GetMigrations(steps.Length), _logger);
             
         //act
         var deploySteps = await sut.GetDeploySteps(MainBranch).ToArrayAsync();
@@ -41,15 +40,36 @@ public class StrategyTests
     public async Task GetDeploySteps_WhenOnlyInitStepIsDeployed_ShouldReturnTheStepsAfter()
     {
         //arrange
-        var sut = new Strategy(_steps, GetMigrations(1), _logger);
+        var steps = GetSteps(_directory);
+        var sut = new Strategy(steps, GetMigrations(1), _logger);
             
         //act
         var deploySteps = await sut.GetDeploySteps(MainBranch).ToArrayAsync();
         
         //assert
-        deploySteps.Length.Should().Be(_steps.Length - 1);
+        deploySteps.Length.Should().Be(steps.Length - 1);
     }
 
+    [Fact]
+    public async Task GetDeploySteps_WhenDeployingRelease_ShouldDeployOneStep()
+    {
+        //arrange
+        const string releaseBranch = "release/1.1";
+        var releaseSteps = new[]
+        {
+            new Step(Database01, "TKT-001.SampleDescription", releaseBranch, false, _directory)
+        };
+        var steps = GetSteps(_directory).Concat(releaseSteps).ToArray();
+        var sut = new Strategy(steps, GetMigrations(2), _logger);
+            
+        //act
+        var deploySteps = await sut.GetDeploySteps(releaseBranch).ToArrayAsync();
+        
+        //assert
+        deploySteps.Length.Should().Be(1);
+        deploySteps.Should().BeEquivalentTo(releaseSteps);
+    }
+    
     private static Dictionary<string, DatabaseMigration[]> GetMigrations(int count)
     {
         return new Dictionary<string, DatabaseMigration[]>
@@ -58,8 +78,9 @@ public class StrategyTests
                 Database01,
                 new []
                 {
-                    new DatabaseMigration(GlobalSettings.InitStepName, DateTimeOffset.Now, "", ""),
-                    new DatabaseMigration("TKT-001.SampleDescription", DateTimeOffset.Now, "", "")
+                    new DatabaseMigration(GlobalSettings.InitStepName, "", ""),
+                    new DatabaseMigration("TKT-001.SampleDescription", "", ""),
+                    new DatabaseMigration("TKT-002.SampleDescription", "", "")
                 }.Take(count).ToArray()
             }
         };
@@ -67,11 +88,11 @@ public class StrategyTests
 
     private static Step[] GetSteps(IDirectoryInfo databaseDirectory)
     {
-        return new[]
-        {
+        return
+        [
             new Step(Database01, GlobalSettings.InitStepName, MainBranch, true, databaseDirectory),
             new Step(Database01, "TKT-001.SampleDescription", MainBranch, false, databaseDirectory)
-        };
+        ];
     }
 
     private static IDirectoryInfo CreateDatabaseDirectory(string database)

@@ -82,7 +82,6 @@ public class DeployService : BaseService
         _logger.LogInformation($"Database {step.Database} Adding migration {step.Name}");
         var migration = new DatabaseMigration(
             step.Name,
-            DateTimeOffset.UtcNow,
             Environment.UserName,
             hash);
             

@@ -91,7 +91,7 @@ public class OracleDatabase : DatabaseBase
         
         return new DatabaseMigration(
             reader.GetString(0),
-            oracleReader.GetDateTimeOffset(1),
+            oracleReader.GetDateTime(1),
             reader.GetString(2),
             reader.GetString(3)
         );

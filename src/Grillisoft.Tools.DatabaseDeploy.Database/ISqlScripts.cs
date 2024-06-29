@@ -3,10 +3,11 @@
 public interface ISqlScripts
 {
     string ExistsSql { get; }
-    string CreateSql { get; }
+    string[] CreateSql { get; }
     string InitSql { get; }
-    string GetSql { get; }
-    string AddSql { get; }
-    string RemoveSql { get; }
-    string ClearSql { get; }
+    string ClearMigrationsSql { get; }
+    
+    string GetMigrationsSql { get; }
+    string AddMigrationSql { get; }
+    string RemoveMigrationSql { get; }
 }

@@ -8,16 +8,16 @@ public class MySqlScripts(string databaseName, string migrationTableName) : ISql
             SELECT COUNT(*) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='{databaseName}'
         ";
 
-    public string CreateSql { get; } = $@"
+    public string[] CreateSql { get; } = [$@"
             CREATE DATABASE `{databaseName}`
-        ";
+        "];
 
-    public string GetSql { get; } =
+    public string GetMigrationsSql { get; } =
         $"SELECT `name`, `deployed_utc`, `user`, `hash` FROM `{migrationTableName}` ORDER BY `id` ASC";
-    public string AddSql { get; } =
+    public string AddMigrationSql { get; } =
         $@"INSERT INTO `{migrationTableName}`(`name`, `deployed_utc`, `user`, `hash`)
                      VALUES(@name, @deployed_utc, @user_name, @hash)";
-    public string RemoveSql { get; } =
+    public string RemoveMigrationSql { get; } =
         $"DELETE FROM `{migrationTableName}` WHERE `name` = @name";
 
     public string InitSql { get; } = $@"
@@ -31,6 +31,6 @@ public class MySqlScripts(string databaseName, string migrationTableName) : ISql
               UNIQUE(`name`)
             );
         ";
-    public string ClearSql { get; } =
+    public string ClearMigrationsSql { get; } =
         $"DROP TABLE IF EXISTS `{migrationTableName}`";
 }

@@ -15,10 +15,7 @@ public class OracleScriptParser : IScriptParser
 
         foreach (var line in lines)
         {
-            var trim = line?.Trim();
-
-            if (trim is null)
-                continue;
+            var trim = line.Trim();
 
             if (!(buffer.Length <= 0 && CanIgnore(trim)))
                 buffer.AppendLine(line);

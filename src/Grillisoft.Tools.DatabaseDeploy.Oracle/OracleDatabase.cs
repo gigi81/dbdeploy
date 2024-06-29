@@ -56,16 +56,6 @@ public class OracleDatabase : DatabaseBase
         };
         return connection;
     }
-
-    public async override Task Create(CancellationToken cancellationToken)
-    {
-        await using var connection = this.CreateConnectionWithoutDatabase(this.Logger);
-        await connection.OpenAsync(cancellationToken);
-        await using var command1 = this.CreateCommand(this.SqlScripts.CreateSql, connection);
-        await command1.ExecuteNonQueryAsync(cancellationToken);
-        await using var command2 = this.CreateCommand(((OracleScripts)this.SqlScripts).GrantSql, connection);
-        await command2.ExecuteNonQueryAsync(cancellationToken);
-    }
     
     public async override Task ClearMigrations(CancellationToken cancellationToken)
     {

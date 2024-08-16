@@ -10,13 +10,14 @@ public class OracleScripts(string schema, string migrationTableName) : ISqlScrip
         SELECT CAST(COUNT(*) as INT) AS count FROM all_users WHERE username = '{schema.ToUpperInvariant()}'
         ";
 
-    public string CreateSql { get; } = $@"
+    public string[] CreateSql { get; } =
+    [
+        $@"
         CREATE USER {schema} IDENTIFIED BY ""{schema}""
                        DEFAULT TABLESPACE users
                        QUOTA UNLIMITED ON users
-        ";
-
-    public string GrantSql { get; } = $@"
+        ",
+        $@"
         GRANT CREATE MATERIALIZED VIEW,
               CREATE PROCEDURE,
               CREATE SEQUENCE,
@@ -27,14 +28,15 @@ public class OracleScripts(string schema, string migrationTableName) : ISqlScrip
               CREATE TYPE,
               CREATE VIEW
           TO {schema}
-        ";
+        "
+    ];
     
-    public string GetSql { get; } =
+    public string GetMigrationsSql { get; } =
         $"SELECT name, deployed_utc, user_name, hash FROM {migrationTableName} ORDER BY id ASC";
-    public string AddSql { get; } =
+    public string AddMigrationSql { get; } =
         $@"INSERT INTO {migrationTableName}(name, deployed_utc, user_name, hash)
                      VALUES(:name, :deployed_utc, :user_name, :hash)";
-    public string RemoveSql { get; } =
+    public string RemoveMigrationSql { get; } =
         $"DELETE FROM {migrationTableName} WHERE name = :name";
 
     public string InitSql { get; } = $@"
@@ -56,7 +58,7 @@ public class OracleScripts(string schema, string migrationTableName) : ISqlScrip
             AND OBJECT_NAME = '{migrationTableName.ToUpperInvariant()}'
         ";
     
-    public string ClearSql { get; } = $@"
+    public string ClearMigrationsSql { get; } = $@"
         DROP TABLE {migrationTableName}
         ";
 }

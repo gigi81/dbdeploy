@@ -6,9 +6,9 @@ public class SqlServerScripts(string databaseName, string migrationTableName) : 
             SELECT COUNT(*) FROM sys.databases where name='{databaseName}'
         ";
 
-    public string CreateSql { get; } = $@"
+    public string[] CreateSql { get; } = [$@"
             CREATE DATABASE [{databaseName}]
-        ";
+        "];
 
     public string InitSql { get; } = $@"
             IF OBJECT_ID(N'{migrationTableName}', N'U') IS NULL
@@ -23,15 +23,15 @@ public class SqlServerScripts(string databaseName, string migrationTableName) : 
             );
         ";
 
-    public string GetSql { get; } =
+    public string GetMigrationsSql { get; } =
         $"SELECT [name], [deployed_utc], [user], [hash] FROM {migrationTableName} ORDER BY [id] ASC";
 
-    public string AddSql { get; } =
+    public string AddMigrationSql { get; } =
         $@"INSERT INTO {migrationTableName}([name], [deployed_utc], [user], [hash])
            VALUES(@name, @deployed_utc, @user_name, @hash)";
 
-    public string RemoveSql { get; } =
+    public string RemoveMigrationSql { get; } =
         $"DELETE FROM {migrationTableName} WHERE [name] = @name";
 
-    public string ClearSql { get; } = $"DROP TABLE IF EXISTS {migrationTableName}";
+    public string ClearMigrationsSql { get; } = $"DROP TABLE IF EXISTS {migrationTableName}";
 }

@@ -57,11 +57,13 @@ public abstract class DatabaseBase : IDatabase
 
     public async virtual Task Create(CancellationToken cancellationToken)
     {
-        var script = this.SqlScripts.CreateSql;
         await using var connection = this.CreateConnectionWithoutDatabase(_logger);
         await connection.OpenAsync(cancellationToken);
-        await using var command = this.CreateCommand(script, connection);
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        foreach (var script in this.SqlScripts.CreateSql)
+        {
+            await using var command = this.CreateCommand(script, connection);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
     }
 
     public async virtual Task RunScript(string script, CancellationToken cancellationToken)
@@ -88,7 +90,7 @@ public abstract class DatabaseBase : IDatabase
     public async virtual Task<ICollection<DatabaseMigration>> GetMigrations(CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
-        await using var command = CreateCommand(this.SqlScripts.GetSql);
+        await using var command = CreateCommand(this.SqlScripts.GetMigrationsSql);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var ret = new List<DatabaseMigration>();
         
@@ -114,7 +116,7 @@ public abstract class DatabaseBase : IDatabase
     public async virtual Task AddMigration(DatabaseMigration migration, CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
-        await using var command = CreateCommand(this.SqlScripts.AddSql);
+        await using var command = CreateCommand(this.SqlScripts.AddMigrationSql);
         command.AddParameter("name", migration.Name)
                .AddParameter("deployed_utc", migration.DateTime)
                .AddParameter("user_name", migration.User)
@@ -126,13 +128,13 @@ public abstract class DatabaseBase : IDatabase
     public async virtual Task RemoveMigration(DatabaseMigration migration, CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
-        await using var command = CreateCommand(this.SqlScripts.RemoveSql);
+        await using var command = CreateCommand(this.SqlScripts.RemoveMigrationSql);
         command.AddParameter("name", migration.Name);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     public async virtual Task ClearMigrations(CancellationToken cancellationToken)
-        => await RunScript(this.SqlScripts.ClearSql, cancellationToken);
+        => await RunScript(this.SqlScripts.ClearMigrationsSql, cancellationToken);
 
     protected virtual DbCommand CreateCommand(string script, DbConnection? connection = null)
     {

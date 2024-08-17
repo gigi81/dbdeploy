@@ -22,7 +22,7 @@ internal class PostgreSqlDatabaseFactory : IDatabaseFactory
         _loggerFactory = loggerFactory;
     }
     
-    public string Name => "sqlServer";
+    public string Name => "postgreSql";
     
     public Task<IDatabase> GetDatabase(string name, IConfigurationSection config, CancellationToken cancellationToken)
     {

@@ -25,6 +25,7 @@
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
     <PackageVersion Include="MySqlConnector" Version="2.3.7" />
+    <PackageVersion Include="Npgsql" Version="8.0.3" />
     <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.5.0" />
     <PackageVersion Include="Serilog" Version="4.0.0" />
     <PackageVersion Include="Serilog.Extensions.Hosting" Version="8.0.0" />
@@ -41,6 +42,7 @@
     <PackageVersion Include="Testcontainers.MsSql" Version="3.9.0" />
     <PackageVersion Include="Testcontainers.MySql" Version="3.9.0" />
     <PackageVersion Include="Testcontainers.Oracle" Version="3.9.0" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="3.9.0" />
     <PackageVersion Include="xunit" Version="2.9.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2">
       <PrivateAssets>all</PrivateAssets>

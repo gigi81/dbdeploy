@@ -1,0 +1,11 @@
+﻿{
+  "global": {
+    "defaultProvider": "postgreSql",
+    "scriptTimeout": 600
+  },
+  "databases":{
+    "Pagila": {
+      "connectionString": "Host=127.0.0.1;Username=postgres;Password=postgres2019!;Database=pagila"
+    }
+  }
+}

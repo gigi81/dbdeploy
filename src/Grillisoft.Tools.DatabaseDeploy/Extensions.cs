@@ -23,10 +23,10 @@ internal static class Extensions
     {
         if (string.IsNullOrEmpty(value))
             return string.Empty;
-        
+
         return value.Substring(0, Math.Min(maxLength, value.Length));
     }
-    
+
     internal static string BranchName(this string filename)
     {
         var name = filename;

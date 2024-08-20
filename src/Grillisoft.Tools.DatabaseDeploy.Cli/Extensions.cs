@@ -15,12 +15,12 @@ public static class Extensions
                 services.AddSingleton(deployOptions);
                 services.AddSingleton<IExecutable, DeployService>();
                 break;
-            
+
             case RollbackOptions rollbackOptions:
                 services.AddSingleton(rollbackOptions);
                 services.AddSingleton<IExecutable, RollbackService>();
                 break;
-            
+
             default:
                 throw new Exception($"Options of type {options.GetType().Name} not supported");
         }

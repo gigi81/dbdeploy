@@ -23,7 +23,7 @@ public class Strategy
     public async IAsyncEnumerable<Step> GetDeploySteps(string branch)
     {
         var migrations = GetMigrationsQueues();
-        
+
         foreach (var step in _steps)
         {
             if (!IsStepDeployed(step, migrations[step.Database], out var migration))
@@ -33,22 +33,22 @@ public class Strategy
             else
             {
                 var hash = await step.GetStepHash();
-                if(!hash.Equals(migration?.Hash))
+                if (!hash.Equals(migration?.Hash))
                     _logger.LogWarning($"Database {step.Database} Step {step.Name} hash mismatch detected, deploy script was changed after deployment");
-                
-                if(step.Branch.EqualsIgnoreCase(branch))
+
+                if (step.Branch.EqualsIgnoreCase(branch))
                     _logger.LogInformation($"Database {step.Database} Step {step.Name} already deployed");
             }
         }
     }
-    
+
     public IEnumerable<(Step, DatabaseMigration)> GetRollbackSteps(string branch)
     {
         foreach (var (step, migration) in GetRollbackStepsInternal().Reverse())
         {
             if (!step.Branch.EqualsIgnoreCase(branch))
                 yield break;
-            
+
             yield return (step, migration);
         }
     }
@@ -56,7 +56,7 @@ public class Strategy
     private IEnumerable<(Step, DatabaseMigration)> GetRollbackStepsInternal()
     {
         var migrations = GetMigrationsQueues();
-        
+
         foreach (var step in _steps)
         {
             if (!IsStepDeployed(step, migrations[step.Database], out var migration) || migration == null)
@@ -64,9 +64,9 @@ public class Strategy
                 _logger.LogInformation($"Database {step.Database} Step {step.Name} was not deployed. Skipping rollback");
                 continue;
             }
-            
+
             //we do not rollback the init step
-            if(step.IsInit)
+            if (step.IsInit)
                 continue;
 
             yield return (step, migration);
@@ -88,7 +88,7 @@ public class Strategy
 
         if (!migration.Name.EqualsIgnoreCase(step.Name))
             throw new StepMigrationMismatchException(step, migration);
-            
+
         return true;
     }
 }

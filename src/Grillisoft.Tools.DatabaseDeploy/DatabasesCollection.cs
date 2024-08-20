@@ -17,7 +17,7 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
         _configurationSection = configuration.GetSection("databases");
         _global = configuration.GetSection(GlobalSettings.SectionName)?.Get<GlobalSettings>() ?? new GlobalSettings();
     }
-    
+
     public async Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken)
     {
         if (_databases.TryGetValue(name, out var ret))
@@ -27,7 +27,7 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
         _databases.Add(name, ret);
         return ret;
     }
-    
+
     private async Task<IDatabase> CreateDatabase(string name, CancellationToken cancellationToken)
     {
         var section = _configurationSection.GetSection(name);
@@ -49,7 +49,7 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
         {
             await database.DisposeAsync();
         }
-        
+
         _databases.Clear();
     }
 }

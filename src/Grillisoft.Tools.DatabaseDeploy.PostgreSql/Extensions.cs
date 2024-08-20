@@ -11,7 +11,7 @@ public static class Extensions
     {
         services.AddSingleton<PostgreSqlScriptParser>();
         services.AddSingleton<IDatabaseFactory, PostgreSqlDatabaseFactory>();
-        
+
         return services;
     }
 }

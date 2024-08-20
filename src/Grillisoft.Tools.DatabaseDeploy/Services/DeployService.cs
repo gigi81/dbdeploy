@@ -25,7 +25,7 @@ public class DeployService : BaseService
         _options = options;
         _progress = progress;
     }
-    
+
     public async override Task<int> Execute(CancellationToken stoppingToken)
     {
         var count = 0;
@@ -35,7 +35,7 @@ public class DeployService : BaseService
 
         await CheckDatabasesExistsOrCreate(databases, stoppingToken);
         await InitializeMigrations(databases, stoppingToken);
-        
+
         var strategy = await GetStrategy(steps, stoppingToken);
         var deploySteps = await strategy.GetDeploySteps(_options.Branch).ToArrayAsync(stoppingToken);
 
@@ -50,7 +50,7 @@ public class DeployService : BaseService
         _logger.LogInformation("Deployment completed successfully in {0}", stopwatch.Elapsed);
         return 0;
     }
-    
+
     private async Task CheckDatabasesExistsOrCreate(string[] databases, CancellationToken stoppingToken)
     {
         var missingDatabases = await databases.WhereAsync(CheckDatabaseIsMissing, stoppingToken)
@@ -68,7 +68,7 @@ public class DeployService : BaseService
             await db.InitializeMigrations(stoppingToken);
         }
     }
-    
+
     private async Task DeployStep(Step step, CancellationToken stoppingToken)
     {
         _logger.LogInformation($"Database {step.Database} Deploying {step.Name}");
@@ -76,7 +76,7 @@ public class DeployService : BaseService
         var hash = await step.GetStepHash();
         await RunScript(step.DeployScript, database, stoppingToken);
         await RunScripts(step.DataScripts, database, stoppingToken);
-        if(_options.Test)
+        if (_options.Test)
             await RunScript(step.TestScript, database, stoppingToken);
 
         _logger.LogInformation($"Database {step.Database} Adding migration {step.Name}");
@@ -84,10 +84,10 @@ public class DeployService : BaseService
             step.Name,
             Environment.UserName,
             hash);
-            
+
         await database.AddMigration(migration, stoppingToken);
     }
-    
+
     private async Task<bool> CheckDatabaseIsMissing(string name, CancellationToken stoppingToken)
     {
         var database = await GetDatabase(name, stoppingToken);

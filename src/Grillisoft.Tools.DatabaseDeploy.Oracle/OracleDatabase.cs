@@ -28,7 +28,7 @@ public class OracleDatabase : DatabaseBase
     }
 
     public override string DatabaseName => _schema;
-    
+
     protected override ISqlScripts CreateSqlScripts()
     {
         this.Logger.LogWarning("Database is {Database}", this.DatabaseName);
@@ -50,17 +50,17 @@ public class OracleDatabase : DatabaseBase
         {
             foreach (OracleError error in args.Errors)
             {
-                logger.LogInformation(error.Message);    
+                logger.LogInformation(error.Message);
             }
-            
+
         };
         return connection;
     }
-    
+
     public async override Task ClearMigrations(CancellationToken cancellationToken)
     {
         var exists = await RunScript<decimal>(((OracleScripts)this.SqlScripts).MigrationTableExistsSql, cancellationToken);
-        if(exists > 0)
+        if (exists > 0)
             await base.ClearMigrations(cancellationToken);
     }
 
@@ -70,15 +70,15 @@ public class OracleDatabase : DatabaseBase
         this.Logger.LogWarning("Count {Count}", count);
         if (count > 0)
             return;
-        
+
         await base.InitializeMigrations(cancellationToken);
     }
-    
+
     protected async override Task OpenConnection(CancellationToken cancellationToken)
     {
         if (this.Connection.State == ConnectionState.Open)
             return;
-        
+
         await base.OpenConnection(cancellationToken);
         await using var command = CreateCommand(((OracleScripts)this.SqlScripts).SetSchemaSql);
         await command.ExecuteNonQueryAsync(cancellationToken);

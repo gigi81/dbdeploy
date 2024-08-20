@@ -9,7 +9,7 @@ public static class Extensions
     {
         services.AddSingleton<OracleScriptParser>();
         services.AddSingleton<IDatabaseFactory, OracleDatabaseFactory>();
-        
+
         return services;
     }
 }

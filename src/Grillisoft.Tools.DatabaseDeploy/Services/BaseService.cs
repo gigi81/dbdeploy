@@ -42,7 +42,7 @@ public abstract class BaseService : IExecutable
     {
         var directory = _fileSystem.DirectoryInfo.New(path);
         var manager = new BranchesManager(directory, _globalSettings.Value);
-        
+
         _logger.LogInformation($"Loading branches from {directory.FullName}");
         var errors = await manager.Load();
 
@@ -62,7 +62,7 @@ public abstract class BaseService : IExecutable
             await RunScript(scriptFile, database, cancellationToken);
         }
     }
-    
+
     protected async Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken cancellationToken)
     {
         _logger.LogInformation($"Database {database.Name} Running script {scriptFile.FullName}");
@@ -95,7 +95,7 @@ public abstract class BaseService : IExecutable
             .ToArray();
 
         var tuples = await Task.WhenAll(tasks);
-        
+
         return tuples.ToDictionary(
             m => m.Item1,
             m => m.Item2

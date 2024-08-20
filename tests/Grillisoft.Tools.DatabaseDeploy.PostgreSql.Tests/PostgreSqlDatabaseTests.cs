@@ -18,7 +18,7 @@ public class PostgreSqlDatabaseTests : DatabaseTest<PostgreSqlDatabase, PostgreS
     protected override PostgreSqlDatabase CreateDatabase()
     {
         _logger.LogInformation(this.ConnectionString);
-        
+
         return new PostgreSqlDatabase(
             "test",
             this.ConnectionString,

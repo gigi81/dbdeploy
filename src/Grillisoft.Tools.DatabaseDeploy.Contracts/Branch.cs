@@ -2,7 +2,7 @@
 public record Branch
 {
     private string[]? _databases;
-    
+
     public Branch(string name, IReadOnlyCollection<Step> steps)
     {
         this.Name = name;

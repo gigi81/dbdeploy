@@ -15,16 +15,16 @@ public static class BranchesValidator
         var data = steps.SelectMany(s => s.DataScripts).Select(s => s.FullName);
         var rollback = steps.Where(s => !s.IsInit).Select(s => s.RollbackScript.FullName).ToArray();
         var test = steps.Select(s => s.TestScript.FullName);
-        
+
         var mandatoryFiles = (settings.RollbackRequired ? deploy.Concat(rollback) : deploy)
             .Distinct()
             .ToHashSet(StringComparer.InvariantCultureIgnoreCase);
-            
+
         var extraFiles = (settings.RollbackRequired ? test : test.Concat(rollback))
             .Concat(data)
             .Distinct()
             .ToHashSet(StringComparer.InvariantCultureIgnoreCase);
-        
+
         var found = directory.EnumerateFiles("*.sql", SearchOption.AllDirectories)
             .Select(s => s.FullName)
             .ToHashSet(StringComparer.InvariantCultureIgnoreCase);
@@ -45,7 +45,7 @@ public static class BranchesValidator
             foreach (var step in steps.Where(s => !regex.IsMatch(s.Name)))
                 errors.Add($"Step {step.Name} for database {step.Database} does not match expected naming convention");
         }
-        
+
         return errors;
     }
 }

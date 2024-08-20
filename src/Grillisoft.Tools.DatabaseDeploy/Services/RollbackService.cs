@@ -33,7 +33,7 @@ public class RollbackService : BaseService
         var steps = await GetBranchSteps(_options.Path, _options.Branch);
         var strategy = await GetStrategy(steps, stoppingToken);
         var rollbackSteps = strategy.GetRollbackSteps(_options.Branch).ToArray();
-        
+
         _logger.LogInformation("Detected {0} steps to rollback", rollbackSteps.Length);
         _progress.Report(0);
         foreach (var (step, migration) in rollbackSteps)

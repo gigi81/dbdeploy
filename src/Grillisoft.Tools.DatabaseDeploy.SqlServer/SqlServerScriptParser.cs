@@ -11,7 +11,7 @@ internal class SqlServerScriptParser : IScriptParser
     {
         await using var file = scriptFile.OpenRead();
         using var stream = new StreamReader(file);
-        
+
         var line = await stream.ReadLineAsync(cancellationToken);
         var buffer = new StringBuilder();
 
@@ -26,10 +26,10 @@ internal class SqlServerScriptParser : IScriptParser
             {
                 buffer.AppendLine(line);
             }
-            
+
             line = await stream.ReadLineAsync(cancellationToken);
         }
-        
+
         if (buffer.Length > 0)
             yield return buffer.ToString();
     }

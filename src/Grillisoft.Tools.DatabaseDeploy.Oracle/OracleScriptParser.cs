@@ -25,7 +25,7 @@ public class OracleScriptParser : IScriptParser
                 var command = CleanSql(buffer.ToString());
                 if (!string.IsNullOrWhiteSpace(command))
                     yield return command;
-                    
+
                 buffer.Clear();
             }
         }
@@ -44,8 +44,8 @@ public class OracleScriptParser : IScriptParser
         return ';';
     }
 
-    private static readonly char[] TrimChars = ['\t', '\n', '\r', ' ', ';', '/']; 
-    
+    private static readonly char[] TrimChars = ['\t', '\n', '\r', ' ', ';', '/'];
+
     private string CleanSql(string input)
     {
         return input.Trim(TrimChars);

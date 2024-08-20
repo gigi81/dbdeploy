@@ -11,7 +11,7 @@ public static class Extensions
     {
         services.AddSingleton<SqlServerScriptParser>();
         services.AddSingleton<IDatabaseFactory, SqlServerDatabaseFactory>();
-        
+
         return services;
     }
 }

@@ -34,7 +34,7 @@ public class PostgreSqlDatabase : DatabaseBase
     /// <exception cref="ArgumentNullException"></exception>
     private static string GetPublicSchema(string migrationTableName)
     {
-        if(string.IsNullOrWhiteSpace(migrationTableName))
+        if (string.IsNullOrWhiteSpace(migrationTableName))
             throw new ArgumentNullException(nameof(migrationTableName));
 
         if (migrationTableName.Contains('.'))

@@ -21,7 +21,7 @@ public class SqlServerDatabaseTests : DatabaseTest<SqlServerDatabase, MsSqlConta
     protected override SqlServerDatabase CreateDatabase()
     {
         _logger.LogInformation(this.ConnectionString);
-        
+
         return new SqlServerDatabase(
             "test",
             this.ConnectionString,

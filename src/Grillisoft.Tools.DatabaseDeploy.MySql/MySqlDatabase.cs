@@ -42,9 +42,9 @@ public class MySqlDatabase : DatabaseBase
         {
             foreach (var error in args.Errors)
             {
-                logger.LogInformation(error.Message);    
+                logger.LogInformation(error.Message);
             }
-            
+
         };
         return connection;
     }

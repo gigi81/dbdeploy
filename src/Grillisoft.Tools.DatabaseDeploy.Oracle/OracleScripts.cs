@@ -5,7 +5,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
 public class OracleScripts(string schema, string migrationTableName) : ISqlScripts
 {
     public string SetSchemaSql { get; } = $"alter session set current_schema = {schema.ToUpperInvariant()}";
-    
+
     public string ExistsSql { get; } = $@"
         SELECT CAST(COUNT(*) as INT) AS count FROM all_users WHERE username = '{schema.ToUpperInvariant()}'
         ";
@@ -30,7 +30,7 @@ public class OracleScripts(string schema, string migrationTableName) : ISqlScrip
           TO {schema}
         "
     ];
-    
+
     public string GetMigrationsSql { get; } =
         $"SELECT name, deployed_utc, user_name, hash FROM {migrationTableName} ORDER BY id ASC";
     public string AddMigrationSql { get; } =
@@ -57,7 +57,7 @@ public class OracleScripts(string schema, string migrationTableName) : ISqlScrip
             AND OWNER = '{schema.ToUpperInvariant()}'
             AND OBJECT_NAME = '{migrationTableName.ToUpperInvariant()}'
         ";
-    
+
     public string ClearMigrationsSql { get; } = $@"
         DROP TABLE {migrationTableName}
         ";

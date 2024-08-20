@@ -9,7 +9,7 @@ public class BranchesManager
     private const string IncludeKeyword = "@include ";
     private const string MainBranch = "main";
     private const string MainBranchFilename = MainBranch + ".csv";
-    
+
     private readonly IDirectoryInfo _directory;
     private readonly GlobalSettings _globalSettings;
     private readonly Dictionary<string, Branch> _branches = new(StringComparer.InvariantCultureIgnoreCase);
@@ -36,10 +36,10 @@ public class BranchesManager
     public async Task<List<string>> Load()
     {
         _directory.ThrowIfNotFound();
-        
+
         _mainBranch = await Load(_directory.File(MainBranchFilename));
         _branches.Add(_mainBranch.Name, _mainBranch);
-        
+
         var files = _directory.EnumerateFiles("*.csv", SearchOption.TopDirectoryOnly)
             .Where(f => !f.Name.EqualsIgnoreCase(MainBranchFilename))
             .ToArray();
@@ -101,7 +101,7 @@ public class BranchesManager
 
         return new Branch(branchName, steps);
     }
-    
+
     private Step ReadStep(string line, string branchName, int count, IDirectoryInfo directory)
     {
         var split = line.Split(',');
@@ -110,7 +110,7 @@ public class BranchesManager
 
         var database = split[0].Trim();
         var name = split[1].Trim();
-        
+
         return new Step(
             database,
             name,

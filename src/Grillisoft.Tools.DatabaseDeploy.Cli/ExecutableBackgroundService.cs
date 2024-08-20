@@ -31,6 +31,7 @@ public class ExecutableBackgroundService : BackgroundService
             LogStartupInformation();
             var exitCode = await _executable.Execute(stoppingToken);
             Environment.ExitCode = exitCode;
+            _logger.LogDebug("Application exiting with exit code {exitCode}", exitCode);
         }
         catch (Exception ex)
         {

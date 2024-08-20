@@ -20,8 +20,27 @@ public class PostgreSqlDatabase : DatabaseBase
         )
         : base(name, CreateConnection(connectionString, logger), parser, logger)
     {
-        _migrationTableName = migrationTableName;
+        _migrationTableName = GetPublicSchema(migrationTableName);
         this.ScriptTimeout = scriptTimeout;
+    }
+
+    /// <summary>
+    /// Gets the migration table name prefixed by "public"
+    /// unless a schema is already specified in the <paramref name="migrationTableName"/>
+    /// See https://www.postgresql.org/docs/current/ddl-schemas.html#DDL-SCHEMAS-PUBLIC
+    /// </summary>
+    /// <param name="migrationTableName"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    private string GetPublicSchema(string migrationTableName)
+    {
+        if(string.IsNullOrWhiteSpace(migrationTableName))
+            throw new ArgumentNullException(nameof(migrationTableName));
+
+        if (migrationTableName.Contains('.'))
+            return migrationTableName;
+
+        return $"public.{_migrationTableName}";
     }
 
     private static DbConnection CreateConnection(string connectionString, ILogger logger)

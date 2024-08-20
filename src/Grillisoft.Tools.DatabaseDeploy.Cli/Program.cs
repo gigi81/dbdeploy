@@ -62,10 +62,3 @@ static IHost CreateHostBuilder(OptionsBase options, string[] args)
 
     return builder.Build();
 }
-
-internal static class ExitCode
-{
-    public const int Ok = 0;
-    public const int InvalidArguments = -1;
-    public const int GenericError = -2;
-}

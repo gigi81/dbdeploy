@@ -11,4 +11,9 @@ public static class Extensions
     {
         return date.Trim(TimeSpan.TicksPerSecond);
     }
+
+    public static IEnumerable<string> DistinctIgnoreCase(this IEnumerable<string> source)
+    {
+        return source.Distinct(StringComparer.InvariantCultureIgnoreCase);
+    }
 }

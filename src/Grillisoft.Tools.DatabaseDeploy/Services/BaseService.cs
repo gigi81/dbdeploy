@@ -43,7 +43,7 @@ public abstract class BaseService : IExecutable
         var directory = _fileSystem.DirectoryInfo.New(path);
         var manager = new BranchesManager(directory, _globalSettings.Value);
 
-        _logger.LogInformation($"Loading branches from {directory.FullName}");
+        _logger.LogInformation("Loading branches from {Directory}", directory.FullName);
         var errors = await manager.Load();
 
         foreach (var error in errors)

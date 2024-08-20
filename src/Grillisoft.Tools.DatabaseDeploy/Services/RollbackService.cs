@@ -26,22 +26,22 @@ public class RollbackService : BaseService
         _progress = progress;
     }
 
-    public async override Task<int> Execute(CancellationToken stoppingToken)
+    public async override Task<int> Execute(CancellationToken cancellationToken)
     {
         var count = 0;
         var stopwatch = Stopwatch.StartNew();
         var steps = await GetBranchSteps(_options.Path, _options.Branch);
-        var strategy = await GetStrategy(steps, stoppingToken);
+        var strategy = await GetStrategy(steps, cancellationToken);
         var rollbackSteps = strategy.GetRollbackSteps(_options.Branch).ToArray();
 
         _logger.LogInformation("Detected {0} steps to rollback", rollbackSteps.Length);
         _progress.Report(0);
         foreach (var (step, migration) in rollbackSteps)
         {
-            var database = await GetDatabase(step.Database, stoppingToken);
-            await RunScript(step.RollbackScript, database, stoppingToken);
+            var database = await GetDatabase(step.Database, cancellationToken);
+            await RunScript(step.RollbackScript, database, cancellationToken);
             _logger.LogInformation($"Database {step.Database} Removing migration {step.Name}");
-            await database.RemoveMigration(migration, stoppingToken);
+            await database.RemoveMigration(migration, cancellationToken);
             _progress.Report(++count * 100 / steps.Length);
         }
         _progress.Report(100);

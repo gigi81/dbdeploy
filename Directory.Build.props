@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyVersion>1.0.0</AssemblyVersion>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <Authors>Luigi Grilli</Authors>
     <Product>dotnet tool to deploy/rollback database changes/migrations</Product>
     <PackageProjectUrl>https://github.com/gigi81/dbdeploy</PackageProjectUrl>

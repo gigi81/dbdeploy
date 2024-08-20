@@ -31,7 +31,7 @@ public class ExecutableBackgroundService : BackgroundService
             LogStartupInformation();
             var exitCode = await _executable.Execute(stoppingToken);
             Environment.ExitCode = exitCode;
-            _logger.LogDebug("Application exiting with exit code {exitCode}", exitCode);
+            _logger.LogDebug("Application exiting with exit code {ExitCode}", exitCode);
         }
         catch (Exception ex)
         {
@@ -50,7 +50,7 @@ public class ExecutableBackgroundService : BackgroundService
         _logger.LogInformation(HeadingInfo.Default.ToString());
 
         if (!string.IsNullOrWhiteSpace(_hostEnvironment.EnvironmentName))
-            _logger.LogInformation("Environment {environment}", _hostEnvironment.EnvironmentName);
+            _logger.LogInformation("Environment {Environment}", _hostEnvironment.EnvironmentName);
         else
             _logger.LogInformation("Environment was not specified. Using default");
     }

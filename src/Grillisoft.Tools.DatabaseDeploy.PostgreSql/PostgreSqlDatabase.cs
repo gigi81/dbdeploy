@@ -32,7 +32,7 @@ public class PostgreSqlDatabase : DatabaseBase
     /// <param name="migrationTableName"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
-    private string GetPublicSchema(string migrationTableName)
+    private static string GetPublicSchema(string migrationTableName)
     {
         if(string.IsNullOrWhiteSpace(migrationTableName))
             throw new ArgumentNullException(nameof(migrationTableName));
@@ -40,7 +40,7 @@ public class PostgreSqlDatabase : DatabaseBase
         if (migrationTableName.Contains('.'))
             return migrationTableName;
 
-        return $"public.{_migrationTableName}";
+        return $"public.{migrationTableName}";
     }
 
     private static DbConnection CreateConnection(string connectionString, ILogger logger)

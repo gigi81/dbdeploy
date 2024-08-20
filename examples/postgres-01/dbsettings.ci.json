@@ -1,0 +1,7 @@
+﻿{
+  "databases":{
+    "Pagila": {
+      "connectionString": "Host=postgres;Username=postgres;Password=postgres2019!;Database=pagila"
+    }
+  }
+}

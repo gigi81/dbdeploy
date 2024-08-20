@@ -15,6 +15,11 @@ jobs:
   container-job:
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/dotnet/sdk:8.0
+
+    strategy:
+      matrix:
+        example: ['mssql-02', 'oracle-01', 'mysql-01', 'postgres-01']
+
     services:
       mssql:
         image: mcr.microsoft.com/mssql/server:2022-latest
@@ -35,10 +40,12 @@ jobs:
           MARIADB_ROOT_PASSWORD: mariadb2019!
         ports:
           - 3306:3306
-
-    strategy:
-      matrix:
-        example: ['mssql-02', 'oracle-01', 'mysql-01']
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_PASSWORD: postgres2019!
+        ports:
+          - 5432:5432
 
     steps:
       - name: Checkout sources

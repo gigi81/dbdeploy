@@ -56,6 +56,7 @@ static IHost CreateHostBuilder(OptionsBase options, string[] args)
         .AddSqlServer()
         .AddMySql()
         .AddOracle()
+        .AddPostgreSql()
         .AddExecutable(options)
         .AddHostedService<ExecutableBackgroundService>();
     

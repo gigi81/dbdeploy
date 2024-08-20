@@ -42,6 +42,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grillisoft.Tools.DatabaseDe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grillisoft.Tools.DatabaseDeploy.Oracle.Tests", "tests\Grillisoft.Tools.DatabaseDeploy.Oracle.Tests\Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.csproj", "{56DB257E-C8AC-441E-92DB-8144E9784391}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grillisoft.Tools.DatabaseDeploy.PostgreSql", "src\Grillisoft.Tools.DatabaseDeploy.PostgreSql\Grillisoft.Tools.DatabaseDeploy.PostgreSql.csproj", "{552109D1-D527-4EE3-8B0E-A02EA8D6DE9E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grillisoft.Tools.DatabaseDeploy.PostgreSql.Tests", "tests\Grillisoft.Tools.DatabaseDeploy.PostgreSql.Tests\Grillisoft.Tools.DatabaseDeploy.PostgreSql.Tests.csproj", "{080DF9C9-6ABA-4EAE-A9D4-BE0917E259D4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -96,6 +100,14 @@ Global
 		{56DB257E-C8AC-441E-92DB-8144E9784391}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{56DB257E-C8AC-441E-92DB-8144E9784391}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{56DB257E-C8AC-441E-92DB-8144E9784391}.Release|Any CPU.Build.0 = Release|Any CPU
+		{552109D1-D527-4EE3-8B0E-A02EA8D6DE9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{552109D1-D527-4EE3-8B0E-A02EA8D6DE9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{552109D1-D527-4EE3-8B0E-A02EA8D6DE9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{552109D1-D527-4EE3-8B0E-A02EA8D6DE9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{080DF9C9-6ABA-4EAE-A9D4-BE0917E259D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{080DF9C9-6ABA-4EAE-A9D4-BE0917E259D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{080DF9C9-6ABA-4EAE-A9D4-BE0917E259D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{080DF9C9-6ABA-4EAE-A9D4-BE0917E259D4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -113,6 +125,8 @@ Global
 		{346CE4E7-0B4F-41AA-AB1A-F2C5874054A8} = {E878A210-5E10-4674-8DA1-F65BF8CF1D23}
 		{52BBFD30-4A82-40CF-A495-441A43C0B045} = {EDB208D8-E952-450C-A274-69FAD0613CD2}
 		{56DB257E-C8AC-441E-92DB-8144E9784391} = {E878A210-5E10-4674-8DA1-F65BF8CF1D23}
+		{552109D1-D527-4EE3-8B0E-A02EA8D6DE9E} = {EDB208D8-E952-450C-A274-69FAD0613CD2}
+		{080DF9C9-6ABA-4EAE-A9D4-BE0917E259D4} = {E878A210-5E10-4674-8DA1-F65BF8CF1D23}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2FE47D27-BA6B-46C6-858E-032AAAB5007A}

@@ -24,7 +24,7 @@ public abstract class DatabaseBase : IDatabase
         _name = name;
         _connection = connection;
         _parser = parser;
-        _logger = logger;
+        _logger = new DatabaseLogger(name, logger);
     }
 
     protected abstract ISqlScripts CreateSqlScripts();
@@ -78,10 +78,10 @@ public abstract class DatabaseBase : IDatabase
         await OpenConnection(cancellationToken);
         await using var command = CreateCommand(script);
         var ret = await command.ExecuteScalarAsync(cancellationToken);
-        if (ret == null)
-            throw new Exception($"Expected return type {typeof(T)} but sql script return null");
+        if (ret is not T retT)
+            throw new InvalidCastException($"Expected return type {typeof(T)} but sql script return null or an invalid type");
 
-        return (T)ret;
+        return retT;
     }
 
     public async virtual Task InitializeMigrations(CancellationToken cancellationToken)
@@ -156,7 +156,7 @@ public abstract class DatabaseBase : IDatabase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Failed to open connection to database '{_name}'");
+            _logger.LogError(ex, "Failed to open connection to database");
             throw;
         }
     }

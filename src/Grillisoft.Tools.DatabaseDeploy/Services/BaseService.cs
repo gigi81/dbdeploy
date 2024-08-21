@@ -14,6 +14,7 @@ public abstract class BaseService : IExecutable
     private readonly IFileSystem _fileSystem;
     private readonly IOptions<GlobalSettings> _globalSettings;
     protected readonly ILogger _logger;
+    protected readonly DatabaseLoggerFactory _dbl;
 
     protected BaseService(
         IDatabasesCollection databases,
@@ -25,6 +26,7 @@ public abstract class BaseService : IExecutable
         _fileSystem = fileSystem;
         _globalSettings = globalSettings;
         _logger = logger;
+        _dbl = new DatabaseLoggerFactory(logger);
     }
 
     public abstract Task<int> Execute(CancellationToken cancellationToken);
@@ -65,7 +67,7 @@ public abstract class BaseService : IExecutable
 
     protected async Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken cancellationToken)
     {
-        _logger.LogInformation($"Database {database.Name} Running script {scriptFile.FullName}");
+        _dbl[database.Name].LogInformation("Running script {ScriptPath}", scriptFile.FullName);
         var stopwatch = Stopwatch.StartNew();
         await foreach (var script in database.ScriptParser.Parse(scriptFile, cancellationToken))
         {
@@ -75,11 +77,11 @@ public abstract class BaseService : IExecutable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Database {database.Name} Failed to run script {{0}}", script.Truncate(20_000));
+                _dbl[database.Name].LogError(ex, "Failed to run script {ScriptContent}", script.Truncate(20_000));
                 throw;
             }
         }
-        _logger.LogInformation($"Database {database.Name} Script {scriptFile.FullName} executed in {stopwatch.Elapsed}");
+        _dbl[database.Name].LogInformation("Script {ScriptPath} executed in {ExecutionTime}", scriptFile.FullName, stopwatch.Elapsed);
     }
 
     protected async Task<Strategy> GetStrategy(Step[] steps, CancellationToken cancellationToken)
@@ -111,7 +113,7 @@ public abstract class BaseService : IExecutable
     {
         var database = await _databases.GetDatabase(name, cancellationToken);
         var migrations = await database.GetMigrations(cancellationToken);
-        _logger.LogInformation($"Database {database.Name} Found {migrations.Count} existing migrations in database");
+        _dbl[database.Name].LogInformation("Found {MigrationsCount} existing migrations in database", migrations.Count);
         return (name, migrations.ToArray());
     }
 }

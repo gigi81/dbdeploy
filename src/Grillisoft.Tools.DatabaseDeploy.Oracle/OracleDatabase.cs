@@ -38,7 +38,7 @@ public class OracleDatabase : DatabaseBase
     protected override DbConnection CreateConnectionWithoutDatabase(ILogger logger)
     {
         var builder = new OracleConnectionStringBuilder(this.Connection.ConnectionString);
-        builder.UserID = builder.UserID?.Split("/").First();
+        builder.UserID = builder.UserID?.Split("/")[0];
         this.Logger.LogWarning("Setting connection user id to {UserId}", builder.UserID);
         return CreateConnection(builder.ConnectionString, logger);
     }

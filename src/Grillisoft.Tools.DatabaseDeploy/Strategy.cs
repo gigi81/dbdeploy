@@ -8,7 +8,7 @@ public class Strategy
 {
     private readonly Step[] _steps;
     private readonly IDictionary<string, DatabaseMigration[]> _migrations;
-    private readonly ILogger _logger;
+    private readonly DatabaseLoggerFactory _dbl;
 
     public Strategy(
         Step[] steps,
@@ -17,7 +17,7 @@ public class Strategy
     {
         _steps = steps;
         _migrations = migrations;
-        _logger = logger;
+        _dbl = new DatabaseLoggerFactory(logger);
     }
 
     public async IAsyncEnumerable<Step> GetDeploySteps(string branch)
@@ -34,10 +34,10 @@ public class Strategy
             {
                 var hash = await step.GetStepHash();
                 if (!hash.Equals(migration?.Hash))
-                    _logger.LogWarning($"Database {step.Database} Step {step.Name} hash mismatch detected, deploy script was changed after deployment");
+                    _dbl[step.Database].LogWarning("Step {StepName} hash mismatch detected, deploy script was changed after deployment", step.Name);
 
                 if (step.Branch.EqualsIgnoreCase(branch))
-                    _logger.LogInformation($"Database {step.Database} Step {step.Name} already deployed");
+                    _dbl[step.Database].LogInformation("Step {StepName} already deployed", step.Name);
             }
         }
     }
@@ -61,7 +61,7 @@ public class Strategy
         {
             if (!IsStepDeployed(step, migrations[step.Database], out var migration) || migration == null)
             {
-                _logger.LogInformation($"Database {step.Database} Step {step.Name} was not deployed. Skipping rollback");
+                _dbl[step.Database].LogInformation("Step {StepName} was not deployed. Skipping rollback", step.Name);
                 continue;
             }
 

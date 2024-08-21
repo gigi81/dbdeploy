@@ -34,7 +34,7 @@ public class OracleScriptParser : IScriptParser
             yield return buffer.ToString();
     }
 
-    private char DetectSqlTerminator(IEnumerable<string> lines)
+    private static char DetectSqlTerminator(IEnumerable<string> lines)
     {
         if (lines.Any(line => line.Trim().StartsWith('/')))
         {
@@ -46,12 +46,12 @@ public class OracleScriptParser : IScriptParser
 
     private static readonly char[] TrimChars = ['\t', '\n', '\r', ' ', ';', '/'];
 
-    private string CleanSql(string input)
+    private static string CleanSql(string input)
     {
         return input.Trim(TrimChars);
     }
 
-    private bool CanIgnore(string trim)
+    private static bool CanIgnore(string trim)
     {
         return string.IsNullOrEmpty(trim)
                || trim.StartsWith("rem", StringComparison.InvariantCultureIgnoreCase)

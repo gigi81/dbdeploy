@@ -22,7 +22,7 @@ public static class Extensions
                 break;
 
             default:
-                throw new Exception($"Options of type {options.GetType().Name} not supported");
+                throw new ArgumentException($"Options of type {options.GetType().Name} not supported", nameof(options));
         }
 
         return services;

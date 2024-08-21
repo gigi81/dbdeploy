@@ -1,4 +1,5 @@
-﻿namespace Grillisoft.Tools.DatabaseDeploy.Contracts;
+﻿// ReSharper disable PropertyCanBeMadeInitOnly.Global
+namespace Grillisoft.Tools.DatabaseDeploy.Contracts;
 
 public class GlobalSettings
 {

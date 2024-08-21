@@ -1,11 +1,12 @@
 ﻿using CommandLine;
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 
 namespace Grillisoft.Tools.DatabaseDeploy.Options;
 
 public class OptionsBase
 {
-    [Option(shortName: 'b', longName: "branch", HelpText = "Name of branch to deploy (defaults to 'main')")]
-    public string Branch { get; set; } = "main";
+    [Option(shortName: 'b', longName: "branch", HelpText = "Name of branch to deploy (defaults to 'main' or the default branch name set in the global settings)")]
+    public string? Branch { get; set; } = null;
 
     [Option(shortName: 'p', longName: "path", HelpText = "Path of directory containing databases scripts (defaults to current directory)")]
     public string Path { get; set; } = ".";

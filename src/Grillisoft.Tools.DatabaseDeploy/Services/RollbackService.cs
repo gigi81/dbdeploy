@@ -26,13 +26,17 @@ public class RollbackService : BaseService
         _progress = progress;
     }
 
+    private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)
+        ? _options.Branch
+        : _globalSettings.Value.DefaultBranch;
+    
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
         var count = 0;
         var stopwatch = Stopwatch.StartNew();
-        var steps = await GetBranchSteps(_options.Path, _options.Branch);
+        var steps = await GetBranchSteps(_options.Path, this.Branch);
         var strategy = await GetStrategy(steps, cancellationToken);
-        var rollbackSteps = strategy.GetRollbackSteps(_options.Branch).ToArray();
+        var rollbackSteps = strategy.GetRollbackSteps(this.Branch).ToArray();
 
         _logger.LogInformation("Detected {0} steps to rollback", rollbackSteps.Length);
         _progress.Report(0);

@@ -4,6 +4,8 @@ public class GlobalSettings
 {
     public const string SectionName = "global";
 
+    public string DefaultBranch { get; set; } = "main";
+
     public string DefaultProvider { get; set; } = string.Empty;
 
     public int ScriptTimeout { get; set; } = 60 * 60;

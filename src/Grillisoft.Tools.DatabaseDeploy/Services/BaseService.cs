@@ -12,7 +12,7 @@ public abstract class BaseService : IExecutable
 {
     private readonly IDatabasesCollection _databases;
     private readonly IFileSystem _fileSystem;
-    private readonly IOptions<GlobalSettings> _globalSettings;
+    protected readonly IOptions<GlobalSettings> _globalSettings;
     protected readonly ILogger _logger;
     protected readonly DatabaseLoggerFactory _dbl;
 
@@ -30,7 +30,7 @@ public abstract class BaseService : IExecutable
     }
 
     public abstract Task<int> Execute(CancellationToken cancellationToken);
-
+    
     protected async Task<Step[]> GetBranchSteps(string path, string branchName)
     {
         var manager = await LoadBranchesManager(path);

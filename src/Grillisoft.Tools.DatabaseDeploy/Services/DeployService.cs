@@ -27,18 +27,22 @@ public class DeployService : BaseService
         _progress = progress;
     }
 
+    private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)
+        ? _options.Branch
+        : _globalSettings.Value.DefaultBranch;
+    
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
         var count = 0;
         var stopwatch = Stopwatch.StartNew();
-        var steps = await GetBranchSteps(_options.Path, _options.Branch);
+        var steps = await GetBranchSteps(_options.Path, this.Branch);
         var databases = steps.Select(s => s.Database).Distinct().ToArray();
 
         await CheckDatabasesExistsOrCreate(databases, cancellationToken);
         await InitializeMigrations(databases, cancellationToken);
 
         var strategy = await GetStrategy(steps, cancellationToken);
-        var deploySteps = await strategy.GetDeploySteps(_options.Branch).ToArrayAsync(cancellationToken);
+        var deploySteps = await strategy.GetDeploySteps(this.Branch).ToArrayAsync(cancellationToken);
 
         _logger.LogInformation("Detected {0} steps to deploy", deploySteps.Length);
         _progress.Report(0);

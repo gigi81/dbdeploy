@@ -7,8 +7,7 @@ namespace Grillisoft.Tools.DatabaseDeploy;
 public class BranchesManager
 {
     private const string IncludeKeyword = "@include ";
-    private const string MainBranch = "main";
-    private const string MainBranchFilename = MainBranch + ".csv";
+    private const string ListFileExtension = "csv";
 
     private readonly IDirectoryInfo _directory;
     private readonly GlobalSettings _globalSettings;
@@ -27,7 +26,7 @@ public class BranchesManager
 
     public IEnumerable<Step> GetSteps(Branch branch)
     {
-        if (branch.Name.EqualsIgnoreCase(MainBranch) || _mainBranch == null)
+        if (branch.Name.EqualsIgnoreCase(_globalSettings.DefaultBranch) || _mainBranch == null)
             return branch.Steps;
 
         return _mainBranch.Steps.Concat(branch.Steps);
@@ -40,7 +39,7 @@ public class BranchesManager
         _mainBranch = await Load(_directory.File(MainBranchFilename));
         _branches.Add(_mainBranch.Name, _mainBranch);
 
-        var files = _directory.EnumerateFiles("*.csv", SearchOption.TopDirectoryOnly)
+        var files = _directory.EnumerateFiles($"*.{ListFileExtension}", SearchOption.TopDirectoryOnly)
             .Where(f => !f.Name.EqualsIgnoreCase(MainBranchFilename))
             .ToArray();
 
@@ -53,6 +52,8 @@ public class BranchesManager
         return BranchesValidator.Validate(_branches.Values, _globalSettings, _directory);
     }
 
+    private string MainBranchFilename => $"{_globalSettings.DefaultBranch}.{ListFileExtension}";
+
     private async Task<Branch> Load(IFileInfo file)
     {
         return await LoadInternal(file, new HashSet<string>(StringComparer.InvariantCultureIgnoreCase));
@@ -61,7 +62,7 @@ public class BranchesManager
     private static IFileInfo GetBranchFile(string branchName, IDirectoryInfo directory)
     {
         branchName = branchName.Replace('/', '_');
-        return directory.File($"{branchName}.csv");
+        return directory.File($"{branchName}.{ListFileExtension}");
     }
 
     private async Task<Branch> LoadInternal(IFileInfo file, ISet<string> files)

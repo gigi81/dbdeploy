@@ -40,7 +40,7 @@ public abstract class BaseService : IExecutable
         return manager.GetSteps(branch).ToArray();
     }
 
-    protected async Task<BranchesManager> LoadBranchesManager(string path)
+    private async Task<BranchesManager> LoadBranchesManager(string path)
     {
         var directory = _fileSystem.DirectoryInfo.New(path);
         var manager = new BranchesManager(directory, _globalSettings.Value);
@@ -52,7 +52,7 @@ public abstract class BaseService : IExecutable
             _logger.LogError(error);
 
         if (errors.Count > 0)
-            throw new Exception("Detected error(s) in branches configuration");
+            throw new InvalidBranchesConfigurationException(errors);
 
         return manager;
     }

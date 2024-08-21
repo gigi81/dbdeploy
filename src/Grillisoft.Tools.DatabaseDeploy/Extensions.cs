@@ -14,6 +14,11 @@ internal static class Extensions
         return obj.Equals(value, StringComparison.InvariantCultureIgnoreCase);
     }
 
+    public static HashSet<string> ToHashSetIgnoreCase(this IEnumerable<string> source)
+    {
+        return new HashSet<string>(source, StringComparer.InvariantCultureIgnoreCase);
+    }
+
     public static string OverrideWith(this string defaultValue, string? value)
     {
         return string.IsNullOrEmpty(value) ? defaultValue : value;

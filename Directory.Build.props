@@ -10,6 +10,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <NoWarn>S2139</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>

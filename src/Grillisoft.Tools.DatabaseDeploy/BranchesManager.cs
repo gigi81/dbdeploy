@@ -1,5 +1,6 @@
 ﻿using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Microsoft.Extensions.Options;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
@@ -68,7 +69,7 @@ public class BranchesManager
     {
         file.ThrowIfNotFound();
         if (!files.Add(file.Name))
-            throw new Exception($"Circular include detected for file '{file.Name}'");
+            throw new CircularIncludeException(file.Name);
 
         var branchName = file.Name.BranchName();
         var directory = file.Directory ?? file.FileSystem.CurrentDirectory();

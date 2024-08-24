@@ -22,7 +22,7 @@ public class DeployServiceTests
         _output = output;
         _cancellationToken = _cancellationTokenSource.Token;
     }
-    
+
     [Fact]
     public async Task Execute_WhenDeployingMainBranch_IsSuccessful()
     {
@@ -47,7 +47,7 @@ public class DeployServiceTests
         migrations01.First().Name.Should().Be(_globalSettings.InitStepName);
         migrations02.First().Name.Should().Be(_globalSettings.InitStepName);
     }
-    
+
     [Fact]
     public async Task Execute_WhenDeployingRelease1_1Branch_IsSuccessful()
     {
@@ -74,7 +74,7 @@ public class DeployServiceTests
         migrations01.Skip(1).First().Name.Should().Be("TKT-001.SampleDescription");
         migrations02.First().Name.Should().Be(_globalSettings.InitStepName);
     }
-    
+
     [Fact]
     public async Task Execute_WhenDeployingRelease1_2Branch_IsSuccessful()
     {
@@ -98,7 +98,7 @@ public class DeployServiceTests
         migrations01.Count.Should().Be(2);
         migrations01.First().Name.Should().Be(_globalSettings.InitStepName);
         migrations01.Skip(1).First().Name.Should().Be("TKT-001.SampleDescription");
-        
+
         migrations02.Count.Should().Be(2);
         migrations02.First().Name.Should().Be(_globalSettings.InitStepName);
         migrations02.Skip(1).First().Name.Should().Be("TKT-002.SampleDescription");
@@ -112,7 +112,7 @@ public class DeployServiceTests
             .AddSingleton<IProgress<int>>(new Progress<int>())
             .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(databases))
             .AddSingleton<IDatabasesCollection>(new DatabasesCollectionMock(databases))
-            .Configure<GlobalSettings>(options => {})
+            .Configure<GlobalSettings>(options => { })
             .BuildServiceProvider();
 
         return provider.GetRequiredService<DeployService>();

@@ -23,9 +23,9 @@ try
 
     await CreateHostBuilder((OptionsBase)result.Value, args).RunAsync();
 }
-catch(Exception ex)
+catch (Exception ex)
 {
-    if(Environment.ExitCode == ExitCode.Ok)
+    if (Environment.ExitCode == ExitCode.Ok)
         Environment.ExitCode = ExitCode.GenericError;
 
     Console.WriteLine(ex.Message);
@@ -46,10 +46,10 @@ static IHost CreateHostBuilder(OptionsBase options, string[] args)
             .ReadFrom.Configuration(builder.Configuration)
             .WriteTo.Console();
     });
-    
+
     builder.Services.Configure<GlobalSettings>(
         builder.Configuration.GetSection(GlobalSettings.SectionName));
-            
+
     builder.Services.AddSingleton<IFileSystem, FileSystem>()
         .AddSingleton<IDatabasesCollection, DatabasesCollection>()
         .AddSingleton<IProgress<int>, ConsoleProgress>()
@@ -59,13 +59,6 @@ static IHost CreateHostBuilder(OptionsBase options, string[] args)
         .AddPostgreSql()
         .AddExecutable(options)
         .AddHostedService<ExecutableBackgroundService>();
-    
-    return builder.Build();
-}
 
-internal static class ExitCode
-{
-    public const int Ok = 0;
-    public const int InvalidArguments = -1;
-    public const int GenericError = -2;
+    return builder.Build();
 }

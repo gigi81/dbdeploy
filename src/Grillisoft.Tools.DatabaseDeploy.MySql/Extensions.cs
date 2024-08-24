@@ -13,7 +13,7 @@ public static class Extensions
     {
         services.AddSingleton<MySqlScriptParser>();
         services.AddSingleton<IDatabaseFactory, MySqlDatabaseFactory>();
-        
+
         return services;
     }
 }

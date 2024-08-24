@@ -24,12 +24,12 @@ public class MySqlScriptParser : IScriptParser
             }
 
             AppendSql(buffer, RemoveDelimiter(line, delimiter));
-            if(buffer.Length > 0)
+            if (buffer.Length > 0)
                 yield return buffer.ToString();
             buffer.Clear();
         }
-        
-        if(buffer.Length > 0)
+
+        if (buffer.Length > 0)
             yield return buffer.ToString();
     }
 
@@ -50,9 +50,9 @@ public class MySqlScriptParser : IScriptParser
     private static bool GetDelimiter(string line, ref string delimiter)
     {
         line = line.Trim();
-        
+
         if (!line.StartsWith("DELIMITER", StringComparison.InvariantCultureIgnoreCase))
-            return false;    
+            return false;
 
         delimiter = line.Replace("DELIMITER", "", StringComparison.OrdinalIgnoreCase).Trim();
         return true;

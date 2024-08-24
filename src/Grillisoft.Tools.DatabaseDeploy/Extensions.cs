@@ -14,6 +14,11 @@ internal static class Extensions
         return obj.Equals(value, StringComparison.InvariantCultureIgnoreCase);
     }
 
+    public static HashSet<string> ToHashSetIgnoreCase(this IEnumerable<string> source)
+    {
+        return new HashSet<string>(source, StringComparer.InvariantCultureIgnoreCase);
+    }
+
     public static string OverrideWith(this string defaultValue, string? value)
     {
         return string.IsNullOrEmpty(value) ? defaultValue : value;
@@ -23,10 +28,10 @@ internal static class Extensions
     {
         if (string.IsNullOrEmpty(value))
             return string.Empty;
-        
+
         return value.Substring(0, Math.Min(maxLength, value.Length));
     }
-    
+
     internal static string BranchName(this string filename)
     {
         var name = filename;

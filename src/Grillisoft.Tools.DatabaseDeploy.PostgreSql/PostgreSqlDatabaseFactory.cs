@@ -21,9 +21,9 @@ internal class PostgreSqlDatabaseFactory : IDatabaseFactory
         _globalSettings = globalSettings;
         _loggerFactory = loggerFactory;
     }
-    
+
     public string Name => "postgreSql";
-    
+
     public Task<IDatabase> GetDatabase(string name, IConfigurationSection config, CancellationToken cancellationToken)
     {
         var database = new PostgreSqlDatabase(

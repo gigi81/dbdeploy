@@ -2,6 +2,13 @@
   <Import Project="..\Directory.Build.props" />
 
   <ItemGroup>
+    <PackageReference Include="SonarAnalyzer.CSharp">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  
+  <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>$(AssemblyName).Tests</_Parameter1>
     </AssemblyAttribute>

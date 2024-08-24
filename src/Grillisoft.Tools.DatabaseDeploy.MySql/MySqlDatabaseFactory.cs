@@ -21,11 +21,11 @@ public class MySqlDatabaseFactory : IDatabaseFactory
         _globalSettings = globalSettings;
         _loggerFactory = loggerFactory;
     }
-    
+
     public string Name => "mySql";
-    
+
     public Task<IDatabase> GetDatabase(string name, IConfigurationSection config, CancellationToken cancellationToken)
-    { 
+    {
         var database = new MySqlDatabase(
             name,
             config.GetValue("connectionString", string.Empty)!,

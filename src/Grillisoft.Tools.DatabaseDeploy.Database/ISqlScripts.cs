@@ -6,7 +6,7 @@ public interface ISqlScripts
     string[] CreateSql { get; }
     string InitSql { get; }
     string ClearMigrationsSql { get; }
-    
+
     string GetMigrationsSql { get; }
     string AddMigrationSql { get; }
     string RemoveMigrationSql { get; }

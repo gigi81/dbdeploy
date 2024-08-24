@@ -28,10 +28,10 @@ public class StrategyTests
         //arrange
         var steps = GetSteps(_directory);
         var sut = new Strategy(steps, GetMigrations(steps.Length), _logger);
-            
+
         //act
         var deploySteps = await sut.GetDeploySteps(MainBranch).ToArrayAsync();
-        
+
         //assert
         deploySteps.Length.Should().Be(0);
     }
@@ -42,10 +42,10 @@ public class StrategyTests
         //arrange
         var steps = GetSteps(_directory);
         var sut = new Strategy(steps, GetMigrations(1), _logger);
-            
+
         //act
         var deploySteps = await sut.GetDeploySteps(MainBranch).ToArrayAsync();
-        
+
         //assert
         deploySteps.Length.Should().Be(steps.Length - 1);
     }
@@ -61,22 +61,22 @@ public class StrategyTests
         };
         var steps = GetSteps(_directory).Concat(releaseSteps).ToArray();
         var sut = new Strategy(steps, GetMigrations(2), _logger);
-            
+
         //act
         var deploySteps = await sut.GetDeploySteps(releaseBranch).ToArrayAsync();
-        
+
         //assert
         deploySteps.Length.Should().Be(1);
         deploySteps.Should().BeEquivalentTo(releaseSteps);
     }
 
-    private static readonly string TestHash = new string('0', Step.HashLength);
-    
+    private static readonly string TestHash = new('0', Step.HashLength);
+
     private static Dictionary<string, DatabaseMigration[]> GetMigrations(int count)
     {
         return new Dictionary<string, DatabaseMigration[]>
         {
-            { 
+            {
                 Database01,
                 new []
                 {

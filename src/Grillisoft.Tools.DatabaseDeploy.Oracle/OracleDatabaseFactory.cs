@@ -21,11 +21,11 @@ public class OracleDatabaseFactory : IDatabaseFactory
         _globalSettings = globalSettings;
         _loggerFactory = loggerFactory;
     }
-    
+
     public string Name => "oracle";
-    
+
     public Task<IDatabase> GetDatabase(string name, IConfigurationSection config, CancellationToken cancellationToken)
-    { 
+    {
         var database = new OracleDatabase(
             name,
             config.GetValue("schema", name)!,

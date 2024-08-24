@@ -14,7 +14,7 @@ public abstract class DatabaseBase : IDatabase
     private readonly IScriptParser _parser;
     private readonly ILogger _logger;
     private ISqlScripts? _sqlScripts;
-    
+
     protected DatabaseBase(
         string name,
         DbConnection connection,
@@ -24,27 +24,27 @@ public abstract class DatabaseBase : IDatabase
         _name = name;
         _connection = connection;
         _parser = parser;
-        _logger = logger;
+        _logger = new DatabaseLogger(name, logger);
     }
 
     protected abstract ISqlScripts CreateSqlScripts();
-    
+
     protected abstract DbConnection CreateConnectionWithoutDatabase(ILogger logger);
 
     protected ISqlScripts SqlScripts => _sqlScripts ??= CreateSqlScripts();
-    
+
     public string Name => _name;
 
     public virtual string DatabaseName => !string.IsNullOrWhiteSpace(_connection.Database) ? _connection.Database : _name;
-    
+
     public IScriptParser ScriptParser => _parser;
-    
+
     public int ScriptTimeout { get; set; } = 60 * 60;
-    
+
     protected DbConnection Connection => _connection;
 
     protected ILogger Logger => _logger;
-    
+
     public async virtual Task<bool> Exists(CancellationToken cancellationToken)
     {
         var script = this.SqlScripts.ExistsSql;
@@ -78,10 +78,10 @@ public abstract class DatabaseBase : IDatabase
         await OpenConnection(cancellationToken);
         await using var command = CreateCommand(script);
         var ret = await command.ExecuteScalarAsync(cancellationToken);
-        if (ret == null)
-            throw new Exception($"Expected return type {typeof(T)} but sql script return null");
+        if (ret is not T retT)
+            throw new InvalidCastException($"Expected return type {typeof(T)} but sql script return null or an invalid type");
 
-        return (T)ret;
+        return retT;
     }
 
     public async virtual Task InitializeMigrations(CancellationToken cancellationToken)
@@ -93,7 +93,7 @@ public abstract class DatabaseBase : IDatabase
         await using var command = CreateCommand(this.SqlScripts.GetMigrationsSql);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var ret = new List<DatabaseMigration>();
-        
+
         while (await reader.ReadAsync(cancellationToken))
         {
             ret.Add(ReadMigration(reader));
@@ -121,7 +121,7 @@ public abstract class DatabaseBase : IDatabase
                .AddParameter("deployed_utc", migration.DateTime)
                .AddParameter("user_name", migration.User)
                .AddParameter("hash", migration.Hash);
-        
+
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
@@ -156,11 +156,11 @@ public abstract class DatabaseBase : IDatabase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Failed to open connection to database '{_name}'");
+            _logger.LogError(ex, "Failed to open connection to database");
             throw;
         }
     }
-    
+
     public async virtual ValueTask DisposeAsync()
     {
         await _connection.DisposeAsync();

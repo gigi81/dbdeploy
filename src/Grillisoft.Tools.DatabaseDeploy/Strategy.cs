@@ -8,7 +8,7 @@ public class Strategy
 {
     private readonly Step[] _steps;
     private readonly IDictionary<string, DatabaseMigration[]> _migrations;
-    private readonly ILogger _logger;
+    private readonly DatabaseLoggerFactory _dbl;
 
     public Strategy(
         Step[] steps,
@@ -17,13 +17,13 @@ public class Strategy
     {
         _steps = steps;
         _migrations = migrations;
-        _logger = logger;
+        _dbl = new DatabaseLoggerFactory(logger);
     }
 
     public async IAsyncEnumerable<Step> GetDeploySteps(string branch)
     {
         var migrations = GetMigrationsQueues();
-        
+
         foreach (var step in _steps)
         {
             if (!IsStepDeployed(step, migrations[step.Database], out var migration))
@@ -33,22 +33,22 @@ public class Strategy
             else
             {
                 var hash = await step.GetStepHash();
-                if(!hash.Equals(migration?.Hash))
-                    _logger.LogWarning($"Database {step.Database} Step {step.Name} hash mismatch detected, deploy script was changed after deployment");
-                
-                if(step.Branch.EqualsIgnoreCase(branch))
-                    _logger.LogInformation($"Database {step.Database} Step {step.Name} already deployed");
+                if (!hash.Equals(migration?.Hash))
+                    _dbl[step.Database].LogWarning("Step {StepName} hash mismatch detected, deploy script was changed after deployment", step.Name);
+
+                if (step.Branch.EqualsIgnoreCase(branch))
+                    _dbl[step.Database].LogInformation("Step {StepName} already deployed", step.Name);
             }
         }
     }
-    
+
     public IEnumerable<(Step, DatabaseMigration)> GetRollbackSteps(string branch)
     {
         foreach (var (step, migration) in GetRollbackStepsInternal().Reverse())
         {
             if (!step.Branch.EqualsIgnoreCase(branch))
                 yield break;
-            
+
             yield return (step, migration);
         }
     }
@@ -56,17 +56,17 @@ public class Strategy
     private IEnumerable<(Step, DatabaseMigration)> GetRollbackStepsInternal()
     {
         var migrations = GetMigrationsQueues();
-        
+
         foreach (var step in _steps)
         {
             if (!IsStepDeployed(step, migrations[step.Database], out var migration) || migration == null)
             {
-                _logger.LogInformation($"Database {step.Database} Step {step.Name} was not deployed. Skipping rollback");
+                _dbl[step.Database].LogInformation("Step {StepName} was not deployed. Skipping rollback", step.Name);
                 continue;
             }
-            
+
             //we do not rollback the init step
-            if(step.IsInit)
+            if (step.IsInit)
                 continue;
 
             yield return (step, migration);
@@ -88,7 +88,7 @@ public class Strategy
 
         if (!migration.Name.EqualsIgnoreCase(step.Name))
             throw new StepMigrationMismatchException(step, migration);
-            
+
         return true;
     }
 }

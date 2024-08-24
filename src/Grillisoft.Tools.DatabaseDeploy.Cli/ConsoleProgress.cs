@@ -6,7 +6,7 @@ public class ConsoleProgress : IProgress<int>
     {
         if (value < 0 || value > 100)
             return;
-        
+
         Console.Write($"\x1b]9;4;1;{value}\x07");
     }
 }

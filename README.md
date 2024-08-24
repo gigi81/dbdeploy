@@ -55,10 +55,11 @@ release_1.2.csv
 ```
 
 ### dbsettings.json
-This file contains the lists of databases connection strings and settings for the tool to be able to connect to apply the changes. You can have multiple settings files, one for each **environment**.
+This file contains the lists of databases connection strings and settings for the tool to be able to connect to the databases and to apply the changes. You can have multiple settings files, one for each **environment**.
 ```json
 {
   "global": {
+    "defaultBranch": "main",
     "defaultProvider": "sqlServer"
   },
   "databases":{
@@ -75,7 +76,7 @@ This file contains the lists of databases connection strings and settings for th
 
 ### main.csv
 This file contains the list of scripts that are deployed to production. After each successful release, developers should move the list of deployed scripts to this file.
-It is recommended for this file name to match your main branch name (if any).
+It is recommended for this file name to match your default branch name. For example, you can name the file `develop.csv` by changing the `defaultBranch` setting in the `global` section of `dbsettings.json` to `develop`.
 ```
 Database01,_Init
 Database02,_Init

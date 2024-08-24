@@ -1,6 +1,5 @@
 ﻿namespace Grillisoft.Tools.DatabaseDeploy.Exceptions;
 
-[Serializable]
 public class BranchNotFoundException : Exception
 {
     private readonly string _branchName;

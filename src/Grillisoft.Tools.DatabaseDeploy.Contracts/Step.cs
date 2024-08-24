@@ -7,16 +7,16 @@ namespace Grillisoft.Tools.DatabaseDeploy.Contracts;
 public record Step(string Database, string Name, string Branch, bool IsInit, IDirectoryInfo Directory)
 {
     public const int HashLength = 32;
-    
+
     private string? _hash;
     private IList<IFileInfo>? _dataFiles;
 
     public IFileInfo DeployScript =>
         this.Directory.File(IsInit ? $"{Name}.sql" : $"{Name}.Deploy.sql");
-    
+
     public IFileInfo RollbackScript =>
         this.Directory.File($"{Name}.Rollback.sql");
-    
+
     public IFileInfo TestScript => this.Directory.File($"{Name}.Test.sql");
 
     public IList<IFileInfo> DataScripts => _dataFiles ??= GetDataFilesList();
@@ -29,7 +29,7 @@ public record Step(string Database, string Name, string Branch, bool IsInit, IDi
     }
 
     public async Task<string> GetStepHash() => _hash ??= await ComputeHash(this.DeployScript);
-    
+
     private static async Task<string> ComputeHash(IFileInfo file)
     {
         using var md5 = MD5.Create();

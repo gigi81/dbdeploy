@@ -18,7 +18,7 @@ public class MySqlDatabaseTests : DatabaseTest<MySqlDatabase, MySqlContainer>
     protected override MySqlDatabase CreateDatabase()
     {
         _logger.LogInformation(this.ConnectionString);
-        
+
         return new MySqlDatabase(
             "test",
             this.ConnectionString,

@@ -8,7 +8,7 @@ public class DatabaseFactoryMock : IDatabaseFactory
     private readonly Dictionary<string, IDatabase> _databases = new();
 
     public string Name => "mock";
-    
+
     public DatabaseFactoryMock()
     {
     }
@@ -24,7 +24,7 @@ public class DatabaseFactoryMock : IDatabaseFactory
 
     public Task<IDatabase> GetDatabase(string name, IConfigurationSection config, CancellationToken cancellationToken)
     {
-        if(!string.IsNullOrWhiteSpace(name) && _databases.TryGetValue(name, out var ret))
+        if (!string.IsNullOrWhiteSpace(name) && _databases.TryGetValue(name, out var ret))
             return Task.FromResult(ret);
 
         throw new Exception($"Mock database {name} not found");

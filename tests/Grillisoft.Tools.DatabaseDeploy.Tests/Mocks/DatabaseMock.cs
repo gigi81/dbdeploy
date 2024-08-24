@@ -12,7 +12,7 @@ public class DatabaseMock : IDatabase
         : this(name, new ScriptParserMock())
     {
     }
-    
+
     public DatabaseMock(string name, IScriptParser scriptParser)
     {
         this.Name = name;
@@ -41,7 +41,7 @@ public class DatabaseMock : IDatabase
 
     public Task<ICollection<DatabaseMigration>> GetMigrations(CancellationToken cancellationToken)
     {
-        return Task.FromResult((ICollection<DatabaseMigration>) _migrations);
+        return Task.FromResult((ICollection<DatabaseMigration>)_migrations);
     }
 
     public Task AddMigration(DatabaseMigration migration, CancellationToken cancellationToken)

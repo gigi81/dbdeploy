@@ -120,7 +120,7 @@ jobs:
         id: nbgv
       - name: Push tag
         id: tag_version
-        uses: mathieudutour/github-tag-action@v6.1
+        uses: mathieudutour/github-tag-action@v6
         with:
           custom_tag: ${{ steps.nbgv.outputs.SemVer2 }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -131,7 +131,7 @@ jobs:
           name: Release v${{ steps.nbgv.outputs.SemVer2 }}
           body: ${{ steps.tag_version.outputs.changelog }}
       - name: Comment relevant issues and merge requests
-        uses: apexskier/github-release-commenter@v1.3.2
+        uses: apexskier/github-release-commenter@v1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           comment-template: |

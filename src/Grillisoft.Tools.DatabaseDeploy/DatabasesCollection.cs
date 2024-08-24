@@ -1,5 +1,6 @@
 ﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Microsoft.Extensions.Configuration;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
@@ -17,7 +18,7 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
         _configurationSection = configuration.GetSection("databases");
         _global = configuration.GetSection(GlobalSettings.SectionName)?.Get<GlobalSettings>() ?? new GlobalSettings();
     }
-    
+
     public async Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken)
     {
         if (_databases.TryGetValue(name, out var ret))
@@ -27,18 +28,18 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
         _databases.Add(name, ret);
         return ret;
     }
-    
+
     private async Task<IDatabase> CreateDatabase(string name, CancellationToken cancellationToken)
     {
         var section = _configurationSection.GetSection(name);
         var provider = _global.DefaultProvider.OverrideWith(section["provider"]);
 
         if (string.IsNullOrWhiteSpace(provider) || !_databaseFactories.TryGetValue(provider, out var factory))
-            throw new Exception($"Could not find factory '{provider}' for database '{name}'");
+            throw new DatabaseProviderNotFoundException(provider, name);
 
         var database = await factory.GetDatabase(name, section, cancellationToken);
         if (database == null)
-            throw new Exception($"Database '{name}' not found");
+            throw new DatabaseConfigNotFoundException(name);
 
         return database;
     }
@@ -49,7 +50,7 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
         {
             await database.DisposeAsync();
         }
-        
+
         _databases.Clear();
     }
 }

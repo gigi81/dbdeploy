@@ -6,12 +6,12 @@ using Grillisoft.Tools.DatabaseDeploy.Contracts;
 namespace Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
 
 public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifetime
-    where TDatabase: IDatabase
-    where TDatabaseContainer: DockerContainer, IDatabaseContainer
+    where TDatabase : IDatabase
+    where TDatabaseContainer : DockerContainer, IDatabaseContainer
 {
     private static readonly DatabaseMigration TestMigration =
         new("test", "user", "12345678123456781234567812345678");
-    
+
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly CancellationToken _cancellationToken;
     private readonly TDatabaseContainer _container;
@@ -23,9 +23,9 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
     }
 
     protected string ConnectionString => _container.GetConnectionString();
-    
+
     protected abstract TDatabase CreateDatabase();
-    
+
     [Fact]
     [Trait(nameof(DockerPlatform), nameof(DockerPlatform.Linux))]
     public async Task InitializeMigrations_Then_GetMigrations_ShouldBeEmpty()
@@ -93,7 +93,7 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
         migrationsBefore.First().Should().BeEquivalentTo(TestMigration);
         migrationsAfter.Count.Should().Be(0);
     }
-    
+
     [Fact]
     [Trait(nameof(DockerPlatform), nameof(DockerPlatform.Linux))]
     public async Task Exists_ShouldReturnTrue()

@@ -1,15 +1,14 @@
 ﻿using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
-using Microsoft.Extensions.Options;
+using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
 
 public class BranchesManager
 {
     private const string IncludeKeyword = "@include ";
-    private const string MainBranch = "main";
-    private const string MainBranchFilename = MainBranch + ".csv";
-    
+    private const string ListFileExtension = "csv";
+
     private readonly IDirectoryInfo _directory;
     private readonly GlobalSettings _globalSettings;
     private readonly Dictionary<string, Branch> _branches = new(StringComparer.InvariantCultureIgnoreCase);
@@ -27,7 +26,7 @@ public class BranchesManager
 
     public IEnumerable<Step> GetSteps(Branch branch)
     {
-        if (branch.Name.EqualsIgnoreCase(MainBranch) || _mainBranch == null)
+        if (branch.Name.EqualsIgnoreCase(_globalSettings.DefaultBranch) || _mainBranch == null)
             return branch.Steps;
 
         return _mainBranch.Steps.Concat(branch.Steps);
@@ -36,11 +35,11 @@ public class BranchesManager
     public async Task<List<string>> Load()
     {
         _directory.ThrowIfNotFound();
-        
+
         _mainBranch = await Load(_directory.File(MainBranchFilename));
         _branches.Add(_mainBranch.Name, _mainBranch);
-        
-        var files = _directory.EnumerateFiles("*.csv", SearchOption.TopDirectoryOnly)
+
+        var files = _directory.EnumerateFiles($"*.{ListFileExtension}", SearchOption.TopDirectoryOnly)
             .Where(f => !f.Name.EqualsIgnoreCase(MainBranchFilename))
             .ToArray();
 
@@ -53,6 +52,8 @@ public class BranchesManager
         return BranchesValidator.Validate(_branches.Values, _globalSettings, _directory);
     }
 
+    private string MainBranchFilename => $"{_globalSettings.DefaultBranch}.{ListFileExtension}";
+
     private async Task<Branch> Load(IFileInfo file)
     {
         return await LoadInternal(file, new HashSet<string>(StringComparer.InvariantCultureIgnoreCase));
@@ -61,14 +62,14 @@ public class BranchesManager
     private static IFileInfo GetBranchFile(string branchName, IDirectoryInfo directory)
     {
         branchName = branchName.Replace('/', '_');
-        return directory.File($"{branchName}.csv");
+        return directory.File($"{branchName}.{ListFileExtension}");
     }
 
     private async Task<Branch> LoadInternal(IFileInfo file, ISet<string> files)
     {
         file.ThrowIfNotFound();
         if (!files.Add(file.Name))
-            throw new Exception($"Circular include detected for file '{file.Name}'");
+            throw new CircularIncludeException(file.Name);
 
         var branchName = file.Name.BranchName();
         var directory = file.Directory ?? file.FileSystem.CurrentDirectory();
@@ -101,7 +102,7 @@ public class BranchesManager
 
         return new Branch(branchName, steps);
     }
-    
+
     private Step ReadStep(string line, string branchName, int count, IDirectoryInfo directory)
     {
         var split = line.Split(',');
@@ -110,7 +111,7 @@ public class BranchesManager
 
         var database = split[0].Trim();
         var name = split[1].Trim();
-        
+
         return new Step(
             database,
             name,

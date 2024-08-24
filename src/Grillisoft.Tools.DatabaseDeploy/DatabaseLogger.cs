@@ -4,7 +4,7 @@ namespace Grillisoft.Tools.DatabaseDeploy;
 
 public class DatabaseLogger : ILogger
 {
-    private static Type? FormattedLogValuesType = Type.GetType("Microsoft.Extensions.Logging.FormattedLogValues, Microsoft.Extensions.Logging.Abstractions");
+    private static readonly Type? FormattedLogValuesType = Type.GetType("Microsoft.Extensions.Logging.FormattedLogValues, Microsoft.Extensions.Logging.Abstractions");
 
     private readonly string[] _database;
     private readonly ILogger _logger;
@@ -22,7 +22,7 @@ public class DatabaseLogger : ILogger
     {
         if (!IsEnabled(logLevel))
             return;
-        
+
         state = CreateNewState(state);
         _logger.Log(logLevel, eventId, state, exception, formatter);
     }
@@ -45,10 +45,10 @@ public class DatabaseLogger : ILogger
         //the last item of keyValuePairs contains the original format
         var values = _database.Concat(keyValuePairs.Take(keyValuePairs.Count - 1).Select(kvp => kvp.Value)).ToArray();
         var format = _prefixFormat + keyValuePairs[^1].Value;
-        
+
         return (TState?)Activator.CreateInstance(FormattedLogValuesType, format, values) ?? state;
     }
-    
+
     public bool IsEnabled(LogLevel logLevel)
     {
         return _logger.IsEnabled(logLevel);

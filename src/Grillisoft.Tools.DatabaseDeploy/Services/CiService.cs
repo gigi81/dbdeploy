@@ -41,20 +41,20 @@ public class CiService : BaseService
             _logger.LogInformation("Executing Step {CurrentStep}/{TotalSteps} ------------", current, steps.Length);
             var result = await step.ExecuteAsync(cancellationToken);
             _logger.LogInformation("Step {CurrentStep}/{TotalSteps} terminated with exit code {ExitCode}", current, steps.Length, result.ExitCode);
-            
-            if(result.ExitCode != 0)
+
+            if (result.ExitCode != 0)
                 return result.ExitCode;
-            
+
             current++;
         }
-        
+
         return 0;
     }
 
     private IEnumerable<Command> GetSteps()
     {
         yield return ExecuteDbDeploy("deploy", this.DefaultBranch, _options.Create);
-        if(this.Branch.EqualsIgnoreCase(this.DefaultBranch))
+        if (this.Branch.EqualsIgnoreCase(this.DefaultBranch))
             yield break;
 
         yield return ExecuteDbDeploy("deploy", this.Branch, _options.Create);
@@ -77,7 +77,7 @@ public class CiService : BaseService
         arguments = arguments.Concat([verb, "--path", ".", "-b", branch]);
         if (create)
             arguments = arguments.Concat(["--create"]);
-        
+
         return arguments;
     }
 

@@ -20,7 +20,7 @@ public static class Extensions
                 services.AddSingleton(rollbackOptions);
                 services.AddSingleton<IExecutable, RollbackService>();
                 break;
-            
+
             case CiOptions ciOptions:
                 services.AddSingleton(ciOptions);
                 services.AddSingleton<IExecutable, CiService>();

@@ -7,7 +7,7 @@ public class DatabaseLoggerFactory
 {
     private readonly ILogger _logger;
     private readonly ConcurrentDictionary<string, DatabaseLogger> _loggers = new();
-    
+
     public DatabaseLoggerFactory(ILogger logger)
     {
         _logger = logger;

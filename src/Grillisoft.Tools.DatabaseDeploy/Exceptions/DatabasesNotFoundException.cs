@@ -8,6 +8,6 @@ public class DatabasesNotFoundException : Exception
     {
         _missingDatabases = missingDatabases;
     }
-    
+
     public override string Message => $"Databases not found: {string.Join(", ", _missingDatabases)}";
 }

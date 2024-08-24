@@ -120,7 +120,7 @@ jobs:
         id: nbgv
       - name: Push tag
         id: tag_version
-        uses: mathieudutour/github-tag-action@v6
+        uses: mathieudutour/github-tag-action@v6.2
         with:
           custom_tag: ${{ steps.nbgv.outputs.SemVer2 }}
           github_token: ${{ secrets.GITHUB_TOKEN }}

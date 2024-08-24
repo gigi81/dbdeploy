@@ -29,7 +29,7 @@ public class RollbackService : BaseService
     private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)
         ? _options.Branch
         : _globalSettings.Value.DefaultBranch;
-    
+
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
         var count = 0;

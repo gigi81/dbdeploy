@@ -12,14 +12,9 @@ env:
   PROJECT: src/Grillisoft.Tools.DatabaseDeploy.Cli/Grillisoft.Tools.DatabaseDeploy.Cli.csproj
   
 jobs:
-  container-job:
+  mssql-job:
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/dotnet/sdk:8.0
-
-    strategy:
-      matrix:
-        example: ['mssql-02', 'oracle-01', 'mysql-01', 'postgres-01']
-
     services:
       mssql:
         image: mcr.microsoft.com/mssql/server:2022-latest
@@ -28,25 +23,6 @@ jobs:
           SA_PASSWORD: 'SqlServer2019!'
         ports:
           - 1433:1433
-      oracle:
-        image: gvenzl/oracle-free:latest
-        env:
-          ORACLE_PASSWORD: 'oracle2019!'
-        ports:
-          - 1521:1521
-      mariadb:
-        image: mariadb:latest
-        env:
-          MARIADB_ROOT_PASSWORD: mariadb2019!
-        ports:
-          - 3306:3306
-      postgres:
-        image: postgres:latest
-        env:
-          POSTGRES_PASSWORD: postgres2019!
-        ports:
-          - 5432:5432
-
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -56,15 +32,71 @@ jobs:
       - name: Dotnet restore
         run: dotnet restore
 
-      - name: Create databases
-        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/${{ matrix.example }} -c
+      - name: dbdeploy ci
+        run: dotnet run --configuration Release --project $PROJECT -- ci --path examples/mssql-02 -c --branch release/1.1
+        
+  oracle-job:
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/dotnet/sdk:8.0
+    services:
+      oracle:
+        image: gvenzl/oracle-free:latest
+        env:
+          ORACLE_PASSWORD: 'oracle2019!'
+        ports:
+          - 1521:1521
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Deploy release
-        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/${{ matrix.example }} --branch release/1.1
+      - name: Dotnet restore
+        run: dotnet restore
 
-      - name: Rollback release
-        run: dotnet run --configuration Release --project $PROJECT -- rollback --path examples/${{ matrix.example }} --branch release/1.1
+      - name: dbdeploy ci
+        run: dotnet run --configuration Release --project $PROJECT -- ci --path examples/oracle-01 -c --branch release/1.1
 
-      # make sure scripts are re-runnable
-      - name: Re-deploy release
-        run: dotnet run --configuration Release --project $PROJECT -- deploy --path examples/${{ matrix.example }} --branch release/1.1
+  mariadb-job:
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/dotnet/sdk:8.0
+    services:
+      mariadb:
+        image: mariadb:latest
+        env:
+          MARIADB_ROOT_PASSWORD: mariadb2019!
+        ports:
+          - 3306:3306
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Dotnet restore
+        run: dotnet restore
+
+      - name: dbdeploy ci
+        run: dotnet run --configuration Release --project $PROJECT -- ci --path examples/mysql-01 -c --branch release/1.1
+
+  postgres-job:
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/dotnet/sdk:8.0
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_PASSWORD: postgres2019!
+        ports:
+          - 5432:5432
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Dotnet restore
+        run: dotnet restore
+
+      - name: dbdeploy ci
+        run: dotnet run --configuration Release --project $PROJECT -- ci --path examples/postgres-01 -c --branch release/1.1

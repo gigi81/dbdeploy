@@ -30,7 +30,7 @@ public abstract class BaseService : IExecutable
     }
 
     public abstract Task<int> Execute(CancellationToken cancellationToken);
-    
+
     protected async Task<Step[]> GetBranchSteps(string path, string branchName)
     {
         var manager = await LoadBranchesManager(path);

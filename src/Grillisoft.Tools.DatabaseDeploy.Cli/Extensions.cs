@@ -21,6 +21,11 @@ public static class Extensions
                 services.AddSingleton<IExecutable, RollbackService>();
                 break;
 
+            case CiOptions ciOptions:
+                services.AddSingleton(ciOptions);
+                services.AddSingleton<IExecutable, CiService>();
+                break;
+
             default:
                 throw new ArgumentException($"Options of type {options.GetType().Name} not supported", nameof(options));
         }

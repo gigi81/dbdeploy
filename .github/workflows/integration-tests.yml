@@ -8,14 +8,13 @@ on:
     branches: [main]
 
 env:
-  CONTAINER: mcr.microsoft.com/dotnet/sdk:8.0
   DOTNET_ENVIRONMENT: ci
   PROJECT: src/Grillisoft.Tools.DatabaseDeploy.Cli/Grillisoft.Tools.DatabaseDeploy.Cli.csproj
   
 jobs:
   mssql-job:
     runs-on: ubuntu-latest
-    container: $CONTAINER
+    container: mcr.microsoft.com/dotnet/sdk:8.0
     services:
       mssql:
         image: mcr.microsoft.com/mssql/server:2022-latest
@@ -38,7 +37,7 @@ jobs:
         
   oracle-job:
     runs-on: ubuntu-latest
-    container: $CONTAINER
+    container: mcr.microsoft.com/dotnet/sdk:8.0
     services:
       oracle:
         image: gvenzl/oracle-free:latest
@@ -60,7 +59,7 @@ jobs:
 
   mariadb-job:
     runs-on: ubuntu-latest
-    container: $CONTAINER
+    container: mcr.microsoft.com/dotnet/sdk:8.0
     services:
       mariadb:
         image: mariadb:latest
@@ -82,7 +81,7 @@ jobs:
 
   postgres-job:
     runs-on: ubuntu-latest
-    container: $CONTAINER
+    container: mcr.microsoft.com/dotnet/sdk:8.0
     services:
       postgres:
         image: postgres:latest

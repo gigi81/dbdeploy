@@ -35,7 +35,7 @@ public class DeployService : BaseService
     {
         var count = 0;
         var stopwatch = Stopwatch.StartNew();
-        var steps = await GetBranchSteps(_options.Path, this.Branch);
+        var steps = await GetBranchSteps(_options.Path, this.Branch, cancellationToken);
         var databases = steps.Select(s => s.Database).Distinct().ToArray();
 
         await CheckDatabasesExistsOrCreate(databases, cancellationToken);

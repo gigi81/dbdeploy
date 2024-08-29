@@ -205,3 +205,7 @@ dotnet_style_prefer_inferred_tuple_names = true:suggestion
 dotnet_style_prefer_inferred_anonymous_type_member_names = true:suggestion
 dotnet_style_prefer_compound_assignment = true:warning
 dotnet_style_prefer_simplified_interpolation = true:suggestion
+
+# resharper suggestions
+resharper_enforce_foreach_statement_braces_highlighting = none
+resharper_enforce_if_statement_braces_highlighting = none

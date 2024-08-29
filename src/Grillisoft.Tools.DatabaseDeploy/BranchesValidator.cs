@@ -1,12 +1,13 @@
 ﻿using System.IO.Abstractions;
 using System.Text.RegularExpressions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+// ReSharper disable EnforceForeachStatementBraces
 
 namespace Grillisoft.Tools.DatabaseDeploy;
 
 public static class BranchesValidator
 {
-    public static List<string> Validate(IEnumerable<Branch> branches, GlobalSettings settings, IDirectoryInfo directory)
+    public static List<string> Validate(ICollection<Branch> branches, GlobalSettings settings, IDirectoryInfo directory)
     {
         var errors = new List<string>();
         var steps = branches.SelectMany(b => b.Steps).Distinct().ToArray();
@@ -30,6 +31,17 @@ public static class BranchesValidator
         var missing = mandatoryFiles.Where(m => !found.Contains(m)).ToArray();
         var untracked = found.Where(f => !mandatoryFiles.Contains(f) && !extraFiles.Contains(f))
             .ToArray();
+
+        foreach (var branch in branches)
+        {
+            var duplicates = branch.Steps
+                .GroupBy(s => s.Name)
+                .Where(g => g.Count() > 1)
+                .ToArray();
+            
+            foreach (var duplicate in duplicates)
+                errors.Add($"The script {duplicate.Key} was incorrectly specified more than once on branch {branch.Name}");
+        }
 
         foreach (var file in missing)
             errors.Add($"Could not find mandatory file {file}");

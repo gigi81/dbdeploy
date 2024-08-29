@@ -11,6 +11,11 @@ public static class Extensions
     {
         switch (options)
         {
+            case ValidateOptions validateOptions:
+                services.AddSingleton(validateOptions);
+                services.AddSingleton<IExecutable, ValidateService>();
+                break;
+            
             case DeployOptions deployOptions:
                 services.AddSingleton(deployOptions);
                 services.AddSingleton<IExecutable, DeployService>();

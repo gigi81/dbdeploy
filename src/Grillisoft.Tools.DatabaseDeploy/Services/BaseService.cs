@@ -5,6 +5,7 @@ using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+// ReSharper disable InconsistentNaming
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
@@ -31,16 +32,16 @@ public abstract class BaseService : IExecutable
 
     public abstract Task<int> Execute(CancellationToken cancellationToken);
 
-    protected async Task<Step[]> GetBranchSteps(string path, string branchName)
+    protected async Task<Step[]> GetBranchSteps(string path, string branchName, CancellationToken cancellationToken)
     {
-        var manager = await LoadBranchesManager(path);
+        var manager = await LoadBranchesManager(path, cancellationToken);
         if (!manager.Branches.TryGetValue(branchName, out var branch))
             throw new BranchNotFoundException(branchName);
 
         return manager.GetSteps(branch).ToArray();
     }
 
-    private async Task<BranchesManager> LoadBranchesManager(string path)
+    protected async Task<BranchesManager> LoadBranchesManager(string path, CancellationToken cancellationToken)
     {
         var directory = _fileSystem.DirectoryInfo.New(path);
         var manager = new BranchesManager(directory, _globalSettings.Value);

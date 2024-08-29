@@ -13,7 +13,7 @@ using Serilog;
 
 try
 {
-    var result = Parser.Default.ParseArguments<DeployOptions, RollbackOptions, CiOptions>(args);
+    var result = Parser.Default.ParseArguments<ValidateOptions, DeployOptions, RollbackOptions, CiOptions>(args);
 
     if (result.Errors.Any())
     {

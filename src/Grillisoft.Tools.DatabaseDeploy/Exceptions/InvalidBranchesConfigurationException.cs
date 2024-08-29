@@ -9,5 +9,7 @@ public class InvalidBranchesConfigurationException : Exception
         _errors = errors;
     }
 
+    public IReadOnlyCollection<string> Errors => _errors;
+    
     public override string Message => $"Invalid branches configuration: {string.Join(", ", _errors)}";
 }

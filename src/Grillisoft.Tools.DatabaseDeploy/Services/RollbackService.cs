@@ -34,7 +34,7 @@ public class RollbackService : BaseService
     {
         var count = 0;
         var stopwatch = Stopwatch.StartNew();
-        var steps = await GetBranchSteps(_options.Path, this.Branch);
+        var steps = await GetBranchSteps(_options.Path, this.Branch, cancellationToken);
         var strategy = await GetStrategy(steps, cancellationToken);
         var rollbackSteps = strategy.GetRollbackSteps(this.Branch).ToArray();
 

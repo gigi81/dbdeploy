@@ -11,6 +11,9 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
 public class CiService : BaseService
 {
+    private const string DeployVerb = "deploy";
+    private const string RollbackVerb = "rollback";
+    
     private readonly CiOptions _options;
 
     public CiService(
@@ -53,32 +56,41 @@ public class CiService : BaseService
 
     private IEnumerable<Command> GetSteps()
     {
-        yield return ExecuteDbDeploy("deploy", this.DefaultBranch, _options.Create);
+        yield return ExecuteDbDeploy(DeployVerb, this.DefaultBranch);
         if (this.Branch.EqualsIgnoreCase(this.DefaultBranch))
             yield break;
 
-        yield return ExecuteDbDeploy("deploy", this.Branch, _options.Create);
-        yield return ExecuteDbDeploy("rollback", this.Branch, false);
-        yield return ExecuteDbDeploy("deploy", this.Branch, _options.Create);
+        yield return ExecuteDbDeploy(DeployVerb, this.Branch);
+        yield return ExecuteDbDeploy(RollbackVerb, this.Branch);
+        yield return ExecuteDbDeploy(DeployVerb, this.Branch);
     }
 
-    private Command ExecuteDbDeploy(string verb, string branch, bool create = false)
+    private Command ExecuteDbDeploy(string verb, string branch)
     {
         return Cli.Wrap(ExecutablePath)
-            .WithArguments(GetArguments(verb, branch, create))
+            .WithArguments(GetArguments(verb, branch))
             .WithStandardOutputPipe(PipeTarget.ToDelegate(Console.WriteLine))
             .WithStandardErrorPipe(PipeTarget.ToDelegate(Console.WriteLine))
             .WithWorkingDirectory(_options.Path);
     }
 
-    private static IEnumerable<string> GetArguments(string verb, string branch, bool create)
+    private IEnumerable<string> GetArguments(string verb, string branch)
     {
-        IEnumerable<string> arguments = IsDll ? [DbDeployPath] : Array.Empty<string>();
-        arguments = arguments.Concat([verb, "--path", ".", "-b", branch]);
-        if (create)
-            arguments = arguments.Concat(["--create"]);
-
-        return arguments;
+        if (IsDll)
+            yield return DbDeployPath;
+        
+        yield return verb;
+        yield return "--path";
+        //path is set by CLI working directory in ExecuteDbDeploy
+        yield return ".";
+        yield return "-b";
+        yield return branch;
+        
+        if (_options.Create && verb == DeployVerb)
+            yield return "--create";
+        
+        if (_options.Test && verb == DeployVerb)
+            yield return "--test";
     }
 
     private static string DbDeployPath => Assembly.GetEntryAssembly()!.Location;

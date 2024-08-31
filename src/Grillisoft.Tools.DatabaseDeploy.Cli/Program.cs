@@ -44,7 +44,8 @@ static IHost CreateHostBuilder(OptionsBase options, string[] args)
     {
         config.Enrich.FromLogContext()
             .ReadFrom.Configuration(builder.Configuration)
-            .WriteTo.Console();
+            .WriteTo.Console()
+            .WriteTo.OpenTelemetry();
     });
 
     builder.Services.Configure<GlobalSettings>(

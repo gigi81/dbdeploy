@@ -45,7 +45,13 @@ static IHost CreateHostBuilder(OptionsBase options, string[] args)
         config.Enrich.FromLogContext()
             .ReadFrom.Configuration(builder.Configuration)
             .WriteTo.Console()
-            .WriteTo.OpenTelemetry();
+            .WriteTo.OpenTelemetry(options =>
+            {
+                options.ResourceAttributes = new Dictionary<string, object>()
+                {
+                    { "service.name", "dbdeploy" }
+                };
+            });
     });
 
     builder.Services.Configure<GlobalSettings>(

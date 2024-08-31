@@ -76,6 +76,9 @@ public class CiService : BaseService
 
     private IEnumerable<string> GetArguments(string verb, string branch)
     {
+        if (IsDll)
+            yield return DbDeployPath;
+        
         yield return verb;
         yield return "--path";
         //path is set by CLI working directory in ExecuteDbDeploy

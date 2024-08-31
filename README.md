@@ -27,7 +27,7 @@ dbdeploy rollback --path examples/examples01 --branch release/1.1
 ## Deploy during Development/CI
 This command will create databases (if they don't already exits) and deploy both .Deploy.sql scripts and .Test.sql scripts
 ```shell
-dbdeploy deploy --path examples/examples01 --branch release/1.1 --create --test
+dbdeploy ci --path examples/examples01 --branch release/1.1 --create --test
 ```
 
 ## Files structure

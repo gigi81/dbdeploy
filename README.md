@@ -24,11 +24,21 @@ dbdeploy deploy --path examples/examples01 --branch release/1.1
 dbdeploy rollback --path examples/examples01 --branch release/1.1
 ```
 
-## Deploy during Development/CI
-This command will create databases (if they don't already exits) and deploy both .Deploy.sql scripts and .Test.sql scripts
+## Using dbdeploy during CI builds
 ```shell
 dbdeploy ci --path examples/examples01 --branch release/1.1 --create --test
 ```
+
+This command will:
+- create databases (if they don't already exits)
+- deploy .Deploy.sql scripts and .Test.sql scripts for the specified `branch`
+- rollback by running .Rollback.sql scripts for the specified `branch`
+- re-deploy .Deploy.sql scripts and .Test.sql scripts for the specified `branch`
+
+You can see this command in action on the GitHub actions of this repo in the integration tests.
+The idea here is that scritps should obviously deploy and rollback with no errors but also re-deploying them again
+should not raise any errors. If the re-deployment fails it is usually an indication that the rollback script has
+side effects or it is not fully rolling back the changes.
 
 ## Files structure
 The files structure and content is designed to play nice with source control systems like git.

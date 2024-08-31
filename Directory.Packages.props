@@ -12,7 +12,7 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="8.0.2" />
-    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.141">
+    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.143">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageVersion>
@@ -20,7 +20,7 @@
     <PackageVersion Include="Neovolve.Logging.Xunit" Version="6.1.0" />
     <PackageVersion Include="FluentAssertions" Version="6.12.0" />
     <PackageVersion Include="FluentValidation" Version="11.9.2" />
-    <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.2.1" />
+    <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.2.2" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
@@ -33,6 +33,7 @@
     <PackageVersion Include="Serilog.Extensions.Logging" Version="8.0.0" />
     <PackageVersion Include="Serilog.Settings.Configuration" Version="8.0.2" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageVersion Include="Serilog.Sinks.OpenTelemetry" Version="4.0.0" />
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="9.32.0.97167" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="21.0.29" />
@@ -57,14 +58,15 @@
     </PackageVersion>
     <PackageVersion Include="Snapshooter.Xunit" Version="0.14.1" />
     <PackageVersion Include="FakeItEasy" Version="8.3.0" />
+    
     <!-- Transitive dependencies -->
     <PackageVersion Include="Azure.Core" Version="1.42.0" />
     <PackageVersion Include="Azure.Identity" Version="1.12.0" />
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
     <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.1" />
-    <PackageVersion Include="Microsoft.Identity.Client" Version="4.63.0" />
-    <PackageVersion Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.63.0" />
+    <PackageVersion Include="Microsoft.Identity.Client" Version="4.64.0" />
+    <PackageVersion Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.64.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Abstractions" Version="8.0.2" />
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.0.2" />
     <PackageVersion Include="Microsoft.IdentityModel.Logging" Version="8.0.2" />
@@ -87,5 +89,6 @@
     <PackageVersion Include="System.Text.Encodings.Web" Version="8.0.0" />
     <PackageVersion Include="System.Text.Json" Version="8.0.4" />
     <PackageVersion Include="xunit.abstractions" Version="2.0.3" />
+    <PackageVersion Include="xunit.analyzers" Version="1.16.0" />
   </ItemGroup>
 </Project>

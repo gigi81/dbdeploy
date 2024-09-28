@@ -6,6 +6,7 @@ using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Soenneker.Extensions.Enumerable;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
@@ -56,10 +57,10 @@ public class DeployService : BaseService
         return 0;
     }
 
-    private async Task CheckDatabasesExistsOrCreate(string[] databases, CancellationToken stoppingToken)
+    private async Task CheckDatabasesExistsOrCreate(string[] databases, CancellationToken cancellationToken)
     {
-        var missingDatabases = await databases.WhereAsync(CheckDatabaseIsMissing, stoppingToken)
-            .ToArrayAsync(stoppingToken);
+        var missingDatabases = await databases.WhereAsync(CheckDatabaseIsMissing, cancellationToken)
+            .ToArrayAsync(cancellationToken);
         if (missingDatabases.Length > 0)
             throw new DatabasesNotFoundException(missingDatabases);
     }

@@ -34,6 +34,9 @@
     <PackageVersion Include="Serilog.Settings.Configuration" Version="8.0.2" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageVersion Include="Serilog.Sinks.OpenTelemetry" Version="4.0.0" />
+    <PackageVersion Include="Soenneker.Extensions.Enumerable" Version="2.1.166" />
+    <PackageVersion Include="Soenneker.Extensions.Enumerable.String" Version="2.1.514" />
+    <PackageVersion Include="Soenneker.Extensions.String" Version="2.1.250" />
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="9.32.0.97167" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="21.0.29" />
@@ -58,7 +61,6 @@
     </PackageVersion>
     <PackageVersion Include="Snapshooter.Xunit" Version="0.14.1" />
     <PackageVersion Include="FakeItEasy" Version="8.3.0" />
-    
     <!-- Transitive dependencies -->
     <PackageVersion Include="Azure.Core" Version="1.42.0" />
     <PackageVersion Include="Azure.Identity" Version="1.12.0" />

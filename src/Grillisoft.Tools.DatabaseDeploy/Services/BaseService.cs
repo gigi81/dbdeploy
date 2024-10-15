@@ -5,6 +5,8 @@ using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Soenneker.Extensions.String;
+
 // ReSharper disable InconsistentNaming
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;

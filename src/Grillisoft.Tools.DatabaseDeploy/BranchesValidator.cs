@@ -1,13 +1,17 @@
 ﻿using System.IO.Abstractions;
+using System.Text;
 using System.Text.RegularExpressions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Soenneker.Extensions.Enumerable.String;
+using Soenneker.Extensions.String;
+
 // ReSharper disable EnforceForeachStatementBraces
 
 namespace Grillisoft.Tools.DatabaseDeploy;
 
 public static class BranchesValidator
 {
-    public static List<string> Validate(ICollection<Branch> branches, GlobalSettings settings, IDirectoryInfo directory)
+    public static async Task<List<string>> Validate(ICollection<Branch> branches, GlobalSettings settings, IDirectoryInfo directory)
     {
         var steps = branches.SelectMany(b => b.Steps).Distinct().ToArray();
 
@@ -15,6 +19,7 @@ public static class BranchesValidator
             .Concat(CheckFiles(settings, directory, steps))
             .Concat(CheckForDuplicateSteps(branches))
             .Concat(CheckForInvalidStepNames(settings, steps))
+            .Concat(await CheckForBOMs(directory).ToArrayAsync())
             .ToList();
 
         return errors;
@@ -75,5 +80,55 @@ public static class BranchesValidator
         var regex = new Regex(settings.StepsNameRegex);
         foreach (var step in steps.Where(s => !s.IsInit && !regex.IsMatch(s.Name)))
             yield return $"Step {step.Name} for database {step.Database} does not match expected naming convention";
+    }
+
+    // ReSharper disable once InconsistentNaming
+    private static async IAsyncEnumerable<string> CheckForBOMs(IDirectoryInfo directory)
+    {
+        var files = directory.EnumerateFiles("*.sql", SearchOption.AllDirectories)
+            .Concat(directory.EnumerateFiles("*.csv", SearchOption.TopDirectoryOnly));
+        
+        var tasks = files.Select(file => Task.Run(async () =>
+            {
+                var encoding = await DetectBOM(file);
+                return (file, encoding);
+            }))
+            .ToArray();
+        
+        var results = await Task.WhenAll(tasks);
+
+        foreach (var result in results.Where(t => t.encoding != null))
+        {
+            yield return $"BOM detected on file {result.file.FullName}. Convert the file to UTF8 without BOM";
+        }
+    }
+
+    // ReSharper disable once InconsistentNaming
+    private static async Task<Encoding?> DetectBOM(IFileInfo file)
+    {
+        var buffer = new byte[4];
+        await using var stream = file.OpenRead();
+        var count = await stream.ReadAsync(buffer).ConfigureAwait(false);
+        if (count <= 0)
+            return null;
+
+        // Check for BOM patterns
+        if (buffer[0] == 0x2b && buffer[1] == 0x2f && buffer[2] == 0x76)
+#pragma warning disable SYSLIB0001
+            return Encoding.UTF7;
+#pragma warning restore SYSLIB0001
+        if (buffer[0] == 0xef && buffer[1] == 0xbb && buffer[2] == 0xbf)
+            return Encoding.UTF8;
+        if (buffer[0] == 0xff && buffer[1] == 0xfe && buffer[2] == 0x00 && buffer[3] == 0x00)
+            return Encoding.UTF32; // UTF-32 LE
+        if (buffer[0] == 0x00 && buffer[1] == 0x00 && buffer[2] == 0xfe && buffer[3] == 0xff)
+            return Encoding.GetEncoding("UTF-32BE"); // UTF-32 BE
+        if (buffer[0] == 0xff && buffer[1] == 0xfe)
+            return Encoding.Unicode; // UTF-16 LE
+        if (buffer[0] == 0xfe && buffer[1] == 0xff)
+            return Encoding.BigEndianUnicode; // UTF-16 BE
+
+        // No BOM found
+        return null;
     }
 }

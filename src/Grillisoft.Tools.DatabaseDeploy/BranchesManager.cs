@@ -1,6 +1,7 @@
 ﻿using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
+using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
 
@@ -49,7 +50,7 @@ public class BranchesManager
             _branches.Add(branch.Name, branch);
         }
 
-        return BranchesValidator.Validate(_branches.Values, _globalSettings, _directory);
+        return await BranchesValidator.Validate(_branches.Values, _globalSettings, _directory);
     }
 
     private string MainBranchFilename => $"{_globalSettings.DefaultBranch}.{ListFileExtension}";

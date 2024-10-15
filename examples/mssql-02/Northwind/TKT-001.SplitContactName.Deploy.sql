@@ -1,4 +1,4 @@
-﻿ALTER TABLE Customers
+ALTER TABLE Customers
 ADD FirstName nvarchar(30) NULL,
     LastName nvarchar(30) NULL
 GO

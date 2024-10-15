@@ -148,3 +148,25 @@ It is recommended for this file name to match your release branch name (if any) 
 @include release_1.1
 Database02,TKT-002.SampleDescription
 ```
+
+## Alternatives
+
+A list of other database migration tools, both open source and commercial.
+
+[DbUp](https://dbup.readthedocs.io/en/latest/)
+
+[Grate](https://erikbra.github.io/grate/)
+
+[migrate](https://github.com/golang-migrate/migrate?tab=readme-ov-file)
+
+[dbmate](https://github.com/amacneil/dbmate)
+
+[FlyWay](https://flywaydb.org/)
+
+[Migrator.Net](https://github.com/migratordotnet/Migrator.NET)
+
+[Liquidbase](https://www.liquibase.com/)
+
+[Atlas](https://atlasgo.io/)
+
+[Nasgrate](https://github.com/dlevsha/nasgrate)

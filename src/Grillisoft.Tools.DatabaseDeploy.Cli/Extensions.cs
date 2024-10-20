@@ -30,7 +30,12 @@ public static class Extensions
                 services.AddSingleton(ciOptions);
                 services.AddSingleton<IExecutable, CiService>();
                 break;
-
+            
+            case GenerateOptions generateOptions:
+                services.AddSingleton(generateOptions);
+                services.AddSingleton<IExecutable, GenerateService>();
+                break;
+            
             default:
                 throw new ArgumentException($"Options of type {options.GetType().Name} not supported", nameof(options));
         }

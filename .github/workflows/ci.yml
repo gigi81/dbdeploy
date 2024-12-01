@@ -49,7 +49,7 @@ jobs:
         uses: codecov/codecov-action@v5
         if: runner.os == 'Linux'
         with:
-          exclude: tests
+          gcov_ignore: tests
           token: ${{ secrets.CODECOV_TOKEN }}
   pack:
     name: Pack

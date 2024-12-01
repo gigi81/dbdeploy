@@ -27,6 +27,8 @@ public class OracleDatabase : DatabaseBase
         this.ScriptTimeout = scriptTimeout;
     }
 
+    public override string Dialect => "Oracle";
+    
     public override string DatabaseName => _schema;
 
     protected override ISqlScripts CreateSqlScripts()

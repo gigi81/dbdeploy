@@ -13,6 +13,8 @@ public class DatabaseMock : IDatabase
     {
     }
 
+    public string Dialect => "ANSI SQL";
+
     public DatabaseMock(string name, IScriptParser scriptParser)
     {
         this.Name = name;

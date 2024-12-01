@@ -5,6 +5,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
 public interface IDatabase : IAsyncDisposable
 {
     string Name { get; }
+    string Dialect { get; }
     Task<bool> Exists(CancellationToken cancellationToken);
     Task Create(CancellationToken cancellationToken);
     IScriptParser ScriptParser { get; }

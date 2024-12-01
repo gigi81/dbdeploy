@@ -16,6 +16,7 @@
     
 	<ItemGroup>
       <PackageReference Include="CommandLineParser" />
+      <PackageReference Include="Microsoft.Extensions.AI.Ollama" />
 	  <PackageReference Include="Microsoft.Extensions.Hosting" />
       <PackageReference Include="Serilog" />
       <PackageReference Include="Serilog.Extensions.Hosting" />

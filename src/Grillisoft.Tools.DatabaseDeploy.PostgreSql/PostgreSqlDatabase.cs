@@ -24,6 +24,8 @@ public class PostgreSqlDatabase : DatabaseBase
         this.ScriptTimeout = scriptTimeout;
     }
 
+    public override string Dialect => "PostgreSQL";
+    
     /// <summary>
     /// Gets the migration table name prefixed by "public"
     /// unless a schema is already specified in the <paramref name="migrationTableName"/>

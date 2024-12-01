@@ -28,9 +28,9 @@ jobs:
         with:
           dotnet-version: 8.0.x
       - name: Run Tests
-        run: dotnet test --collect:"XPlat Code Coverage" --logger "GitHubActions" --logger "trx;LogFileName=test-results.trx" --filter DockerPlatform!=Linux || true
+        run: dotnet test --collect:"XPlat Code Coverage" --logger "GitHubActions" --logger "trx;LogFileName=test-results.trx" --filter DockerPlatform!=Linux /p:CoverletOutputFormat=opencover || true
       - name: Run Integration Tests
-        run: dotnet test --collect:"XPlat Code Coverage" --logger "GitHubActions" --logger "trx;LogFileName=integration-results.trx" --filter DockerPlatform=Linux || true
+        run: dotnet test --collect:"XPlat Code Coverage" --logger "GitHubActions" --logger "trx;LogFileName=integration-results.trx" --filter DockerPlatform=Linux /p:CoverletOutputFormat=opencover || true
         if: runner.os == 'Linux'
       - name: Test Report
         uses: dorny/test-reporter@v1.9.1
@@ -45,39 +45,11 @@ jobs:
         with:
           name: Code coverage ${{ matrix.os }}
           path: "**/coverage.cobertura.xml"
-  coverage:
-    name: Coverage
-    needs: [test]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-      - uses: actions/download-artifact@v4
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        if: runner.os == 'Linux'
         with:
-          name: Code coverage ubuntu-latest
-          path: coverage-ubuntu
-      - uses: actions/download-artifact@v4
-        with:
-          name: Code coverage windows-latest
-          path: coverage-windows
-      - uses: actions/download-artifact@v4
-        with:
-          name: Code coverage macos-latest
-          path: coverage-macos
-      - name: Generate coverage report
-        uses: danielpalme/ReportGenerator-GitHub-Action@5.3.8
-        with:
-          reports: "**/coverage.cobertura.xml"
-          targetdir: "coverage-report"
-          reporttypes: "Cobertura"
-      # - name: Publish coverage report to Codacy
-        # uses: codacy/codacy-coverage-reporter-action@master
-        # if: github.repository == 'gigi81/dbdeploy' && github.event_name == 'push'
-        # with:
-          # project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-          # coverage-reports: coverage-report/Cobertura.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
   pack:
     name: Pack
     needs: [test]

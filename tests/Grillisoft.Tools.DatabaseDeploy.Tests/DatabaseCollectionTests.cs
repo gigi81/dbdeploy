@@ -28,8 +28,7 @@ public class DatabaseCollectionTests
             { "databases:test:provider", FactoryProviderName }
         });
         
-        var factory = new Mock<IDatabaseFactory>();
-        factory.Setup(f => f.Name).Returns(FactoryProviderName);
+        var factory = GetDatabaseFactory();
         var database = Mock.Of<IDatabase>();
         factory.SetupSequence(f => f.GetDatabase("test", It.IsAny<IConfigurationSection>(), cts.Token))
             .ReturnsAsync(database)
@@ -57,8 +56,7 @@ public class DatabaseCollectionTests
             { "global:defaultProvider", FactoryProviderName }
         });
         
-        var factory = new Mock<IDatabaseFactory>();
-        factory.Setup(f => f.Name).Returns(FactoryProviderName);
+        var factory = GetDatabaseFactory();
         var database = Mock.Of<IDatabase>();
         factory.SetupSequence(f => f.GetDatabase("test", It.IsAny<IConfigurationSection>(), cts.Token))
             .ReturnsAsync(database)
@@ -85,9 +83,7 @@ public class DatabaseCollectionTests
             { "databases:test:connectionString", "test" }
         });
         
-        var factory = new Mock<IDatabaseFactory>();
-        factory.Setup(f => f.Name).Returns(FactoryProviderName);
-
+        var factory = GetDatabaseFactory();
         await using var collection = new DatabasesCollection([factory.Object], configuration);
         
         //act
@@ -96,5 +92,12 @@ public class DatabaseCollectionTests
         //assert
         Assert.True(ex != null, "The DatabaseProviderNotFoundException exception was not thrown.");
         ex.GetType().Should().Be(typeof(DatabaseProviderNotFoundException));
+    }
+
+    private static Mock<IDatabaseFactory> GetDatabaseFactory()
+    {
+        var factory = new Mock<IDatabaseFactory>();
+        factory.Setup(f => f.Name).Returns(FactoryProviderName);
+        return factory;
     }
 }

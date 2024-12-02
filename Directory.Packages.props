@@ -60,7 +60,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
     <PackageVersion Include="Snapshooter.Xunit" Version="0.14.1" />
-    <PackageVersion Include="FakeItEasy" Version="8.3.0" />
+    <PackageVersion Include="Moq" Version="4.20.72" />
     <!-- Transitive dependencies -->
     <PackageVersion Include="Azure.Core" Version="1.42.0" />
     <PackageVersion Include="Azure.Identity" Version="1.12.0" />

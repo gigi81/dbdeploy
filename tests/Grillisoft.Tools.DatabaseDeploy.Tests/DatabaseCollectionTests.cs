@@ -29,13 +29,13 @@ public class DatabaseCollectionTests
         });
         
         var factory = new Mock<IDatabaseFactory>();
-        var database = Mock.Of<IDatabase>();
         factory.Setup(f => f.Name).Returns(FactoryProviderName);
+        var database = Mock.Of<IDatabase>();
         factory.SetupSequence(f => f.GetDatabase("test", It.IsAny<IConfigurationSection>(), cts.Token))
             .ReturnsAsync(database)
             .Throws(new Exception("This was expected to be called only once as it is cached afterwards"));
 
-        var collection = new DatabasesCollection([factory.Object], configuration);
+        await using var collection = new DatabasesCollection([factory.Object], configuration);
         
         //act
         var actualDatabase01 = await collection.GetDatabase("test", cts.Token);
@@ -45,7 +45,36 @@ public class DatabaseCollectionTests
         actualDatabase01.Should().BeSameAs(database);
         actualDatabase02.Should().BeSameAs(database);
     }
-    
+
+    [Fact]
+    public async Task GetDatabase_WhenDefaultProvider_ReturnsDatabase()
+    {
+        //arrange
+        var cts = new CancellationTokenSource();
+        var configuration = CreateConfig(new Dictionary<string, string?>()
+        {
+            { "databases:test:connectionString", "test" },
+            { "global:defaultProvider", FactoryProviderName }
+        });
+        
+        var factory = new Mock<IDatabaseFactory>();
+        factory.Setup(f => f.Name).Returns(FactoryProviderName);
+        var database = Mock.Of<IDatabase>();
+        factory.SetupSequence(f => f.GetDatabase("test", It.IsAny<IConfigurationSection>(), cts.Token))
+            .ReturnsAsync(database)
+            .Throws(new Exception("This was expected to be called only once as it is cached afterwards"));
+
+        await using var collection = new DatabasesCollection([factory.Object], configuration);
+        
+        //act
+        var actualDatabase01 = await collection.GetDatabase("test", cts.Token);
+        var actualDatabase02 = await collection.GetDatabase("test", cts.Token);
+
+        //assert
+        actualDatabase01.Should().BeSameAs(database);
+        actualDatabase02.Should().BeSameAs(database);
+    }
+
     [Fact]
     public async Task GetDatabase_WhenProviderMissing_Throws()
     {
@@ -59,7 +88,7 @@ public class DatabaseCollectionTests
         var factory = new Mock<IDatabaseFactory>();
         factory.Setup(f => f.Name).Returns(FactoryProviderName);
 
-        var collection = new DatabasesCollection([factory.Object], configuration);
+        await using var collection = new DatabasesCollection([factory.Object], configuration);
         
         //act
         var ex = await Record.ExceptionAsync(() => collection.GetDatabase("test", cts.Token));

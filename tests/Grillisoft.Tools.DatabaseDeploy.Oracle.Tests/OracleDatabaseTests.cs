@@ -16,6 +16,7 @@ public class OracleDatabaseTests : DatabaseTest<OracleDatabase, OracleContainer>
     {
         var ret = base.GetConfigurationSettings();
         ret.Add("databases:test:schema", "oracle");
+        ret.Add("databases:test:migrationTable", "MIGRATIONS");
         return ret;
     }
 

@@ -1,5 +1,5 @@
-﻿using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
-using Microsoft.Extensions.Logging;
+﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
 using Testcontainers.PostgreSql;
 using Xunit.Abstractions;
 
@@ -7,24 +7,18 @@ namespace Grillisoft.Tools.DatabaseDeploy.PostgreSql.Tests;
 
 public class PostgreSqlDatabaseTests : DatabaseTest<PostgreSqlDatabase, PostgreSqlContainer>
 {
-    private readonly ILogger<PostgreSqlDatabase> _logger;
-
     public PostgreSqlDatabaseTests(ITestOutputHelper output)
-        : base(new PostgreSqlBuilder().Build())
+        : base(new PostgreSqlBuilder().Build(), output)
     {
-        _logger = output.BuildLoggerFor<PostgreSqlDatabase>();
     }
 
-    protected override PostgreSqlDatabase CreateDatabase()
+    protected override IDatabaseFactory CreateDatabaseFactory()
     {
-        _logger.LogInformation(this.ConnectionString);
-
-        return new PostgreSqlDatabase(
-            "test",
-            this.ConnectionString,
-            "__Migrations",
-            60,
+        return new PostgreSqlDatabaseFactory(
             new PostgreSqlScriptParser(),
-            _logger);
+            this.GlobalSettingsOptions,
+            this.LoggerFactory);
     }
+
+    protected override string ProviderName => PostgreSqlDatabaseFactory.ProviderName;
 }

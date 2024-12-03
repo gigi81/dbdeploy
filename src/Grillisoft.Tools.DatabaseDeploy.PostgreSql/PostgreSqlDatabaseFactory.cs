@@ -8,6 +8,8 @@ namespace Grillisoft.Tools.DatabaseDeploy.PostgreSql;
 
 internal class PostgreSqlDatabaseFactory : IDatabaseFactory
 {
+    public const string ProviderName = "postgreSql";
+    
     private readonly PostgreSqlScriptParser _parser;
     private readonly IOptions<GlobalSettings> _globalSettings;
     private readonly ILoggerFactory _loggerFactory;
@@ -22,7 +24,7 @@ internal class PostgreSqlDatabaseFactory : IDatabaseFactory
         _loggerFactory = loggerFactory;
     }
 
-    public string Name => "postgreSql";
+    public string Name => ProviderName;
 
     public Task<IDatabase> GetDatabase(string name, IConfigurationSection config, CancellationToken cancellationToken)
     {

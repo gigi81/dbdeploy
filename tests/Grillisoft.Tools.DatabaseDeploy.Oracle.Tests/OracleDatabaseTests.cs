@@ -12,6 +12,13 @@ public class OracleDatabaseTests : DatabaseTest<OracleDatabase, OracleContainer>
     {
     }
 
+    protected override IDictionary<string, string?> GetConfigurationSettings()
+    {
+        var ret = base.GetConfigurationSettings();
+        ret.Add("databases:test:schema", "oracle");
+        return ret;
+    }
+
     protected override IDatabaseFactory CreateDatabaseFactory()
     {
         return new OracleDatabaseFactory(

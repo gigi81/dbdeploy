@@ -8,6 +8,8 @@ namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
 
 public class OracleDatabaseFactory : IDatabaseFactory
 {
+    public const string ProviderName = "oracle";
+    
     private readonly OracleScriptParser _parser;
     private readonly IOptions<GlobalSettings> _globalSettings;
     private readonly ILoggerFactory _loggerFactory;
@@ -22,7 +24,7 @@ public class OracleDatabaseFactory : IDatabaseFactory
         _loggerFactory = loggerFactory;
     }
 
-    public string Name => "oracle";
+    public string Name => ProviderName;
 
     public Task<IDatabase> GetDatabase(string name, IConfigurationSection config, CancellationToken cancellationToken)
     {

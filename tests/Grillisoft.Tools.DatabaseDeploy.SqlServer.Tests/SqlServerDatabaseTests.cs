@@ -1,5 +1,5 @@
-﻿using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
-using Microsoft.Extensions.Logging;
+﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
 using Testcontainers.MsSql;
 using Xunit.Abstractions;
 
@@ -7,27 +7,18 @@ namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests;
 
 public class SqlServerDatabaseTests : DatabaseTest<SqlServerDatabase, MsSqlContainer>
 {
-    private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private readonly CancellationToken _cancellationToken;
-    private readonly ILogger<SqlServerDatabase> _logger;
-
     public SqlServerDatabaseTests(ITestOutputHelper output)
-        : base(new MsSqlBuilder().Build())
+        : base(new MsSqlBuilder().Build(), output)
     {
-        _cancellationToken = _cancellationTokenSource.Token;
-        _logger = output.BuildLoggerFor<SqlServerDatabase>();
     }
-
-    protected override SqlServerDatabase CreateDatabase()
+    
+    protected override IDatabaseFactory CreateDatabaseFactory()
     {
-        _logger.LogInformation(this.ConnectionString);
-
-        return new SqlServerDatabase(
-            "test",
-            this.ConnectionString,
-            "__Migrations",
-            60,
+        return new SqlServerDatabaseFactory(
             new SqlServerScriptParser(),
-            _logger);
+            this.GlobalSettingsOptions,
+            this.LoggerFactory);
     }
+
+    protected override string ProviderName => SqlServerDatabaseFactory.ProviderName;
 }

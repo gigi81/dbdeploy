@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace Grillisoft.Tools.DatabaseDeploy;
+﻿namespace Grillisoft.Tools.DatabaseDeploy;
 
 internal static class Extensions
 {

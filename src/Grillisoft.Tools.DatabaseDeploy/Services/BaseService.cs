@@ -13,8 +13,8 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
 public abstract class BaseService : IExecutable
 {
-    private readonly IDatabasesCollection _databases;
-    private readonly IFileSystem _fileSystem;
+    protected readonly IDatabasesCollection _databases;
+    protected readonly IFileSystem _fileSystem;
     protected readonly IOptions<GlobalSettings> _globalSettings;
     protected readonly ILogger _logger;
     protected readonly DatabaseLoggerFactory _dbl;

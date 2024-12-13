@@ -7,7 +7,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />
-    <PackageReference Include="OpenAI" />
     <PackageReference Include="Soenneker.Extensions.Enumerable" />
     <PackageReference Include="Soenneker.Extensions.Enumerable.String" />
     <PackageReference Include="Soenneker.Extensions.String" />

@@ -7,7 +7,6 @@ using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using OpenAI.Chat;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
@@ -94,7 +93,7 @@ public class GenerateService : BaseService
             else if (sql)
                 builder.AppendLine(line);
             
-            line = await reader.ReadLineAsync();
+            line = await reader.ReadLineAsync(cancellationToken);
         }
 
         return builder.ToString();

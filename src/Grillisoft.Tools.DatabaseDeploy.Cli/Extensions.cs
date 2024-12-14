@@ -35,7 +35,12 @@ public static class Extensions
                 services.AddSingleton(generateOptions);
                 services.AddSingleton<IExecutable, GenerateService>();
                 break;
-            
+
+            case FormatOptions formatOptions:
+                services.AddSingleton(formatOptions);
+                services.AddSingleton<IExecutable, FormatService>();
+                break;
+                
             default:
                 throw new ArgumentException($"Options of type {options.GetType().Name} not supported", nameof(options));
         }

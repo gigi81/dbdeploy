@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
-using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -39,9 +38,8 @@ public class FormatService : BaseService
 
             foreach (var databaseName in databases)
             {
-                //var database = await GetDatabase(databaseName, cancellationToken);
-                //TODO: fix dialect
-                await FormatDatabaseSqlFiles(rootDir.SubDirectory(databaseName), "sql", cancellationToken);
+                var database = await GetDatabase(databaseName, cancellationToken);
+                await FormatDatabaseSqlFiles(rootDir.SubDirectory(databaseName), database.Dialect, cancellationToken);
             }
 
             _logger.LogInformation("SQL formatting completed successfully in {Elapsed}", stopwatch.Elapsed);
@@ -61,6 +59,7 @@ public class FormatService : BaseService
 
         foreach (var file in files)
         {
+            _logger.LogInformation("Formatting file {Path}", file.FullName);
             await formatter.FormatSql(file, cancellationToken);
         }
     }

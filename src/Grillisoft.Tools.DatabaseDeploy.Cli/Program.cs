@@ -5,8 +5,6 @@ using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Cli;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
-using Grillisoft.Tools.DatabaseDeploy.Oracle;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -61,7 +59,7 @@ static IHost CreateHostBuilder(OptionsBase options, string[] args)
     builder.Services.AddSingleton<IFileSystem, FileSystem>()
         .AddSingleton<IDatabasesCollection, DatabasesCollection>()
         .AddSingleton<IProgress<int>, ConsoleProgress>()
-        .AddSingleton<IChatClient>((_) => new OllamaChatClient(new Uri("http://localhost:11434/"), "llama3.1"))
+        .AddAIGenerator()
         .AddSqlServer()
         .AddMySql()
         .AddOracle()

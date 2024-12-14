@@ -1,7 +1,9 @@
 ﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Oracle;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
+// ReSharper disable once CheckNamespace
+namespace Grillisoft.Tools.DatabaseDeploy;
 
 public static class Extensions
 {

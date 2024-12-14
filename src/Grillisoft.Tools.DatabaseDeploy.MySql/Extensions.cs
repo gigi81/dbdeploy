@@ -1,10 +1,9 @@
-﻿
-
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.MySql;
 // ReSharper disable once CheckNamespace
 using Microsoft.Extensions.DependencyInjection;
 
+// ReSharper disable once CheckNamespace
 namespace Grillisoft.Tools.DatabaseDeploy;
 
 public static class Extensions

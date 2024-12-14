@@ -28,6 +28,7 @@
 	</ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.AI\Grillisoft.Tools.DatabaseDeploy.AI.csproj" />
       <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.MySql\Grillisoft.Tools.DatabaseDeploy.MySql.csproj" />
       <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.Oracle\Grillisoft.Tools.DatabaseDeploy.Oracle.csproj" />
       <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.PostgreSql\Grillisoft.Tools.DatabaseDeploy.PostgreSql.csproj" />

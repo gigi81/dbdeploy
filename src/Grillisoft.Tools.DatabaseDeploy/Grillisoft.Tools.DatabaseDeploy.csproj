@@ -3,7 +3,6 @@
   <ItemGroup>
     <PackageReference Include="CliWrap" />
     <PackageReference Include="CommandLineParser" />
-    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />

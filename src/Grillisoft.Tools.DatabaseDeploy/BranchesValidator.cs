@@ -88,18 +88,15 @@ public static class BranchesValidator
         var files = directory.EnumerateFiles("*.sql", SearchOption.AllDirectories)
             .Concat(directory.EnumerateFiles("*.csv", SearchOption.TopDirectoryOnly));
         
-        var tasks = files.Select(file => Task.Run(async () =>
-            {
-                var encoding = await DetectBOM(file);
-                return (file, encoding);
-            }))
+        var tasks = files
+            .Select(file => Task.Run(async () => (File: file, Encoding: await DetectBOM(file))))
             .ToArray();
         
         var results = await Task.WhenAll(tasks);
 
-        foreach (var result in results.Where(t => t.encoding != null))
+        foreach (var result in results.Where(t => t.Encoding != null))
         {
-            yield return $"BOM detected on file {result.file.FullName}. Convert the file to UTF8 without BOM";
+            yield return $"BOM detected on file {result.File.FullName}. Convert the file to UTF8 without BOM";
         }
     }
 

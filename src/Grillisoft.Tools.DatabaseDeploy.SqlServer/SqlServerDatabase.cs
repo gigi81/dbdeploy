@@ -22,6 +22,8 @@ public class SqlServerDatabase : DatabaseBase
         this.ScriptTimeout = scriptTimeout;
     }
 
+    public override string Dialect => "Microsoft SQL Server";
+    
     protected override ISqlScripts CreateSqlScripts()
     {
         return new SqlServerScripts(this.DatabaseName, _migrationTableName);

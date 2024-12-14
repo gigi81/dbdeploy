@@ -34,6 +34,7 @@ public abstract class DatabaseBase : IDatabase
     protected ISqlScripts SqlScripts => _sqlScripts ??= CreateSqlScripts();
 
     public string Name => _name;
+    public abstract string Dialect { get; }
 
     public virtual string DatabaseName => !string.IsNullOrWhiteSpace(_connection.Database) ? _connection.Database : _name;
 

@@ -23,6 +23,8 @@ public class MySqlDatabase : DatabaseBase
         this.ScriptTimeout = scriptTimeout;
     }
 
+    public override string Dialect => "MySql";
+    
     protected override ISqlScripts CreateSqlScripts()
     {
         return new MySqlScripts(this.DatabaseName, _migrationTableName);

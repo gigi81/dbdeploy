@@ -2,16 +2,19 @@
 using System.Text;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 
 namespace Grillisoft.Tools.DatabaseDeploy.AI;
 
 public class Generator : IGenerator
 {
     private readonly IChatClient _chatClient;
+    private readonly ILogger<Generator> _logger;
 
-    public Generator(IChatClient chatClient)
+    public Generator(IChatClient chatClient, ILogger<Generator> logger)
     {
         _chatClient = chatClient;
+        _logger = logger;
     }
     
     public async Task GenerateRollback(IFileInfo deployFile, IFileInfo rollbackFile, string dialect, CancellationToken cancellationToken)
@@ -19,6 +22,7 @@ public class Generator : IGenerator
         var deployScript = await deployFile.ReadAllTextAsync(cancellationToken);
         var rollbackScript = await GenerateRollback(deployScript, dialect, cancellationToken);
         await rollbackFile.WriteAllTextAsync(rollbackScript, cancellationToken);
+        _logger.LogWarning("*** AI Generation is EXPERIMENTAL. Remember to review to generated rollback script ***");
     }
     
     private const string RollbackPrompt = "Can you please create a rollback SQL script for the below {0} script. Remember to invert the order of the operations in the rollback script. \n\n{1}";

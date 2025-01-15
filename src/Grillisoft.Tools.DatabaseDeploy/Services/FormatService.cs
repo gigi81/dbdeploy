@@ -19,7 +19,7 @@ public class FormatService : BaseService
         IDatabasesCollection databases,
         IFileSystem fileSystem,
         IOptions<GlobalSettings> globalSettings,
-        ILogger logger)
+        ILogger<FormatService> logger)
         : base(databases, fileSystem, globalSettings, logger)
     {
         _options = options;

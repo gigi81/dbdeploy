@@ -1,3 +1,4 @@
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Formatting;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,7 +9,7 @@ public static class Extensions
 {
     public static IServiceCollection AddSqlFormatting(this IServiceCollection services)
     {
-        services.AddSingleton<SqlFormatterFactory>();
+        services.AddSingleton<ISqlFormatterFactory, SqlFormatterFactory>();
         return services;
     }
 }

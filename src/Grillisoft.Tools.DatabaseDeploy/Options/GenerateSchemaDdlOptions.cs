@@ -4,7 +4,7 @@ using CommandLine;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Options;
 
-[Verb("validate", HelpText = "Validates scripts filenames and csv files.")]
-public sealed class ValidateOptions : OptionsBase
+[Verb("generate-schema-ddl", HelpText = "Generates the full schema DDL.")]
+public sealed class GenerateSchemaDdlOptions : OptionsBase
 {
 }

@@ -9,14 +9,14 @@ namespace Grillisoft.Tools.DatabaseDeploy.Tests;
 public class DatabaseCollectionTests
 {
     private const string FactoryProviderName = "provider01";
-    
+
     private static IConfiguration CreateConfig(Dictionary<string, string?> settings)
     {
         var configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.AddInMemoryCollection(settings);
         return configurationBuilder.Build();
     }
-    
+
     [Fact]
     public async Task GetDatabase_WhenProviderSpecified_ReturnsDatabase()
     {
@@ -27,7 +27,7 @@ public class DatabaseCollectionTests
             { "databases:test:connectionString", "test" },
             { "databases:test:provider", FactoryProviderName }
         });
-        
+
         var factory = GetDatabaseFactory();
         var database = Mock.Of<IDatabase>();
         factory.SetupSequence(f => f.GetDatabase("test", It.IsAny<IConfigurationSection>(), cts.Token))
@@ -35,7 +35,7 @@ public class DatabaseCollectionTests
             .Throws(new Exception("This was expected to be called only once as it is cached afterwards"));
 
         await using var collection = new DatabasesCollection([factory.Object], configuration);
-        
+
         //act
         var actualDatabase01 = await collection.GetDatabase("test", cts.Token);
         var actualDatabase02 = await collection.GetDatabase("test", cts.Token);
@@ -55,7 +55,7 @@ public class DatabaseCollectionTests
             { "databases:test:connectionString", "test" },
             { "global:defaultProvider", FactoryProviderName }
         });
-        
+
         var factory = GetDatabaseFactory();
         var database = Mock.Of<IDatabase>();
         factory.SetupSequence(f => f.GetDatabase("test", It.IsAny<IConfigurationSection>(), cts.Token))
@@ -63,7 +63,7 @@ public class DatabaseCollectionTests
             .Throws(new Exception("This was expected to be called only once as it is cached afterwards"));
 
         await using var collection = new DatabasesCollection([factory.Object], configuration);
-        
+
         //act
         var actualDatabase01 = await collection.GetDatabase("test", cts.Token);
         var actualDatabase02 = await collection.GetDatabase("test", cts.Token);
@@ -82,10 +82,10 @@ public class DatabaseCollectionTests
         {
             { "databases:test:connectionString", "test" }
         });
-        
+
         var factory = GetDatabaseFactory();
         await using var collection = new DatabasesCollection([factory.Object], configuration);
-        
+
         //act
         var ex = await Record.ExceptionAsync(() => collection.GetDatabase("test", cts.Token));
 

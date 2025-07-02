@@ -24,7 +24,7 @@ public class MySqlDatabase : DatabaseBase
     }
 
     public override string Dialect => "MySql";
-    
+
     protected override ISqlScripts CreateSqlScripts()
     {
         return new MySqlScripts(this.DatabaseName, _migrationTableName);

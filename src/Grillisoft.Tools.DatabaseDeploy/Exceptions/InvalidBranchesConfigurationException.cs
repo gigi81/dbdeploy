@@ -10,6 +10,6 @@ public class InvalidBranchesConfigurationException : Exception
     }
 
     public IReadOnlyCollection<string> Errors => _errors;
-    
+
     public override string Message => $"Invalid branches configuration: {string.Join(", ", _errors)}";
 }

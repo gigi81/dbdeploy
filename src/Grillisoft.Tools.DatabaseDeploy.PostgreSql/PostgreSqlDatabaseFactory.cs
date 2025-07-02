@@ -9,7 +9,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.PostgreSql;
 internal class PostgreSqlDatabaseFactory : IDatabaseFactory
 {
     public const string ProviderName = "postgreSql";
-    
+
     private readonly PostgreSqlScriptParser _parser;
     private readonly IOptions<GlobalSettings> _globalSettings;
     private readonly ILoggerFactory _loggerFactory;

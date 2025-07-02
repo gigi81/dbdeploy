@@ -9,7 +9,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.SqlServer;
 internal class SqlServerDatabaseFactory : IDatabaseFactory
 {
     public const string ProviderName = "sqlServer";
-    
+
     private readonly SqlServerScriptParser _parser;
     private readonly IOptions<GlobalSettings> _globalSettings;
     private readonly ILoggerFactory _loggerFactory;

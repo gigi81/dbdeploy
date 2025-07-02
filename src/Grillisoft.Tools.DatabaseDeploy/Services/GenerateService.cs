@@ -41,7 +41,7 @@ public class GenerateService : BaseService
             _logger.LogWarning("No missing rollback scripts found on path {Path}", _directory.FullName);
             return 0;
         }
-        
+
         foreach (var deployFile in missingRollbacks)
         {
             var rollbackFile = GetRollbackFile(deployFile);
@@ -58,11 +58,11 @@ public class GenerateService : BaseService
                 errors++;
             }
         }
-        
+
         _logger.LogInformation("Generated {Count} rollback scripts in {Elapsed}", missingRollbacks.Length, stopwatch.Elapsed);
         return errors;
     }
-    
+
     private static IFileInfo GetRollbackFile(IFileInfo deployFile)
     {
         return deployFile.Directory.File(deployFile.Name.Replace(".Deploy.sql", ".Rollback.sql"));

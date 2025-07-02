@@ -14,7 +14,7 @@ public class CiService : BaseService
 {
     private const string DeployVerb = "deploy";
     private const string RollbackVerb = "rollback";
-    
+
     private readonly CiOptions _options;
 
     public CiService(
@@ -79,17 +79,17 @@ public class CiService : BaseService
     {
         if (IsDll)
             yield return DbDeployPath;
-        
+
         yield return verb;
         yield return "--path";
         //path is set by CLI working directory in ExecuteDbDeploy
         yield return ".";
         yield return "-b";
         yield return branch;
-        
+
         if (_options.Create && verb == DeployVerb)
             yield return "--create";
-        
+
         if (_options.Test && verb == DeployVerb)
             yield return "--test";
     }

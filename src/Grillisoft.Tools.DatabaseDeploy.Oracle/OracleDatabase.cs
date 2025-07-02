@@ -28,7 +28,7 @@ public class OracleDatabase : DatabaseBase
     }
 
     public override string Dialect => "Oracle";
-    
+
     public override string DatabaseName => _schema;
 
     protected override ISqlScripts CreateSqlScripts()

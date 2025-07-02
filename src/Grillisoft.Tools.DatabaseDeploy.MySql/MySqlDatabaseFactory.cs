@@ -9,7 +9,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.MySql;
 public class MySqlDatabaseFactory : IDatabaseFactory
 {
     public const string ProviderName = "mySql";
-    
+
     private readonly MySqlScriptParser _parser;
     private readonly IOptions<GlobalSettings> _globalSettings;
     private readonly ILoggerFactory _loggerFactory;

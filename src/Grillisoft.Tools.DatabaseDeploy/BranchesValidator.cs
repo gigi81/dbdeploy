@@ -53,7 +53,7 @@ public static class BranchesValidator
         foreach (var file in untracked)
             yield return $"Untracked file detected {file}";
     }
-    
+
     private static IEnumerable<string> CheckForDuplicateSteps(ICollection<Branch> branches)
     {
         foreach (var branch in branches)
@@ -65,13 +65,13 @@ public static class BranchesValidator
                     .GroupBy(s => s.Name, StringComparer.InvariantCultureIgnoreCase)
                     .Where(g => g.Count() > 1)
                     .ToArray();
-                
+
                 foreach (var duplicate in duplicates)
                     yield return $"The script {duplicate.Key} for database {database} was specified more than once on branch {branch.Name}";
             }
         }
     }
-    
+
     private static IEnumerable<string> CheckForInvalidStepNames(GlobalSettings settings, Step[] steps)
     {
         if (string.IsNullOrWhiteSpace(settings.StepsNameRegex))
@@ -87,11 +87,11 @@ public static class BranchesValidator
     {
         var files = directory.EnumerateFiles("*.sql", SearchOption.AllDirectories)
             .Concat(directory.EnumerateFiles("*.csv", SearchOption.TopDirectoryOnly));
-        
+
         var tasks = files
             .Select(file => Task.Run(async () => (File: file, Encoding: await DetectBOM(file))))
             .ToArray();
-        
+
         var results = await Task.WhenAll(tasks);
 
         foreach (var result in results.Where(t => t.Encoding != null))

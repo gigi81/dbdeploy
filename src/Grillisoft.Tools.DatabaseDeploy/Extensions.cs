@@ -6,12 +6,12 @@ internal static class Extensions
     {
         return new Queue<T>(items);
     }
-    
+
     public static string OverrideWith(this string defaultValue, string? value)
     {
         return string.IsNullOrEmpty(value) ? defaultValue : value;
     }
-    
+
     internal static string BranchName(this string filename)
     {
         var name = filename;

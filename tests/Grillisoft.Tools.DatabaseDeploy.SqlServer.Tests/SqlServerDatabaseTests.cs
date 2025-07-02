@@ -11,7 +11,7 @@ public class SqlServerDatabaseTests : DatabaseTest<SqlServerDatabase, MsSqlConta
         : base(new MsSqlBuilder().Build(), output)
     {
     }
-    
+
     protected override IDatabaseFactory CreateDatabaseFactory()
     {
         return new SqlServerDatabaseFactory(

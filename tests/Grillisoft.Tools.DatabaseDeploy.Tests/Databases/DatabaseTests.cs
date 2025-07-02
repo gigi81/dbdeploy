@@ -49,17 +49,17 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
     protected ILogger<TDatabase> Logger => _logger;
 
     protected ILoggerFactory LoggerFactory => _loggerFactory;
-    
+
     protected IOptions<GlobalSettings> GlobalSettingsOptions => _globalSettings.Value;
-    
+
     protected IConfiguration Configuration => _configuration.Value;
-    
+
     protected string ConnectionString => _container.GetConnectionString();
 
     protected abstract IDatabaseFactory CreateDatabaseFactory();
 
     protected abstract string ProviderName { get; }
-    
+
     protected virtual IDictionary<string, string?> GetConfigurationSettings()
     {
         return new Dictionary<string, string?>()
@@ -73,7 +73,7 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
     private async Task<TDatabase> CreateDatabase()
     {
         var config = _configuration.Value.GetSection("databases:test");
-        return (TDatabase) await _databaseFactory.Value.GetDatabase("test", config, _cancellationToken);
+        return (TDatabase)await _databaseFactory.Value.GetDatabase("test", config, _cancellationToken);
     }
 
     [Fact]

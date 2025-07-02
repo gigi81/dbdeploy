@@ -23,7 +23,7 @@ public class SqlServerDatabase : DatabaseBase
     }
 
     public override string Dialect => "Microsoft SQL Server";
-    
+
     protected override ISqlScripts CreateSqlScripts()
     {
         return new SqlServerScripts(this.DatabaseName, _migrationTableName);

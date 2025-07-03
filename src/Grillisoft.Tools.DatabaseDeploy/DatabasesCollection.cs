@@ -11,15 +11,17 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
     private readonly Dictionary<string, IDatabase> _databases = new(StringComparer.InvariantCultureIgnoreCase);
     private readonly IConfigurationSection _configurationSection;
     private readonly GlobalSettings _global;
+    private readonly Lazy<List<string>> _keys;
 
     public DatabasesCollection(IEnumerable<IDatabaseFactory> databaseFactories, IConfiguration configuration)
     {
         _databaseFactories = databaseFactories.ToDictionary(f => f.Name, f => f, StringComparer.InvariantCultureIgnoreCase);
         _configurationSection = configuration.GetSection("databases");
         _global = configuration.GetSection(GlobalSettings.SectionName)?.Get<GlobalSettings>() ?? new GlobalSettings();
+        _keys = new Lazy<List<string>>(() => _configurationSection.GetChildren().Select(c => c.Key).ToList());
     }
 
-    public IReadOnlyCollection<string> Databases => _databases.Keys;
+    public IReadOnlyCollection<string> Databases => _keys.Value;
 
     public async Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken)
     {

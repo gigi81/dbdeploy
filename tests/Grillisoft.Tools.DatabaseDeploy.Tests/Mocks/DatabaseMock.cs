@@ -64,7 +64,7 @@ public class DatabaseMock : IDatabase
         return Task.CompletedTask;
     }
 
-    public Task GenerateSchemaDdl(Stream stream, CancellationToken cancellationToken)
+    public Task GenerateSchemaDdl(StreamWriter writer, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }

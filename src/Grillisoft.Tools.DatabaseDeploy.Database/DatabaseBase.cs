@@ -137,7 +137,7 @@ public abstract class DatabaseBase : IDatabase
     public async virtual Task ClearMigrations(CancellationToken cancellationToken)
         => await RunScript(this.SqlScripts.ClearMigrationsSql, cancellationToken);
 
-    public virtual Task GenerateSchemaDdl(Stream stream, CancellationToken cancellationToken)
+    public virtual Task GenerateSchemaDdl(StreamWriter writer, CancellationToken cancellationToken)
         => throw new NotImplementedException();
 
     protected virtual DbCommand CreateCommand(string script, DbConnection? connection = null)

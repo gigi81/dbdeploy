@@ -105,16 +105,16 @@ public class OracleDatabase : DatabaseBase
             ALL_OBJECTS
         WHERE
             OWNER = :owner
-          AND OBJECT_TYPE IN ({String.Join(",", OracleObjectTypes.Select(t => $"'{t}'"))})
+            AND OBJECT_TYPE IN ({String.Join(",", OracleObjectTypes.Select(t => $"'{t}'"))})
+            AND OBJECT_NAME NOT LIKE 'ISEQ$$%'
         ORDER BY
             OBJECT_TYPE,
             OBJECT_NAME
     """;
     
-    public async override Task GenerateSchemaDdl(Stream stream, CancellationToken cancellationToken)
+    public async override Task GenerateSchemaDdl(StreamWriter writer, CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
-        await using var writer = new StreamWriter(stream, Encoding.UTF8, 1024, true);
 
         Logger.LogInformation("Getting list of objects for schema {SchemaName}", _schema);
         await using var command = CreateCommand(GetObjectsListSql);
@@ -134,15 +134,18 @@ public class OracleDatabase : DatabaseBase
         var dependencies = await GetDependencies(cancellationToken);
         var sortedObjects = TopologicalSort(objectsToScript.Select(o => new DbObject(o.Name, o.Type)).ToList(), dependencies);
 
-        foreach (var dbObject in sortedObjects)
+        foreach (var objectType in OracleObjectTypes)
         {
-            var ddl = await GetObjectDDL(dbObject.Name, dbObject.Type, cancellationToken);
-            if (ddl == null || ddl == DBNull.Value)
-                continue;
+            foreach (var dbObject in sortedObjects.Where(d => d.Type == objectType))
+            {
+                var ddl = await GetObjectDDL(dbObject.Name, dbObject.Type, cancellationToken);
+                if (ddl == null || ddl == DBNull.Value)
+                    continue;
 
-            await writer.WriteLineAsync(ddl.ToString()?.Trim());
-            await writer.WriteLineAsync("/");
-            await writer.WriteLineAsync();
+                await writer.WriteLineAsync(ddl.ToString()?.Trim());
+                await writer.WriteLineAsync("/");
+                await writer.WriteLineAsync();
+            }
         }
     }
 

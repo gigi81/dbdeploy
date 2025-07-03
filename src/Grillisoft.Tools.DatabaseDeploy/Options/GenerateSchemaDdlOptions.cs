@@ -4,7 +4,7 @@ using CommandLine;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Options;
 
-[Verb("generate-schema-ddl", HelpText = "Generates the full schema DDL.")]
+[Verb("generate-schema", HelpText = "Generates the full schema DDL.")]
 public sealed class GenerateSchemaDdlOptions : OptionsBase
 {
 }

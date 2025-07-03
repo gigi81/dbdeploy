@@ -19,6 +19,8 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
         _global = configuration.GetSection(GlobalSettings.SectionName)?.Get<GlobalSettings>() ?? new GlobalSettings();
     }
 
+    public IReadOnlyCollection<string> Databases => _databases.Keys;
+
     public async Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken)
     {
         if (_databases.TryGetValue(name, out var ret))

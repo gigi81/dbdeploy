@@ -11,6 +11,8 @@ public class DatabasesCollectionMock : IDatabasesCollection
         _databases = databases.ToDictionary(d => d.Name, d => d, StringComparer.InvariantCultureIgnoreCase);
     }
 
+    public IReadOnlyCollection<string> Databases => _databases.Keys;
+
     public Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrWhiteSpace(name) && _databases.TryGetValue(name, out var ret))

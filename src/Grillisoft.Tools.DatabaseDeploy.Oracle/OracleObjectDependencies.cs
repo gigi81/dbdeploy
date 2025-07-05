@@ -1,3 +1,5 @@
+using Grillisoft.Tools.DatabaseDeploy.Contracts;
+
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
 
-public record OracleObjectDependencies(string Name, string Type, string ReferencedName, string ReferencedType);
+public record OracleObjectDependencies(DbObject DbObject, DbObject DbObjectDependency);

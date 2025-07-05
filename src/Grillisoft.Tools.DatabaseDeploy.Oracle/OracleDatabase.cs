@@ -91,11 +91,44 @@ public class OracleDatabase : DatabaseBase
         await using var command = CreateCommand(((OracleScripts)this.SqlScripts).SetSchemaSql);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
+    
+    public async override Task GenerateSchemaDdl(StreamWriter writer, CancellationToken cancellationToken)
+    {
+        await OpenConnection(cancellationToken);
 
-    private static readonly string[] OracleObjectTypes = {
-        "TABLE", "VIEW", "PROCEDURE", "FUNCTION", "SEQUENCE", "INDEX",
-        "PACKAGE", "PACKAGE BODY", "TRIGGER", "TYPE", "SYNONYM"
-    };
+        var dbObjects = await GetObjectsList(cancellationToken);
+        var dbObjectsDependencies = await GetDependencies(cancellationToken);
+        
+        Logger.LogInformation("Building graph");
+        var graph = new OracleObjectsGraph(dbObjects, dbObjectsDependencies);
+
+        Logger.LogInformation("Starting DDL generation");
+        foreach (var dbObject in graph.GetGraph())
+        {
+            var ddl = await GetObjectDdl(dbObject.Name, dbObject.Type, cancellationToken);
+            if (ddl == null || ddl == DBNull.Value)
+                continue;
+
+            await writer.WriteLineAsync(ddl.ToString()?.Trim());
+            await writer.WriteLineAsync("/");
+            await writer.WriteLineAsync();
+        }
+    }
+
+    internal static readonly string[] OracleObjectTypes = [
+        "TYPE",
+        "TABLE",
+        "SEQUENCE",
+        "INDEX",
+        "CONSTRAINT",
+        "TRIGGER",
+        "SYNONYM",
+        "VIEW",
+        "FUNCTION",
+        "PROCEDURE",
+        "PACKAGE",
+        "PACKAGE BODY",
+    ];
 
     private static readonly string GetObjectsListSql = $"""
         SELECT
@@ -112,10 +145,8 @@ public class OracleDatabase : DatabaseBase
             OBJECT_NAME
     """;
     
-    public async override Task GenerateSchemaDdl(StreamWriter writer, CancellationToken cancellationToken)
+    private async Task<List<DbObject>> GetObjectsList(CancellationToken cancellationToken)
     {
-        await OpenConnection(cancellationToken);
-
         Logger.LogInformation("Getting list of objects for schema {SchemaName}", _schema);
         await using var command = CreateCommand(GetObjectsListSql);
         command.AddParameter("owner", _schema);
@@ -131,39 +162,21 @@ public class OracleDatabase : DatabaseBase
             }
         }
 
-        var dependencies = await GetDependencies(cancellationToken);
-        var sortedObjects = TopologicalSort(objectsToScript.Select(o => new DbObject(o.Name, o.Type)).ToList(), dependencies);
-
-        foreach (var objectType in OracleObjectTypes)
-        {
-            foreach (var dbObject in sortedObjects.Where(d => d.Type == objectType))
-            {
-                var ddl = await GetObjectDDL(dbObject.Name, dbObject.Type, cancellationToken);
-                if (ddl == null || ddl == DBNull.Value)
-                    continue;
-
-                await writer.WriteLineAsync(ddl.ToString()?.Trim());
-                await writer.WriteLineAsync("/");
-                await writer.WriteLineAsync();
-            }
-        }
+        return objectsToScript;
     }
 
-    private const string GetDdlSql = "SELECT DBMS_METADATA.GET_DDL(:object_type, :object_name, :owner) FROM DUAL";
-
-    private async Task<object?> GetObjectDDL(string objectName, string objectType, CancellationToken cancellationToken)
-    {
-        Logger.LogInformation("Getting DDL for object {ObjectName} of type {ObjectType}", objectName, objectType);
-        await using var command = CreateCommand(GetDdlSql);
-
-        command.AddParameter("object_type", objectType);
-        command.AddParameter("object_name", objectName);
-        command.AddParameter("owner", _schema);
-
-        return await command.ExecuteScalarAsync(cancellationToken);
-    }
-
-    private const string GetDependenciesSql = "SELECT NAME, TYPE, REFERENCED_NAME, REFERENCED_TYPE FROM ALL_DEPENDENCIES WHERE OWNER = :owner AND REFERENCED_OWNER = :owner";
+    private const string GetDependenciesSql = """
+        SELECT
+            NAME,
+            TYPE,
+            REFERENCED_NAME,
+            REFERENCED_TYPE
+        FROM
+            ALL_DEPENDENCIES
+        WHERE
+            OWNER = :owner
+            AND REFERENCED_OWNER = :owner
+        """;
     
     private async Task<List<OracleObjectDependencies>> GetDependencies(CancellationToken cancellationToken)
     {
@@ -176,63 +189,35 @@ public class OracleDatabase : DatabaseBase
         while (await reader.ReadAsync(cancellationToken))
         {
             dependencies.Add(new OracleObjectDependencies(
-                reader.GetString(0), 
-                reader.GetString(1), 
-                reader.GetString(2),
-                reader.GetString(3)));
+                new DbObject(reader.GetString(0), reader.GetString(1)),
+                new DbObject(reader.GetString(2), reader.GetString(3))));
         }
 
         return dependencies;
     }
+    
+    private const string GetObjectDdlSql = "SELECT DBMS_METADATA.GET_DDL(:object_type, :object_name, :owner) FROM DUAL";
 
-    private List<DbObject> TopologicalSort(List<DbObject> objects, List<OracleObjectDependencies> dependencies)
+    private const string DisableConstraintsSql = """
+        BEGIN
+          DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM, 'CONSTRAINTS', FALSE);
+          DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM, 'REF_CONSTRAINTS', FALSE);
+          DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM, 'STORAGE', FALSE);
+        END;
+    """;
+    
+    private async Task<object?> GetObjectDdl(string objectName, string objectType, CancellationToken cancellationToken)
     {
-        var graph = new Dictionary<DbObject, List<DbObject>>();
-        var inDegree = new Dictionary<DbObject, int>();
+        Logger.LogInformation("Getting DDL for object {ObjectName} of type {ObjectType}", objectName, objectType);
+        await using var disableConstraintsCommand = CreateCommand(DisableConstraintsSql);
+        await disableConstraintsCommand.ExecuteNonQueryAsync(cancellationToken);
+        
+        await using var command = CreateCommand(GetObjectDdlSql);
 
-        foreach (var obj in objects)
-        {
-            graph[obj] = new List<DbObject>();
-            inDegree[obj] = 0;
-        }
+        command.AddParameter("object_type", objectType);
+        command.AddParameter("object_name", objectName);
+        command.AddParameter("owner", _schema);
 
-        foreach (var dep in dependencies)
-        {
-            var source = objects.FirstOrDefault(o => o.Name == dep.Name && o.Type == dep.Type);
-            var target = objects.FirstOrDefault(o => o.Name == dep.ReferencedName && o.Type == dep.ReferencedType);
-
-            if (source != null && target != null)
-            {
-                graph[target].Add(source);
-                inDegree[source]++;
-            }
-        }
-
-        var queue = new Queue<DbObject>(objects.Where(obj => inDegree[obj] == 0));
-        var sortedList = new List<DbObject>();
-
-        while (queue.Any())
-        {
-            var obj = queue.Dequeue();
-            sortedList.Add(obj);
-
-            foreach (var neighbor in graph[obj])
-            {
-                inDegree[neighbor]--;
-                if (inDegree[neighbor] == 0)
-                {
-                    queue.Enqueue(neighbor);
-                }
-            }
-        }
-
-        // If sortedList doesn't contain all objects, there's a cycle
-        if (sortedList.Count != objects.Count)
-        {
-            // Handle cycle detection, e.g., log a warning or throw an exception
-            Logger.LogWarning("Cycle detected in database object dependencies. DDL generation might be incomplete.");
-        }
-
-        return sortedList;
+        return await command.ExecuteScalarAsync(cancellationToken);
     }
 }

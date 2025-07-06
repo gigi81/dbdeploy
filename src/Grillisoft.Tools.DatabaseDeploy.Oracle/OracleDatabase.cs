@@ -5,6 +5,7 @@ using Grillisoft.Tools.DatabaseDeploy.Database;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer;
 using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
+using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
 
@@ -125,6 +126,7 @@ public class OracleDatabase : DatabaseBase
         "SEQUENCE",
         "INDEX",
         "CONSTRAINT",
+        "REF_CONSTRAINT",
         "TRIGGER",
         "SYNONYM",
         "VIEW",
@@ -180,6 +182,15 @@ public class OracleDatabase : DatabaseBase
     	            constraint_index = 'YES'
     	            AND OWNER = :OWNER
             )
+        UNION
+        SELECT
+            CONSTRAINT_NAME as OBJECT_NAME,
+            'REF_CONSTRAINT' as OBJECT_TYPE
+        FROM
+            ALL_CONSTRAINTS
+        WHERE
+            OWNER = :OWNER
+            AND constraint_type = 'R'
     """;
     
     private async Task<List<DbObject>> GetObjectsList(CancellationToken cancellationToken)
@@ -261,7 +272,14 @@ public class OracleDatabase : DatabaseBase
         if(string.IsNullOrWhiteSpace(ddl))
             yield break;
 
+        if (!objectType.EqualsIgnoreCase("TABLE"))
+        {
+            yield return ddl;
+            yield break;
+        }
+        
         var indexes = ddl.AllIndexes(["ALTER TABLE", "CREATE UNIQUE INDEX"], StringComparison.OrdinalIgnoreCase)
+            .Where(i => i > 0)
             .Order()
             .ToList();
         
@@ -274,7 +292,8 @@ public class OracleDatabase : DatabaseBase
             var last = 0;
             foreach (var index in indexes)
             {
-                yield return ddl.Substring(last, index - last);
+                if(index - last > 0)
+                    yield return ddl.Substring(last, index - last);
                 last = index;
             }
 

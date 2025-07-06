@@ -100,13 +100,12 @@ public class OracleDatabase : DatabaseBase
         Logger.LogInformation("Starting DDL generation");
         foreach (var dbObject in graph.GetGraph())
         {
-            var ddl = await GetObjectDdl(dbObject.Name, dbObject.Type, cancellationToken);
-            if (string.IsNullOrWhiteSpace(ddl))
-                continue;
-
-            await writer.WriteLineAsync(ddl.Trim());
-            await writer.WriteLineAsync("/");
-            await writer.WriteLineAsync();
+            await foreach (var ddl in GetObjectDdl(dbObject.Name, dbObject.Type, cancellationToken))
+            {
+                await writer.WriteLineAsync(ddl.Trim());
+                await writer.WriteLineAsync("/");
+                await writer.WriteLineAsync();
+            }
         }
 
         foreach (var ddl in await GetCommentsDdl(cancellationToken))
@@ -159,16 +158,27 @@ public class OracleDatabase : DatabaseBase
                     AND table_name = :MIGRATION_TABLE_NAME
             )
             -- exclude primary keys as they will be generated along with the tables DDLs
+             AND OBJECT_NAME NOT IN
+             (
+                 SELECT
+                     constraint_name
+                 FROM
+                     all_constraints
+                 WHERE
+                     constraint_type = 'P'
+                 AND
+                     owner = :OWNER
+             )
+            -- exclude constrain indexes as they will be generated along with the tables DDLs
             AND OBJECT_NAME NOT IN
             (
                 SELECT
-                    constraint_name
+    	            index_name
                 FROM
-                    all_constraints
+    	            all_indexes
                 WHERE
-                    constraint_type = 'P'
-                AND
-                    owner = :OWNER
+    	            constraint_index = 'YES'
+    	            AND OWNER = :OWNER
             )
     """;
     
@@ -226,19 +236,19 @@ public class OracleDatabase : DatabaseBase
     
     private const string GetObjectDdlSql = "SELECT DBMS_METADATA.GET_DDL(:object_type, :object_name, :owner) FROM DUAL";
 
-    private const string DisableConstraintsSql = """
+    private const string DllTransformSql = """
         BEGIN
-          DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM, 'CONSTRAINTS', FALSE);
+          DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM, 'CONSTRAINTS', TRUE);
           DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM, 'REF_CONSTRAINTS', FALSE);
           DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM, 'STORAGE', FALSE);
           DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM, 'EMIT_SCHEMA', FALSE);
         END;
     """;
     
-    private async Task<string?> GetObjectDdl(string objectName, string objectType, CancellationToken cancellationToken)
+    private async IAsyncEnumerable<string> GetObjectDdl(string objectName, string objectType, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Getting DDL for object {ObjectName} of type {ObjectType}", objectName, objectType);
-        await using var disableConstraintsCommand = CreateCommand(DisableConstraintsSql);
+        await using var disableConstraintsCommand = CreateCommand(DllTransformSql);
         await disableConstraintsCommand.ExecuteNonQueryAsync(cancellationToken);
         
         await using var command = CreateCommand(GetObjectDdlSql);
@@ -247,42 +257,64 @@ public class OracleDatabase : DatabaseBase
         command.AddParameter("object_name", objectName);
         command.AddParameter("owner", _schema);
 
-        return await command.ExecuteScalarAsync(cancellationToken) as string;
+        var ddl = await command.ExecuteScalarAsync(cancellationToken) as string;
+        if(string.IsNullOrWhiteSpace(ddl))
+            yield break;
+
+        var indexes = ddl.AllIndexes(["ALTER TABLE", "CREATE UNIQUE INDEX"], StringComparison.OrdinalIgnoreCase)
+            .Order()
+            .ToList();
+        
+        if (indexes.Count == 0)
+        {
+            yield return ddl;
+        }
+        else
+        {
+            var last = 0;
+            foreach (var index in indexes)
+            {
+                yield return ddl.Substring(last, index - last);
+                last = index;
+            }
+
+            yield return ddl.Substring(last);
+        }
     }
 
     private const string GetCommentsDdlSql = """
-        SELECT 'COMMENT ON TABLE "' || tc.table_name || '" IS ''' || REPLACE(tc.comments, '''', '''''') || ''';' AS ddl
-        FROM all_tab_comments tc
-        WHERE tc.owner = :OWNER
-          AND tc.comments IS NOT NULL
-        
-        UNION ALL
-        
-        SELECT 'COMMENT ON COLUMN "' || cc.table_name || '"."' || cc.column_name || '" IS ''' || REPLACE(cc.comments, '''', '''''') || ''';' AS ddl
-        FROM all_col_comments cc
-        WHERE cc.owner = :OWNER
-          AND cc.comments IS NOT NULL
-        
-        UNION ALL
-        
-        SELECT 'COMMENT ON INDEXTYPE "' || it.indextype_name || '" IS ''' || REPLACE(it.comments, '''', '''''') || ''';' AS ddl
-        FROM all_indextype_comments it
-        WHERE it.owner = :OWNER
-          AND it.comments IS NOT NULL
-        
-        UNION ALL
-        
-        SELECT 'COMMENT ON OPERATOR "' || op.operator_name || '" IS ''' || REPLACE(op.comments, '''', '''''') || ''';' AS ddl
-        FROM all_operator_comments op
-        WHERE op.owner = :OWNER
-          AND op.comments IS NOT NULL
-        
-        UNION ALL
-        
-        SELECT 'COMMENT ON EDITION "' || ed.edition_name || '" IS ''' || REPLACE(ed.comments, '''', '''''') || ''';' AS ddl
-        FROM all_edition_comments ed
-        WHERE ed.comments IS NOT NULL
-    """;
+         SELECT 'COMMENT ON TABLE "' || tc.table_name || '" IS ''' || REPLACE(tc.comments, '''', '''''') || ''';' AS ddl
+         FROM all_tab_comments tc
+         WHERE tc.owner = :OWNER
+           AND tc.comments IS NOT NULL
+         
+         UNION ALL
+         
+         SELECT 'COMMENT ON COLUMN "' || cc.table_name || '"."' || cc.column_name || '" IS ''' || REPLACE(cc.comments, '''', '''''') || ''';' AS ddl
+         FROM all_col_comments cc
+         WHERE cc.owner = :OWNER
+           AND cc.comments IS NOT NULL
+         
+         UNION ALL
+         
+         SELECT 'COMMENT ON INDEXTYPE "' || it.indextype_name || '" IS ''' || REPLACE(it.comments, '''', '''''') || ''';' AS ddl
+         FROM all_indextype_comments it
+         WHERE it.owner = :OWNER
+           AND it.comments IS NOT NULL
+         
+         UNION ALL
+         
+         SELECT 'COMMENT ON OPERATOR "' || op.operator_name || '" IS ''' || REPLACE(op.comments, '''', '''''') || ''';' AS ddl
+         FROM all_operator_comments op
+         WHERE op.owner = :OWNER
+           AND op.comments IS NOT NULL
+         
+         UNION ALL
+         
+         SELECT 'COMMENT ON EDITION "' || ed.edition_name || '" IS ''' || REPLACE(ed.comments, '''', '''''') || ''';' AS ddl
+         FROM all_edition_comments ed
+         WHERE ed.comments IS NOT NULL
+     """;
     
     private async Task<List<string>> GetCommentsDdl(CancellationToken cancellationToken)
     {

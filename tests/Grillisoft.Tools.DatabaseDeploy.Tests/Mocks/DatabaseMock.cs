@@ -64,6 +64,11 @@ public class DatabaseMock : IDatabase
         return Task.CompletedTask;
     }
 
+    public Task GenerateSchemaDdl(StreamWriter writer, CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
+
     public ValueTask DisposeAsync()
     {
         return ValueTask.CompletedTask;

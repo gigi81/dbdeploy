@@ -13,7 +13,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
 public abstract class BaseService : IExecutable
 {
-    private readonly IDatabasesCollection _databases;
+    private IDatabasesCollection _databases;
     private readonly IFileSystem _fileSystem;
     protected readonly IOptions<GlobalSettings> _globalSettings;
     protected readonly ILogger _logger;
@@ -43,9 +43,14 @@ public abstract class BaseService : IExecutable
         return manager.GetSteps(branch).ToArray();
     }
 
+    protected IDirectoryInfo GetDirectory(string path)
+    {
+        return _fileSystem.DirectoryInfo.New(path);
+    }
+    
     protected async Task<BranchesManager> LoadBranchesManager(string path, CancellationToken cancellationToken)
     {
-        var directory = _fileSystem.DirectoryInfo.New(path);
+        var directory = this.GetDirectory(path);
         var manager = new BranchesManager(directory, _globalSettings.Value);
 
         _logger.LogInformation("Loading branches from {Directory}", directory.FullName);
@@ -107,6 +112,8 @@ public abstract class BaseService : IExecutable
         );
     }
 
+    protected IReadOnlyCollection<string> Databases => _databases.Databases;
+    
     protected async Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken)
     {
         return await _databases.GetDatabase(name, cancellationToken);

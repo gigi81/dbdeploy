@@ -15,4 +15,5 @@ public interface IDatabase : IAsyncDisposable
     Task AddMigration(DatabaseMigration migration, CancellationToken cancellationToken);
     Task RemoveMigration(DatabaseMigration migration, CancellationToken cancellationToken);
     Task ClearMigrations(CancellationToken cancellationToken);
+    Task GenerateSchemaDdl(StreamWriter writer, CancellationToken cancellationToken);
 }

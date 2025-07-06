@@ -11,7 +11,7 @@ internal static class Extensions
     {
         return string.IsNullOrEmpty(value) ? defaultValue : value;
     }
-
+    
     internal static string BranchName(this string filename)
     {
         var name = filename;

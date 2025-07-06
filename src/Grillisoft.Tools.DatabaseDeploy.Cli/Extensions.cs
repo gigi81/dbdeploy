@@ -35,6 +35,11 @@ public static class Extensions
                 services.AddSingleton(generateOptions);
                 services.AddSingleton<IExecutable, GenerateService>();
                 break;
+            
+            case GenerateSchemaDdlOptions generateSchemaOptions:
+                services.AddSingleton(generateSchemaOptions);
+                services.AddSingleton<IExecutable, GenerateSchemaDdlService>();
+                break;
 
             default:
                 throw new ArgumentException($"Options of type {options.GetType().Name} not supported", nameof(options));

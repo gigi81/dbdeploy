@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Text;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
@@ -29,7 +30,7 @@ public class GenerateSchemaDdlService : BaseService
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Starting generating database(s) schema definitions for {Count} databases", this.Databases.Count);
-
+        var stopwatch = Stopwatch.StartNew();
         var rootDirectory = this.GetDirectory(_options.Path);
         var lines = new List<string>();
         
@@ -43,7 +44,7 @@ public class GenerateSchemaDdlService : BaseService
             .File(_globalSettings.Value.DefaultBranch + ".csv")
             .AppendAllLines(lines);
         
-        _logger.LogInformation("Schema definitions completed");
+        _logger.LogInformation("Schema definitions completed in {ElapsedTime}", stopwatch.Elapsed);
         return 0;
     }
 

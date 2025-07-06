@@ -12,6 +12,7 @@ public class OracleScriptParser : IScriptParser
         var lines = await scriptFile.ReadAllLinesAsync(cancellationToken);
         var buffer = new StringBuilder();
         var sqlTerminator = DetectSqlTerminator(lines);
+        var count = 0;
 
         foreach (var line in lines)
         {
@@ -20,13 +21,16 @@ public class OracleScriptParser : IScriptParser
             if (!(buffer.Length <= 0 && CanIgnore(trim)))
                 buffer.AppendLine(line);
 
-            if (trim.EndsWith(sqlTerminator))
+            count += trim.Count(c => c == '\'');
+            
+            if (count % 2 == 0 && trim.EndsWith(sqlTerminator))
             {
                 var command = CleanSql(buffer.ToString());
                 if (!string.IsNullOrWhiteSpace(command))
                     yield return command;
 
                 buffer.Clear();
+                count = 0;
             }
         }
 

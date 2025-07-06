@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.IO;
-using System.Linq;
-using System.Text;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Database;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer;
@@ -28,8 +23,8 @@ public class OracleDatabase : DatabaseBase
         ILogger<OracleDatabase> logger
     ) : base(name, CreateConnection(connectionString, logger), parser, logger)
     {
-        _migrationTableName = migrationTableName;
-        _schema = string.IsNullOrEmpty(schema) ? name : schema;
+        _migrationTableName = migrationTableName.ToUpperInvariant();
+        _schema = (string.IsNullOrEmpty(schema) ? name : schema).ToUpperInvariant();
         this.ScriptTimeout = scriptTimeout;
     }
 
@@ -120,7 +115,6 @@ public class OracleDatabase : DatabaseBase
         "TABLE",
         "SEQUENCE",
         "INDEX",
-        "CONSTRAINT",
         "TRIGGER",
         "SYNONYM",
         "VIEW",
@@ -137,19 +131,28 @@ public class OracleDatabase : DatabaseBase
         FROM
             ALL_OBJECTS
         WHERE
-            OWNER = :owner
+            OWNER = :OWNER
             AND OBJECT_TYPE IN ({String.Join(",", OracleObjectTypes.Select(t => $"'{t}'"))})
             AND OBJECT_NAME NOT LIKE 'ISEQ$$%'
-        ORDER BY
-            OBJECT_TYPE,
-            OBJECT_NAME
+            AND OBJECT_NAME != :MIGRATION_TABLE_NAME
+            AND OBJECT_NAME NOT IN
+            (
+                SELECT 
+                    index_name
+                FROM 
+                    all_indexes
+                WHERE 
+                    owner = :OWNER
+                    AND table_name = :MIGRATION_TABLE_NAME
+            )
     """;
     
     private async Task<List<DbObject>> GetObjectsList(CancellationToken cancellationToken)
     {
         Logger.LogInformation("Getting list of objects for schema {SchemaName}", _schema);
         await using var command = CreateCommand(GetObjectsListSql);
-        command.AddParameter("owner", _schema);
+        command.AddParameter("OWNER", _schema);
+        command.AddParameter("MIGRATION_TABLE_NAME", _migrationTableName);
 
         var objectsToScript = new List<DbObject>();
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
@@ -200,9 +203,9 @@ public class OracleDatabase : DatabaseBase
 
     private const string DisableConstraintsSql = """
         BEGIN
-          DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM, 'CONSTRAINTS', FALSE);
           DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM, 'REF_CONSTRAINTS', FALSE);
           DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM, 'STORAGE', FALSE);
+          DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM, 'EMIT_SCHEMA', FALSE);
         END;
     """;
     

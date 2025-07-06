@@ -114,7 +114,7 @@ public class OracleDatabase : DatabaseBase
         "TYPE",
         "TABLE",
         "SEQUENCE",
-        "INDEX",
+        //"INDEX",
         "TRIGGER",
         "SYNONYM",
         "VIEW",
@@ -139,9 +139,9 @@ public class OracleDatabase : DatabaseBase
             (
                 SELECT 
                     index_name
-                FROM 
+                FROM
                     all_indexes
-                WHERE 
+                WHERE
                     owner = :OWNER
                     AND table_name = :MIGRATION_TABLE_NAME
             )

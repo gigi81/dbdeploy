@@ -39,7 +39,7 @@ public static class Extensions
     {
         var index = value.IndexOf(search, comparison);
 
-        while (index > 0)
+        while (index >= 0)
         {
             yield return index;
             index = value.IndexOf(search, index + search.Length, comparison);

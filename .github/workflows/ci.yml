@@ -26,7 +26,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 9.0.x
       - name: Run Tests
         run: dotnet test --collect:"XPlat Code Coverage" --logger "GitHubActions" --logger "trx;LogFileName=test-results.trx" --filter DockerPlatform!=Linux /p:CoverletOutputFormat=opencover || true
       - name: Run Integration Tests
@@ -61,6 +61,8 @@ jobs:
           fetch-depth: 0
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
       - name: Create packages
         run: dotnet pack --configuration Release --output ./packages
       - name: Upload a Build Artifact
@@ -84,6 +86,8 @@ jobs:
           fetch-depth: 0
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
       - uses: actions/download-artifact@v4
         with:
           name: NuGet packages

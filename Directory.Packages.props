@@ -10,8 +10,8 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageVersion>
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="9.0.0-preview.9.24525.1" />
-    <PackageVersion Include="Microsoft.Extensions.AI.Ollama" Version="9.0.0-preview.9.24525.1" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="9.6.0" />
+    <PackageVersion Include="OllamaSharp" Version="5.2.7" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="8.0.2" />
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.7.115">

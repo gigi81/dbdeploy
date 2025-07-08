@@ -1,16 +1,17 @@
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
 
 public class OracleObjectsGraph
 {
     private readonly ICollection<OracleObjectDependencies> _dbObjectsDependencies;
-    private readonly Dictionary<string, DbObject> _dbObjects;
+    private readonly HashSet<DbObject> _dbObjects;
 
     public OracleObjectsGraph(ICollection<DbObject> dbObjects, ICollection<OracleObjectDependencies> dbObjectsDependencies)
     {
         _dbObjectsDependencies = dbObjectsDependencies;
-        _dbObjects = dbObjects.ToDictionary(o => o.Key, o => o);
+        _dbObjects = dbObjects.ToHashSet();
     }
 
     public ICollection<DbObject> GetGraph()
@@ -25,29 +26,25 @@ public class OracleObjectsGraph
             
             foreach (var dbObjectType in OracleDatabase.OracleObjectTypes)
             {
-                var objects = _dbObjects.Values
+                var objects = _dbObjects
                     .Where(o => o.Type == dbObjectType && o.Dependencies.Count == 0)
-                    .OrderBy(o => o.Name)
-                    .ToList();
+                    .ToHashSet();
                 
                 count += objects.Count;
-                result.AddRange(objects);
+                result.AddRange(objects.OrderBy(o => o.Name));
                 RemoveDependencies(objects);
             }
             
             if (count == 0)
-            {
-                var list = String.Join(",", _dbObjects.Values.Except(result).Select(o => o.Name));
-                throw new Exception("Circular dependency detected: " + list);
-            }
+                throw new CircularDependencyException(_dbObjects.Except(result).Select(o => o.Name));
         }
         
         return result;
     }
 
-    private void RemoveDependencies(IList<DbObject> objects)
+    private void RemoveDependencies(HashSet<DbObject> objects)
     {
-        foreach (var dbObject in _dbObjects.Values)
+        foreach (var dbObject in _dbObjects)
         {
             dbObject.Dependencies.RemoveAll(objects.Contains);
         }
@@ -57,11 +54,11 @@ public class OracleObjectsGraph
     {
         foreach (var dependency in dbObjectsDependencies)
         {
-            if(!_dbObjects.TryGetValue(dependency.DbObject.Key, out var dbObject))
-                throw new Exception($"DB object not found: {dependency.DbObject}");
+            if(!_dbObjects.TryGetValue(dependency.DbObject, out var dbObject))
+                throw new DbObjectNotFoundException(dependency.DbObject);
             
-            if(!_dbObjects.TryGetValue(dependency.DbObjectDependency.Key, out var dbObjectDependency))
-                throw new Exception($"DB object not found: {dependency.DbObjectDependency}");
+            if(!_dbObjects.TryGetValue(dependency.DbObjectDependency, out var dbObjectDependency))
+                throw new DbObjectNotFoundException(dependency.DbObjectDependency);
             
             dbObject.Dependencies.Add(dbObjectDependency);
         }

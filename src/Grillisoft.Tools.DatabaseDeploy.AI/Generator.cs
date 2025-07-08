@@ -30,9 +30,9 @@ public class Generator : IGenerator
     private async Task<string> GenerateRollback(string script, string dialect, CancellationToken cancellationToken)
     {
         var prompt = string.Format(RollbackPrompt, dialect, script);
-        var completion = await _chatClient.CompleteAsync(prompt, cancellationToken: cancellationToken);
+        var completion = await _chatClient.GetResponseAsync(prompt, cancellationToken: cancellationToken);
 
-        using var reader = new StringReader(completion.Message.Text ?? string.Empty);
+        using var reader = new StringReader(completion.Text);
         var line = await reader.ReadLineAsync(cancellationToken);
         var builder = new StringBuilder();
         var sql = false;

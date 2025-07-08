@@ -1,0 +1,7 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Grillisoft.Tools.DatabaseDeploy.Database\Grillisoft.Tools.DatabaseDeploy.Database.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -12,7 +12,6 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 public class GenerateSchemaDdlService : BaseService
 {
     private readonly GenerateSchemaDdlOptions _options;
-    private readonly IProgress<int> _progress;
 
     public GenerateSchemaDdlService(
         GenerateSchemaDdlOptions options,
@@ -24,7 +23,6 @@ public class GenerateSchemaDdlService : BaseService
     ) : base(databases, fileSystem, globalOptions, logger)
     {
         _options = options;
-        _progress = progress;
     }
     
     public async override Task<int> Execute(CancellationToken cancellationToken)

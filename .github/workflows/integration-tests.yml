@@ -14,7 +14,7 @@ env:
 jobs:
   mssql-job:
     runs-on: ubuntu-latest
-    container: mcr.microsoft.com/dotnet/sdk:8.0
+    container: mcr.microsoft.com/dotnet/sdk:9.0
     services:
       mssql:
         image: mcr.microsoft.com/mssql/server:2022-latest
@@ -37,7 +37,7 @@ jobs:
         
   oracle-job:
     runs-on: ubuntu-latest
-    container: mcr.microsoft.com/dotnet/sdk:8.0
+    container: mcr.microsoft.com/dotnet/sdk:9.0
     services:
       oracle:
         image: gvenzl/oracle-free:latest
@@ -59,7 +59,7 @@ jobs:
 
   mariadb-job:
     runs-on: ubuntu-latest
-    container: mcr.microsoft.com/dotnet/sdk:8.0
+    container: mcr.microsoft.com/dotnet/sdk:9.0
     services:
       mariadb:
         image: mariadb:latest
@@ -81,7 +81,7 @@ jobs:
 
   postgres-job:
     runs-on: ubuntu-latest
-    container: mcr.microsoft.com/dotnet/sdk:8.0
+    container: mcr.microsoft.com/dotnet/sdk:9.0
     services:
       postgres:
         image: postgres:latest

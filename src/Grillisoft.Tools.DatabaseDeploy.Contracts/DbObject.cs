@@ -18,4 +18,12 @@ public sealed class DbObject
     public string Key { get; }
 
     public override string ToString() => this.Key;
+
+    public override bool Equals(object? obj)
+    {
+        return obj is DbObject other
+               && this.Key.Equals(other.Key);
+    }
+
+    public override int GetHashCode() => this.Key.GetHashCode();
 }

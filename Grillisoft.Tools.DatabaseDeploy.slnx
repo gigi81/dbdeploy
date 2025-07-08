@@ -1,0 +1,29 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="LICENSE.md" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Grillisoft.Tools.DatabaseDeploy.Abstractions/Grillisoft.Tools.DatabaseDeploy.Abstractions.csproj" />
+    <Project Path="src/Grillisoft.Tools.DatabaseDeploy.AI/Grillisoft.Tools.DatabaseDeploy.AI.csproj" />
+    <Project Path="src/Grillisoft.Tools.DatabaseDeploy.Cli/Grillisoft.Tools.DatabaseDeploy.Cli.csproj" />
+    <Project Path="src/Grillisoft.Tools.DatabaseDeploy.Contracts/Grillisoft.Tools.DatabaseDeploy.Contracts.csproj" />
+    <Project Path="src/Grillisoft.Tools.DatabaseDeploy.Database/Grillisoft.Tools.DatabaseDeploy.Database.csproj" />
+    <Project Path="src/Grillisoft.Tools.DatabaseDeploy.MySql/Grillisoft.Tools.DatabaseDeploy.MySql.csproj" />
+    <Project Path="src/Grillisoft.Tools.DatabaseDeploy.Oracle/Grillisoft.Tools.DatabaseDeploy.Oracle.csproj" />
+    <Project Path="src/Grillisoft.Tools.DatabaseDeploy.PostgreSql/Grillisoft.Tools.DatabaseDeploy.PostgreSql.csproj" />
+    <Project Path="src/Grillisoft.Tools.DatabaseDeploy.SqlServer/Grillisoft.Tools.DatabaseDeploy.SqlServer.csproj" />
+    <Project Path="src/Grillisoft.Tools.DatabaseDeploy/Grillisoft.Tools.DatabaseDeploy.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <File Path="tests/Directory.Build.props" />
+    <Project Path="tests/Grillisoft.Tools.DatabaseDeploy.Database.Tests/Grillisoft.Tools.DatabaseDeploy.Database.Tests.csproj" />
+    <Project Path="tests/Grillisoft.Tools.DatabaseDeploy.MySql.Tests/Grillisoft.Tools.DatabaseDeploy.MySql.Tests.csproj" />
+    <Project Path="tests/Grillisoft.Tools.DatabaseDeploy.Oracle.Tests/Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.csproj" />
+    <Project Path="tests/Grillisoft.Tools.DatabaseDeploy.PostgreSql.Tests/Grillisoft.Tools.DatabaseDeploy.PostgreSql.Tests.csproj" />
+    <Project Path="tests/Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests/Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests.csproj" />
+    <Project Path="tests/Grillisoft.Tools.DatabaseDeploy.Tests/Grillisoft.Tools.DatabaseDeploy.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -24,24 +24,24 @@ public class GenerateSchemaDdlService : BaseService
     {
         _options = options;
     }
-    
+
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Starting generating database(s) schema definitions for {Count} databases", this.Databases.Count);
         var stopwatch = Stopwatch.StartNew();
         var rootDirectory = this.GetDirectory(_options.Path);
         var lines = new List<string>();
-        
+
         foreach (var databaseName in this.Databases)
         {
-            if(await GenerateDatabaseDdl(databaseName, rootDirectory, cancellationToken))
+            if (await GenerateDatabaseDdl(databaseName, rootDirectory, cancellationToken))
                 lines.Add($"{databaseName},{_globalSettings.Value.InitStepName}");
         }
-        
+
         rootDirectory
             .File(_globalSettings.Value.DefaultBranch + ".csv")
             .AppendAllLines(lines);
-        
+
         _logger.LogInformation("Schema definitions completed in {ElapsedTime}", stopwatch.Elapsed);
         return 0;
     }
@@ -57,7 +57,7 @@ public class GenerateSchemaDdlService : BaseService
         }
 
         var database = await this.GetDatabase(databaseName, cancellationToken);
-            
+
         databaseDirectory.Create();
         _logger.LogInformation("Generating schema for {DatabaseName} to {Filename}", databaseName, initFile.FullName);
         await using var stream = initFile.OpenWrite();

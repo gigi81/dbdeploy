@@ -10,6 +10,6 @@ public class DbObjectNotFoundException : Exception
     {
         _obj = obj;
     }
-    
+
     public override string Message => $"Database Object {_obj.Name} of type {_obj.Type} not found";
 }

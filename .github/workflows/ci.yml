@@ -72,7 +72,7 @@ jobs:
           path: packages/*.*
   deploy:
     name: Deploy
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [pack]
     runs-on: ubuntu-latest
     permissions:

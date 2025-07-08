@@ -7,12 +7,12 @@ namespace Grillisoft.Tools.DatabaseDeploy.Tests.Services;
 public static class SampleFilesystems
 {
     private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-    public static string Sample01RootPath = IsWindows ? "c:\\demo\\" : "/opt/demo/";
+    public static readonly string Sample01RootPath = IsWindows ? "c:\\demo\\" : "/opt/demo/";
     private static readonly string Sample01Database01Path = IsWindows ? "c:\\demo\\Database01\\" : "/opt/demo/Database01/";
     private static readonly string Sample01Database02Path = IsWindows ? "c:\\demo\\Database02\\" : "/opt/demo/Database02/";
     private static readonly GlobalSettings GlobalSettings = new();
 
-    public static MockFileSystem Sample01 = new(new Dictionary<string, MockFileData>
+    public static readonly MockFileSystem Sample01 = new(new Dictionary<string, MockFileData>
     {
         { $"{Sample01RootPath}main.csv", new MockFileData($@"
                 Database01,{GlobalSettings.InitStepName}

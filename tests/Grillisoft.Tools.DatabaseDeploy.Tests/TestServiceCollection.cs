@@ -9,6 +9,7 @@ public class TestServiceCollection<TSystemUnderTest> : ServiceCollection where T
     public TestServiceCollection(ITestOutputHelper output)
     {
         this.AddSingleton((ILogger<TSystemUnderTest>)output.BuildLoggerFor<TSystemUnderTest>());
+        this.AddSingleton((ILogger)output.BuildLoggerFor<TSystemUnderTest>());
         this.AddSingleton<TSystemUnderTest>();
     }
 }

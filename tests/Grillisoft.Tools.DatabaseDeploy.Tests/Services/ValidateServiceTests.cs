@@ -1,25 +1,24 @@
+using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
+using FluentAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Grillisoft.Tools.DatabaseDeploy.Services;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Grillisoft.Tools.DatabaseDeploy.Tests.Mocks;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit.Abstractions;
 using ExtensionsOptions = Microsoft.Extensions.Options.Options;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests.Services;
 
 public class ValidateServiceTests
 {
-    private readonly ValidateOptions _options;
-    private readonly Mock<IDatabasesCollection> _databases;
-    private readonly Mock<ILogger> _logger;
+    private readonly ITestOutputHelper _output;
 
-    public ValidateServiceTests()
+    public ValidateServiceTests(ITestOutputHelper output)
     {
-        _options = new ValidateOptions { Path = "/path" };
-        _databases = new Mock<IDatabasesCollection>();
-        _logger = new Mock<ILogger>();
+        _output = output;
     }
 
     [Fact]
@@ -30,15 +29,14 @@ public class ValidateServiceTests
         fileSystem.AddFile("/path/main.csv", new MockFileData("MyDb,01_init"));
         fileSystem.AddFile("/path/MyDb/01_init.sql", new MockFileData("SELECT 1"));
 
-        var globalSettings = ExtensionsOptions.Create(
-            new GlobalSettings { DefaultBranch = "main", InitStepName = "01_init" });
-        var service = new ValidateService(_options, _databases.Object, fileSystem, globalSettings, _logger.Object);
+        var globalSettings = new GlobalSettings { DefaultBranch = "main", InitStepName = "01_init" };
+        var service = CreateService(fileSystem, globalSettings);
 
         // Act
         var result = await service.Execute(CancellationToken.None);
 
         // Assert
-        Assert.Equal(0, result);
+        result.Should().Be(0);
     }
 
     [Fact]
@@ -49,14 +47,14 @@ public class ValidateServiceTests
         fileSystem.AddDirectory("/path/MyDb");
         fileSystem.AddFile("/path/main.csv", new MockFileData("MyDb,01_init"));
 
-        var globalSettings = ExtensionsOptions.Create(new GlobalSettings());
-        var service = new ValidateService(_options, _databases.Object, fileSystem, globalSettings, _logger.Object);
+        var globalSettings = new GlobalSettings();
+        var service = CreateService(fileSystem, globalSettings);
 
         // Act
         var result = await service.Execute(CancellationToken.None);
 
         // Assert
-        Assert.True(result > 0);
+        result.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -64,13 +62,27 @@ public class ValidateServiceTests
     {
         // Arrange
         var fileSystem = new MockFileSystem();
-        var globalSettings = ExtensionsOptions.Create(new GlobalSettings());
-        var service = new ValidateService(_options, _databases.Object, fileSystem, globalSettings, _logger.Object);
+        var globalSettings = new GlobalSettings();
+        var service = CreateService(fileSystem, globalSettings);
 
         // Act
         var result = await service.Execute(CancellationToken.None);
 
         // Assert
-        Assert.Equal(-1, result);
+        result.Should().Be(-1);
+    }
+
+    private ValidateService CreateService(IFileSystem fileSystem, GlobalSettings globalSettings)
+    {
+        var provider = new TestServiceCollection<ValidateService>(_output)
+            .AddSingleton(new ValidateOptions { Path = "/path" })
+            .AddSingleton(fileSystem)
+            .AddSingleton<IProgress<int>>(new Progress<int>())
+            .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock())
+            .AddSingleton<IDatabasesCollection>(new DatabasesCollectionMock())
+            .AddSingleton(ExtensionsOptions.Create(globalSettings))
+            .BuildServiceProvider();
+
+        return provider.GetRequiredService<ValidateService>();
     }
 }

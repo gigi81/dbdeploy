@@ -22,7 +22,7 @@ public static class Extensions
     {
         return value.AllIndexes(searches, StringComparison.OrdinalIgnoreCase);
     }
-    
+
     public static IEnumerable<int> AllIndexes(this string value, IEnumerable<string> searches, StringComparison comparison)
     {
         var ret = new List<int>();
@@ -31,7 +31,7 @@ public static class Extensions
         {
             ret.AddRange(value.AllIndexes(search, comparison));
         }
-        
+
         return ret;
     }
 

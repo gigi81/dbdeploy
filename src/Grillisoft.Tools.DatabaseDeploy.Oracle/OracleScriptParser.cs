@@ -22,7 +22,7 @@ public class OracleScriptParser : IScriptParser
                 buffer.AppendLine(line);
 
             count += trim.Count(c => c == '\'');
-            
+
             if (count % 2 == 0 && trim.EndsWith(sqlTerminator))
             {
                 var command = CleanSql(buffer.ToString());

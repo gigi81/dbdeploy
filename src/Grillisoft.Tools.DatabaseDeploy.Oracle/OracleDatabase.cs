@@ -88,14 +88,14 @@ public class OracleDatabase : DatabaseBase
         await using var command = CreateCommand(((OracleScripts)this.SqlScripts).SetSchemaSql);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
-    
+
     public async override Task GenerateSchemaDdl(StreamWriter writer, CancellationToken cancellationToken)
     {
         await OpenConnection(cancellationToken);
 
         var dbObjects = await GetObjectsList(cancellationToken);
         var dbObjectsDependencies = await GetDependencies(cancellationToken);
-        
+
         Logger.LogInformation("Building graph");
         var graph = new OracleObjectsGraph(dbObjects, dbObjectsDependencies);
 
@@ -193,7 +193,7 @@ public class OracleDatabase : DatabaseBase
             OWNER = :OWNER
             AND constraint_type = 'R'
     """;
-    
+
     private async Task<List<DbObject>> GetObjectsList(CancellationToken cancellationToken)
     {
         Logger.LogInformation("Getting list of objects for schema {SchemaName}", _schema);
@@ -207,7 +207,7 @@ public class OracleDatabase : DatabaseBase
             while (await reader.ReadAsync(cancellationToken))
             {
                 objectsToScript.Add(new DbObject(
-                    reader.GetString(0), 
+                    reader.GetString(0),
                     reader.GetString(1)));
             }
         }
@@ -229,7 +229,7 @@ public class OracleDatabase : DatabaseBase
             AND NAME NOT LIKE '%$%'
             AND REFERENCED_NAME NOT LIKE '%$%'
         """;
-    
+
     private async Task<List<OracleObjectDependencies>> GetDependencies(CancellationToken cancellationToken)
     {
         Logger.LogInformation("Getting objects dependencies for schema {SchemaName}", _schema);
@@ -247,7 +247,7 @@ public class OracleDatabase : DatabaseBase
 
         return dependencies;
     }
-    
+
     private const string GetObjectDdlSql = "SELECT DBMS_METADATA.GET_DDL(:object_type, :object_name, :owner) FROM DUAL";
 
     private const string DllTransformSql = """
@@ -258,13 +258,13 @@ public class OracleDatabase : DatabaseBase
           DBMS_METADATA.SET_TRANSFORM_PARAM(DBMS_METADATA.SESSION_TRANSFORM, 'EMIT_SCHEMA', FALSE);
         END;
     """;
-    
+
     private async IAsyncEnumerable<string> GetObjectDdl(string objectName, string objectType, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         Logger.LogInformation("Getting DDL for object {ObjectName} of type {ObjectType}", objectName, objectType);
         await using var disableConstraintsCommand = CreateCommand(DllTransformSql);
         await disableConstraintsCommand.ExecuteNonQueryAsync(cancellationToken);
-        
+
         await using var command = CreateCommand(GetObjectDdlSql);
 
         command.AddParameter("object_type", objectType);
@@ -272,7 +272,7 @@ public class OracleDatabase : DatabaseBase
         command.AddParameter("owner", _schema);
 
         var ddl = await command.ExecuteScalarAsync(cancellationToken) as string;
-        if(string.IsNullOrWhiteSpace(ddl))
+        if (string.IsNullOrWhiteSpace(ddl))
             yield break;
 
         if (!objectType.EqualsIgnoreCase("TABLE"))
@@ -280,12 +280,12 @@ public class OracleDatabase : DatabaseBase
             yield return ddl;
             yield break;
         }
-        
+
         var indexes = ddl.AllIndexes(["ALTER TABLE", "CREATE UNIQUE INDEX"], StringComparison.OrdinalIgnoreCase)
             .Where(i => i > 0)
             .Order()
             .ToList();
-        
+
         if (indexes.Count == 0)
         {
             yield return ddl;
@@ -295,7 +295,7 @@ public class OracleDatabase : DatabaseBase
             var last = 0;
             foreach (var index in indexes)
             {
-                if(index - last > 0)
+                if (index - last > 0)
                     yield return ddl.Substring(last, index - last);
                 last = index;
             }
@@ -337,7 +337,7 @@ public class OracleDatabase : DatabaseBase
          FROM all_edition_comments ed
          WHERE ed.comments IS NOT NULL
      """;
-    
+
     private async Task<List<string>> GetCommentsDdl(CancellationToken cancellationToken)
     {
         Logger.LogInformation("Getting comments DDL");
@@ -345,7 +345,7 @@ public class OracleDatabase : DatabaseBase
 
         command.AddParameter("owner", _schema);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        
+
         var ret = new List<string>();
         while (await reader.ReadAsync(cancellationToken))
         {

@@ -17,28 +17,28 @@ public class OracleObjectsGraph
     public ICollection<DbObject> GetGraph()
     {
         MatchDependencies(_dbObjectsDependencies);
-        
+
         var result = new List<DbObject>();
 
         while (result.Count != _dbObjects.Count)
         {
             var count = 0;
-            
+
             foreach (var dbObjectType in OracleDatabase.OracleObjectTypes)
             {
                 var objects = _dbObjects
                     .Where(o => o.Type == dbObjectType && o.Dependencies.Count == 0)
                     .ToHashSet();
-                
+
                 count += objects.Count;
                 result.AddRange(objects.OrderBy(o => o.Name));
                 RemoveDependencies(objects);
             }
-            
+
             if (count == 0)
                 throw new CircularDependencyException(_dbObjects.Except(result).Select(o => o.Name));
         }
-        
+
         return result;
     }
 
@@ -54,12 +54,12 @@ public class OracleObjectsGraph
     {
         foreach (var dependency in dbObjectsDependencies)
         {
-            if(!_dbObjects.TryGetValue(dependency.DbObject, out var dbObject))
+            if (!_dbObjects.TryGetValue(dependency.DbObject, out var dbObject))
                 throw new DbObjectNotFoundException(dependency.DbObject);
-            
-            if(!_dbObjects.TryGetValue(dependency.DbObjectDependency, out var dbObjectDependency))
+
+            if (!_dbObjects.TryGetValue(dependency.DbObjectDependency, out var dbObjectDependency))
                 throw new DbObjectNotFoundException(dependency.DbObjectDependency);
-            
+
             dbObject.Dependencies.Add(dbObjectDependency);
         }
     }

@@ -35,7 +35,7 @@ public static class Extensions
                 services.AddSingleton(generateOptions);
                 services.AddSingleton<IExecutable, GenerateService>();
                 break;
-            
+
             case GenerateSchemaDdlOptions generateSchemaOptions:
                 services.AddSingleton(generateSchemaOptions);
                 services.AddSingleton<IExecutable, GenerateSchemaDdlService>();

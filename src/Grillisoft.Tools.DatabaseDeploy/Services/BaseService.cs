@@ -47,7 +47,7 @@ public abstract class BaseService : IExecutable
     {
         return _fileSystem.DirectoryInfo.New(path);
     }
-    
+
     protected async Task<BranchesManager> LoadBranchesManager(string path, CancellationToken cancellationToken)
     {
         var directory = this.GetDirectory(path);
@@ -113,7 +113,7 @@ public abstract class BaseService : IExecutable
     }
 
     protected IReadOnlyCollection<string> Databases => _databases.Databases;
-    
+
     protected async Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken)
     {
         return await _databases.GetDatabase(name, cancellationToken);

@@ -10,9 +10,9 @@ public sealed class DbObject
     }
 
     public string Name { get; }
-    
+
     public string Type { get; }
-    
+
     public List<DbObject> Dependencies { get; } = [];
 
     public string Key { get; }

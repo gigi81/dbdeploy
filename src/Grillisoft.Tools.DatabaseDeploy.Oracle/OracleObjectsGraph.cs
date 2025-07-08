@@ -1,4 +1,5 @@
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
 
@@ -35,10 +36,7 @@ public class OracleObjectsGraph
             }
             
             if (count == 0)
-            {
-                var list = String.Join(",", _dbObjects.Except(result).Select(o => o.Name));
-                throw new Exception("Circular dependency detected: " + list);
-            }
+                throw new CircularDependencyException(_dbObjects.Except(result).Select(o => o.Name));
         }
         
         return result;
@@ -57,10 +55,10 @@ public class OracleObjectsGraph
         foreach (var dependency in dbObjectsDependencies)
         {
             if(!_dbObjects.TryGetValue(dependency.DbObject, out var dbObject))
-                throw new Exception($"DB object not found: {dependency.DbObject}");
+                throw new DbObjectNotFoundException(dependency.DbObject);
             
             if(!_dbObjects.TryGetValue(dependency.DbObjectDependency, out var dbObjectDependency))
-                throw new Exception($"DB object not found: {dependency.DbObjectDependency}");
+                throw new DbObjectNotFoundException(dependency.DbObjectDependency);
             
             dbObject.Dependencies.Add(dbObjectDependency);
         }

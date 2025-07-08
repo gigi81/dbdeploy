@@ -1,5 +1,6 @@
 using System.Data;
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Database;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer;
@@ -258,7 +259,7 @@ public class OracleDatabase : DatabaseBase
         END;
     """;
     
-    private async IAsyncEnumerable<string> GetObjectDdl(string objectName, string objectType, CancellationToken cancellationToken)
+    private async IAsyncEnumerable<string> GetObjectDdl(string objectName, string objectType, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         Logger.LogInformation("Getting DDL for object {ObjectName} of type {ObjectType}", objectName, objectType);
         await using var disableConstraintsCommand = CreateCommand(DllTransformSql);

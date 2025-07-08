@@ -21,7 +21,7 @@ public class ValidateServiceTests
         _databases = new Mock<IDatabasesCollection>();
         _logger = new Mock<ILogger>();
     }
-    
+
     [Fact]
     public async Task Execute_WhenValidationSucceeds_ReturnsZero()
     {
@@ -48,7 +48,7 @@ public class ValidateServiceTests
         var fileSystem = new MockFileSystem();
         fileSystem.AddDirectory("/path/MyDb");
         fileSystem.AddFile("/path/main.csv", new MockFileData("MyDb,01_init"));
-        
+
         var globalSettings = ExtensionsOptions.Create(new GlobalSettings());
         var service = new ValidateService(_options, _databases.Object, fileSystem, globalSettings, _logger.Object);
 

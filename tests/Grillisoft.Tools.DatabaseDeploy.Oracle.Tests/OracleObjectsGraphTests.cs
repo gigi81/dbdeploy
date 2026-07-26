@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Xunit;
 

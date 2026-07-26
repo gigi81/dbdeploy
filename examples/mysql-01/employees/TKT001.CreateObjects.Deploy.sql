@@ -152,7 +152,7 @@ begin
     );
     INSERT INTO department_max_date
     SELECT
-        emp_no, max(from_date), max(to_date)
+        emp_no, max(from_date), max(`to_date`)
     FROM
         dept_emp
     GROUP BY
@@ -171,7 +171,7 @@ begin
         department_max_date dmd
         inner join dept_emp de
             on dmd.dept_from_date=de.from_date
-            and dmd.dept_to_date=de.to_date
+            and dmd.dept_to_date=de.`to_date`
             and dmd.emp_no=de.emp_no;
     SELECT
         dept_no,dept_name,manager, count(*)

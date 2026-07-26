@@ -70,7 +70,7 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
         };
     }
 
-    private async Task<TDatabase> CreateDatabase()
+    protected async Task<TDatabase> CreateDatabase()
     {
         var config = _configuration.Value.GetSection("databases:test");
         return (TDatabase)await _databaseFactory.Value.GetDatabase("test", config, _cancellationToken);

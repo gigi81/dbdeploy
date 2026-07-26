@@ -62,7 +62,7 @@ jobs:
     container: mcr.microsoft.com/dotnet/sdk:9.0
     services:
       mariadb:
-        image: mariadb:latest
+        image: mariadb:11.8
         env:
           MARIADB_ROOT_PASSWORD: mariadb2019!
         ports:

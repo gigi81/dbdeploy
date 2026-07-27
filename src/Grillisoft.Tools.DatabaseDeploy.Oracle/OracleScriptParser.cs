@@ -1,11 +1,12 @@
 ﻿using System.IO.Abstractions;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
 
-public class OracleScriptParser : IScriptParser
+public partial class OracleScriptParser : IScriptParser
 {
     public async IAsyncEnumerable<string> Parse(IFileInfo scriptFile, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -23,9 +24,15 @@ public class OracleScriptParser : IScriptParser
 
             count += trim.Count(c => c == '\'');
 
-            if (count % 2 == 0 && trim.EndsWith(sqlTerminator))
+            // A line holding nothing but the terminator always closes the statement, the way
+            // SQL*Plus does. Quote counting cannot be trusted on its own: a single apostrophe in a
+            // PL/SQL comment leaves it convinced the statement is still inside a string literal,
+            // and every following statement gets swallowed into the same command.
+            var isTerminatorLine = trim.Length == 1 && trim[0] == sqlTerminator;
+
+            if (isTerminatorLine || (count % 2 == 0 && trim.EndsWith(sqlTerminator)))
             {
-                var command = CleanSql(buffer.ToString());
+                var command = CleanSql(buffer.ToString(), sqlTerminator);
                 if (!string.IsNullOrWhiteSpace(command))
                     yield return command;
 
@@ -48,11 +55,22 @@ public class OracleScriptParser : IScriptParser
         return ';';
     }
 
-    private static readonly char[] TrimChars = ['\t', '\n', '\r', ' ', ';', '/'];
+    private static readonly char[] Whitespace = ['\t', '\n', '\r', ' '];
 
-    private static string CleanSql(string input)
+    /// <summary>
+    /// Matches the END of a PL/SQL unit, whose semicolon belongs to the statement and must survive.
+    /// </summary>
+    [GeneratedRegex(@"\bEND\s*(""?[A-Za-z0-9_$#]+""?)?\s*;$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex PlSqlEnd();
+
+    private static string CleanSql(string input, char sqlTerminator)
     {
-        return input.Trim(TrimChars);
+        var sql = input.Trim(Whitespace).TrimEnd(sqlTerminator).Trim(Whitespace);
+
+        // Stripping the trailing semicolon off a program unit turns its END; into an END and the
+        // server rejects the whole body.
+        return PlSqlEnd().IsMatch(sql) ? sql : sql.TrimEnd(';').Trim(Whitespace);
     }
 
     private static bool CanIgnore(string trim)

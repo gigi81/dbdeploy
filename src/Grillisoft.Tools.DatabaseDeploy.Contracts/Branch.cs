@@ -1,4 +1,5 @@
 ﻿namespace Grillisoft.Tools.DatabaseDeploy.Contracts;
+
 public record Branch
 {
     private readonly Lazy<string[]> _databases;

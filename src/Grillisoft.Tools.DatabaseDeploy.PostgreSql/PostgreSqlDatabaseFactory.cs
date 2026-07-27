@@ -30,8 +30,8 @@ internal class PostgreSqlDatabaseFactory : IDatabaseFactory
     {
         var database = new PostgreSqlDatabase(
             name,
-            config.GetValue("connectionString", string.Empty)!,
-            config.GetValue("migrationTable", _globalSettings.Value.MigrationsTable)!,
+            config.GetValue("connectionString", string.Empty),
+            config.GetValue("migrationTable", _globalSettings.Value.MigrationsTable),
             config.GetValue("scriptTimeout", _globalSettings.Value.ScriptTimeout),
             _parser,
             _loggerFactory.CreateLogger<PostgreSqlDatabase>());

@@ -1,5 +1,5 @@
-﻿using DotNet.Testcontainers.Containers;
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
+using DotNet.Testcontainers.Containers;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Microsoft.Extensions.Configuration;
@@ -70,7 +70,7 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
         };
     }
 
-    private async Task<TDatabase> CreateDatabase()
+    protected async Task<TDatabase> CreateDatabase()
     {
         var config = _configuration.Value.GetSection("databases:test");
         return (TDatabase)await _databaseFactory.Value.GetDatabase("test", config, _cancellationToken);

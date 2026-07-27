@@ -9,6 +9,12 @@ public class SqlServerDatabase : DatabaseBase
 {
     private readonly string _migrationTableName;
 
+    /// <summary>
+    /// Kept because <see cref="SqlConnection.ConnectionString"/> drops the password once the
+    /// connection has been opened, and the DDL generation needs a connection of its own.
+    /// </summary>
+    private readonly string _connectionString;
+
     internal SqlServerDatabase(
         string name,
         string connectionString,
@@ -19,6 +25,7 @@ public class SqlServerDatabase : DatabaseBase
     ) : base(name, CreateConnection(connectionString, logger), parser, logger)
     {
         _migrationTableName = migrationTableName;
+        _connectionString = connectionString;
         this.ScriptTimeout = scriptTimeout;
     }
 
@@ -41,5 +48,19 @@ public class SqlServerDatabase : DatabaseBase
         var connection = new SqlConnection(connectionString);
         connection.InfoMessage += (sender, args) => { logger.LogInformation(args.Message); };
         return connection;
+    }
+
+    public async override Task GenerateSchemaDdl(StreamWriter writer, CancellationToken cancellationToken)
+    {
+        await OpenConnection(cancellationToken);
+
+        var generator = new SqlServerSchemaDdlGenerator(
+            script => CreateCommand(script),
+            _connectionString,
+            this.DatabaseName,
+            _migrationTableName,
+            this.Logger);
+
+        await generator.Generate(writer, cancellationToken);
     }
 }

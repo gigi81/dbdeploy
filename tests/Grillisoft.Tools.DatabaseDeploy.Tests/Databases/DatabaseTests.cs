@@ -158,7 +158,7 @@ public abstract class DatabaseTest<TDatabase, TDatabaseContainer> : IAsyncLifeti
         exists.Should().Be(true);
     }
 
-    public Task InitializeAsync() => _container.StartAsync();
+    public virtual Task InitializeAsync() => _container.StartAsync();
 
-    public Task DisposeAsync() => _container.DisposeAsync().AsTask();
+    public virtual Task DisposeAsync() => _container.DisposeAsync().AsTask();
 }

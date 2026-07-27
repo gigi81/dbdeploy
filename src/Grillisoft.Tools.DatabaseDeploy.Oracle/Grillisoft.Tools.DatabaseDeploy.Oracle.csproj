@@ -11,8 +11,4 @@
     <ProjectReference Include="..\Grillisoft.Tools.DatabaseDeploy.Database\Grillisoft.Tools.DatabaseDeploy.Database.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <InternalsVisibleTo Include="Grillisoft.Tools.DatabaseDeploy.Oracle.Tests" />
-  </ItemGroup>
-
 </Project>

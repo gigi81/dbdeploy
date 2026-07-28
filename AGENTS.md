@@ -1,3 +1,7 @@
+# AGENTS.md
+
+Instructions for AI coding agents working on this repository.
+
 ## .NET Solution Architecture
 
 The solution is a .NET tool for database migrations. It is composed of the following projects:
@@ -13,6 +17,20 @@ The solution is a .NET tool for database migrations. It is composed of the follo
 - **Grillisoft.Tools.DatabaseDeploy.Oracle**: The Oracle database provider.
 - **Grillisoft.Tools.DatabaseDeploy.AI**: The AI provider for generating database migrations.
 
+Package versions are managed centrally in `Directory.Packages.props`; a `PackageReference` in a
+project must not carry a `Version` attribute. `src/Directory.Build.props` makes every project's
+internals visible to its `.Tests` counterpart, so test projects do not need an `InternalsVisibleTo`
+of their own.
+
+## Editing Files
+
+- Edit files directly with the file editing tools. Do not rewrite files through throwaway
+  `python`, `sed` or `awk` scripts: those edits are invisible in the transcript, hard to review,
+  and have mangled line endings in this repository before.
+- Files in this repository are inconsistent about BOM and CRLF. Do not try to preserve either by
+  hand. Run `dotnet format` once a change set is complete and let it normalise charset, line
+  endings and style.
+
 ## Code Standards
 
 The code standards are defined in the `.editorconfig` file. The main rules are:
@@ -25,6 +43,9 @@ The code standards are defined in the `.editorconfig` file. The main rules are:
 - Use expression-bodied members for properties and accessors.
 - Use PascalCase for types and non-field members.
 - Interfaces should start with `I`.
+
+`SonarAnalyzer.CSharp` runs on every project under `src`. A clean build has zero Sonar warnings in
+the files being changed; the pre-existing ones are S1075, S4790 and S6444.
 
 ## Unit Test and Integration Test Strategy
 
@@ -43,6 +64,10 @@ The unit tests are written using xUnit. For each source project, there is a corr
 
 The unit tests are run on every push and pull request to the `main` and `feature/**` branches. The tests are run on Windows, Linux, and macOS.
 
+Assertions use AwesomeAssertions (`Should()`), not the xUnit `Assert` class. Provider test classes
+that derive from `DatabaseTest<TDatabase, TContainer>` get a Testcontainers database per `[Fact]`,
+so a full provider run is slow - the Oracle project takes about five minutes.
+
 ### Integration Tests
 
 The integration tests are run on every push and pull request to the `main` and `feature/**` branches. The tests are run on Linux. The integration tests use Docker to spin up databases for testing. The following databases are tested:
@@ -54,6 +79,8 @@ The integration tests are run on every push and pull request to the `main` and `
 
 The integration tests run the `dbdeploy` tool against the example databases located in the `examples` folder.
 
-## Gemini Instructions
+## Agent Instructions
 
 - When running tests, only target the specific tests that were added or changed by using the `--filter` option with `dotnet test` to speed up the process. For example: `dotnet test --filter "FullyQualifiedName~MyNewTests"`.
+- Run `dotnet format` after finishing a change set, before reporting the work as done.
+- Do not commit or push unless asked.

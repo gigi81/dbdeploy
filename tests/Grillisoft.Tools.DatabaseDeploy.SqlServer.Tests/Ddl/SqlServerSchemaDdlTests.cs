@@ -24,7 +24,7 @@ public class SqlServerSchemaDdlTests : DatabaseTest<SqlServerDatabase, MsSqlCont
     private readonly ITestOutputHelper _output;
 
     public SqlServerSchemaDdlTests(ITestOutputHelper output)
-        : base(new MsSqlBuilder().Build(), output)
+        : base(new MsSqlBuilder(ContainerImages.SqlServer).Build(), output)
     {
         _output = output;
     }

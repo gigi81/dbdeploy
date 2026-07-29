@@ -22,7 +22,7 @@ public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase, OracleContainer
     private readonly ITestOutputHelper _output;
 
     public OracleSchemaDdlTests(ITestOutputHelper output)
-        : base(new OracleBuilder().Build(), output)
+        : base(new OracleBuilder(ContainerImages.Oracle).Build(), output)
     {
         _output = output;
     }

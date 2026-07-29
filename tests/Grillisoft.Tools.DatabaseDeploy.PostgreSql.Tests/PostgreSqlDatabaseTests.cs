@@ -8,7 +8,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.PostgreSql.Tests;
 public class PostgreSqlDatabaseTests : DatabaseTest<PostgreSqlDatabase, PostgreSqlContainer>
 {
     public PostgreSqlDatabaseTests(ITestOutputHelper output)
-        : base(new PostgreSqlBuilder().Build(), output)
+        : base(new PostgreSqlBuilder(ContainerImages.PostgreSql).Build(), output)
     {
     }
 

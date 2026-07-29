@@ -8,7 +8,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.MySql.Tests;
 public class MySqlDatabaseTests : DatabaseTest<MySqlDatabase, MySqlContainer>
 {
     public MySqlDatabaseTests(ITestOutputHelper output)
-        : base(new MySqlBuilder().Build(), output)
+        : base(new MySqlBuilder(ContainerImages.MySql).Build(), output)
     {
     }
 

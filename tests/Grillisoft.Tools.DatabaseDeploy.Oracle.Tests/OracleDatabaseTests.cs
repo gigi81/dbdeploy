@@ -8,7 +8,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests;
 public class OracleDatabaseTests : DatabaseTest<OracleDatabase, OracleContainer>
 {
     public OracleDatabaseTests(ITestOutputHelper output)
-        : base(new OracleBuilder().Build(), output)
+        : base(new OracleBuilder(ContainerImages.Oracle).Build(), output)
     {
     }
 

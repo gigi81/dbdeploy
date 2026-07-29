@@ -1,5 +1,6 @@
 ﻿using System.Data.Common;
 using Grillisoft.Tools.DatabaseDeploy.Database;
+using Grillisoft.Tools.DatabaseDeploy.SqlServer.Ddl;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 

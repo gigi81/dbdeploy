@@ -73,30 +73,11 @@ public class ProgressReporterTests
         for (var i = 0; i < 50; i++)
             reporter.Advance(Object);
 
-        // Assert
-        logger.Messages.Should().Equal(
+        // Assert - the elapsed time is left out, it changes from one run to the next
+        logger.Messages.Select(Untimed).Should().Equal(
             "Scripted 25/50 objects (50%)",
             "Scripted 50/50 objects (100%)");
     }
 
-    private sealed class RecordingLogger : ILogger
-    {
-        public List<string> Messages { get; } = [];
-
-        public void Log<TState>(
-            LogLevel logLevel,
-            EventId eventId,
-            TState state,
-            Exception? exception,
-            Func<TState, Exception?, string> formatter)
-        {
-            // only the part that does not change from one run to the next
-            var message = formatter(state, exception);
-            Messages.Add(message[..message.IndexOf(" in ", StringComparison.Ordinal)]);
-        }
-
-        public bool IsEnabled(LogLevel logLevel) => true;
-
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-    }
+    private static string Untimed(string message) => message[..message.IndexOf(" in ", StringComparison.Ordinal)];
 }

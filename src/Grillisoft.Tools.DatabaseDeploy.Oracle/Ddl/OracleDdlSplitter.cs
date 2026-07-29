@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
+namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Ddl;
 
 /// <summary>
 /// Splits the CLOB returned by <c>DBMS_METADATA.GET_DDL</c> into individual statements.

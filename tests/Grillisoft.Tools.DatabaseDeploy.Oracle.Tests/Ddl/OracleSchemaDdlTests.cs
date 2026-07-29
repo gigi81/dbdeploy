@@ -10,7 +10,7 @@ using Testcontainers.Oracle;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests;
+namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Ddl;
 
 /// <summary>
 /// End to end check of the schema DDL generation: build a schema that uses the features a real
@@ -22,7 +22,7 @@ public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase, OracleContainer
     private readonly ITestOutputHelper _output;
 
     public OracleSchemaDdlTests(ITestOutputHelper output)
-        : base(new OracleBuilder().Build(), output)
+        : base(new OracleBuilder(ContainerImages.Oracle).Build(), output)
     {
         _output = output;
     }

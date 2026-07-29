@@ -1,4 +1,4 @@
-namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
+namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Ddl;
 
 /// <summary>
 /// Maps an <c>ALL_OBJECTS.OBJECT_TYPE</c> (plus the <see cref="RefConstraint"/> pseudo type, which

@@ -5,31 +5,56 @@ namespace Grillisoft.Tools.DatabaseDeploy.Database.Tests;
 
 public class ExtensionsTests
 {
-    [Theory]
-    [InlineData("this is a test", "is", new[] { 2, 5 })]
-    [InlineData("this is a test", "notfound", new int[0])]
-    [InlineData("", "test", new int[0])]
-    public void AllIndexes_WithStringSearch_ShouldReturnCorrectIndexes(string text, string search, int[] expected)
+    /// <summary>
+    /// The breakdown is read straight off a log line to judge whether a generation did what it was
+    /// supposed to, so the order has to be the order of the script, not the order of the input.
+    /// </summary>
+    [Fact]
+    public void Breakdown_ShouldCountByTypeInScriptOrder()
     {
+        // Arrange
+        string[] types = ["VIEW", "TABLE", "VIEW", "SCHEMA", "TABLE", "TABLE"];
+        var rank = (string type) => type switch { "SCHEMA" => 0, "TABLE" => 1, "VIEW" => 2, _ => int.MaxValue };
+
         // Act
-        var result = text.AllIndexes(search);
+        var result = types.Breakdown(rank);
 
         // Assert
-        result.Should().BeEquivalentTo(expected);
+        result.Should().Be("SCHEMA (1), TABLE (3), VIEW (2)");
     }
 
     [Fact]
-    public void AllIndexes_WithMultipleSearches_ShouldReturnCorrectIndexes()
+    public void Breakdown_WhenCountsAreAlreadyTotalled_ShouldFormatThemTheSameWay()
     {
         // Arrange
-        var text = "this is a test with multiple searches";
-        var searches = new[] { "this", "test", "multiple" };
-        var expected = new[] { 0, 10, 20 };
+        var counts = new Dictionary<string, int> { ["VIEW"] = 2, ["TABLE"] = 3 };
+        var rank = (string type) => type switch { "TABLE" => 1, "VIEW" => 2, _ => int.MaxValue };
 
         // Act
-        var result = text.AllIndexes(searches);
+        var result = counts.Breakdown(rank);
 
         // Assert
-        result.Should().BeEquivalentTo(expected);
+        result.Should().Be("TABLE (3), VIEW (2)");
+    }
+
+    /// <summary>An unknown type must not push a known one down the list.</summary>
+    [Fact]
+    public void Breakdown_WhenATypeHasNoRank_ShouldPutItLast()
+    {
+        // Arrange
+        string[] types = ["SOMETHING NEW", "TABLE"];
+        var rank = (string type) => type == "TABLE" ? 1 : int.MaxValue;
+
+        // Act
+        var result = types.Breakdown(rank);
+
+        // Assert
+        result.Should().Be("TABLE (1), SOMETHING NEW (1)");
+    }
+
+    [Fact]
+    public void Breakdown_WhenThereIsNothingToCount_ShouldBeEmpty()
+    {
+        Array.Empty<string>().Breakdown(_ => 0).Should().BeEmpty();
     }
 }

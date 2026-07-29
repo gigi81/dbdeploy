@@ -1,4 +1,5 @@
 ﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Tests;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
 using Testcontainers.MsSql;
 using Xunit.Abstractions;
@@ -8,7 +9,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests;
 public class SqlServerDatabaseTests : DatabaseTest<SqlServerDatabase, MsSqlContainer>
 {
     public SqlServerDatabaseTests(ITestOutputHelper output)
-        : base(new MsSqlBuilder().Build(), output)
+        : base(new MsSqlBuilder(ContainerImages.SqlServer).Build(), output)
     {
     }
 

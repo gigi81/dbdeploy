@@ -1,6 +1,7 @@
 using System.Data;
 using System.Data.Common;
 using Grillisoft.Tools.DatabaseDeploy.Database;
+using Grillisoft.Tools.DatabaseDeploy.Oracle.Ddl;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer;
 using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;

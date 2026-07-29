@@ -1,4 +1,4 @@
-namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
+namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Ddl;
 
 /// <summary>
 /// Dictionary queries used to discover what has to be scripted.

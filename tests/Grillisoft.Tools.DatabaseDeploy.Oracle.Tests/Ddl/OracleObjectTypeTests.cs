@@ -1,7 +1,8 @@
 using AwesomeAssertions;
+using Grillisoft.Tools.DatabaseDeploy.Oracle.Ddl;
 using Xunit;
 
-namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests;
+namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Ddl;
 
 public class OracleObjectTypeTests
 {

@@ -2,7 +2,7 @@ using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
+namespace Grillisoft.Tools.DatabaseDeploy.Database;
 
 /// <summary>
 /// Orders the objects of a schema so that every object is written to the script after the objects
@@ -10,30 +10,40 @@ namespace Grillisoft.Tools.DatabaseDeploy.Oracle;
 /// </summary>
 /// <remarks>
 /// This is a Kahn topological sort where the tie between objects that are all ready to be written
-/// is broken by <see cref="OracleObjectType.RankOf"/> and then by name, which keeps the output
-/// stable between runs and keeps objects of the same kind together.
+/// is broken by the rank of their type and then by name, which keeps the output stable between runs
+/// and keeps objects of the same kind together.
 /// <para>
-/// Two things a real schema does that a naive sort cannot survive: dependencies pointing at objects
-/// that are not being scripted (objects of an unsupported type, objects filtered out, objects
-/// dropped between the two queries) and dependency cycles, which are perfectly legal between PL/SQL
-/// bodies. Both are tolerated and reported instead of aborting the generation.
+/// Two things a real database does that a naive sort cannot survive: dependencies pointing at
+/// objects that are not being scripted (objects of an unsupported type, objects filtered out,
+/// objects dropped between two queries) and dependency cycles, which every engine allows between
+/// program units. Both are tolerated and reported instead of aborting the generation.
 /// </para>
 /// </remarks>
-public sealed class OracleObjectsGraph
+public class DbObjectsGraph
 {
-    private static readonly IComparer<DbObject> ScriptOrder = new ScriptOrderComparer();
-
+    private readonly IComparer<DbObject> _scriptOrder;
     private readonly ILogger _logger;
     private readonly List<DbObject> _objects;
     private readonly Dictionary<DbObject, HashSet<DbObject>> _requires;
     private readonly Dictionary<DbObject, HashSet<DbObject>> _requiredBy;
     private readonly List<IReadOnlyList<DbObject>> _brokenCycles = [];
 
-    public OracleObjectsGraph(
+    /// <param name="dbObjects">The objects to order. Duplicates are collapsed.</param>
+    /// <param name="dependencies">
+    /// Pairs where the first object can only be created once the second one exists.
+    /// </param>
+    /// <param name="rankOf">
+    /// Position of an object type in the script, used to break the tie between objects that are all
+    /// ready to be written. Lower comes first.
+    /// </param>
+    /// <param name="logger">Optional logger; every decision the sort takes is reported through it.</param>
+    public DbObjectsGraph(
         IEnumerable<DbObject> dbObjects,
-        IEnumerable<OracleObjectDependencies> dbObjectsDependencies,
+        IEnumerable<(DbObject DbObject, DbObject DependsOn)> dependencies,
+        Func<string, int> rankOf,
         ILogger? logger = null)
     {
+        _scriptOrder = new ScriptOrderComparer(rankOf);
         _logger = logger ?? NullLogger.Instance;
         _objects = dbObjects.Distinct().ToList();
         _requires = _objects.ToDictionary(o => o, _ => new HashSet<DbObject>());
@@ -41,23 +51,17 @@ public sealed class OracleObjectsGraph
 
         var known = _requires.Keys.ToHashSet();
 
-        foreach (var dependency in dbObjectsDependencies)
+        foreach (var (dbObject, dependsOnObject) in dependencies)
         {
-            if (!known.TryGetValue(dependency.DbObject, out var dependent))
+            if (!known.TryGetValue(dbObject, out var dependent))
             {
-                _logger.LogDebug(
-                    "Ignoring dependency {ObjectKey} -> {DependencyKey}: {MissingKey} is not being scripted",
-                    dependency.DbObject.Key, dependency.DbObjectDependency.Key, dependency.DbObject.Key);
-                IgnoredDependencies++;
+                LogIgnored(dbObject, dependsOnObject, dbObject);
                 continue;
             }
 
-            if (!known.TryGetValue(dependency.DbObjectDependency, out var dependsOn))
+            if (!known.TryGetValue(dependsOnObject, out var dependsOn))
             {
-                _logger.LogDebug(
-                    "Ignoring dependency {ObjectKey} -> {DependencyKey}: {MissingKey} is not being scripted",
-                    dependency.DbObject.Key, dependency.DbObjectDependency.Key, dependency.DbObjectDependency.Key);
-                IgnoredDependencies++;
+                LogIgnored(dbObject, dependsOnObject, dependsOnObject);
                 continue;
             }
 
@@ -84,7 +88,7 @@ public sealed class OracleObjectsGraph
     public IReadOnlyList<DbObject> GetGraph()
     {
         var pending = _requires.ToDictionary(kv => kv.Key, kv => new HashSet<DbObject>(kv.Value));
-        var ready = new SortedSet<DbObject>(ScriptOrder);
+        var ready = new SortedSet<DbObject>(_scriptOrder);
         var result = new List<DbObject>(_objects.Count);
 
         foreach (var (dbObject, requires) in pending)
@@ -119,20 +123,29 @@ public sealed class OracleObjectsGraph
         return result;
     }
 
+    private void LogIgnored(DbObject dbObject, DbObject dependsOn, DbObject missing)
+    {
+        _logger.LogDebug(
+            "Ignoring dependency {ObjectKey} -> {DependencyKey}: {MissingKey} is not being scripted",
+            dbObject.Key, dependsOn.Key, missing.Key);
+
+        IgnoredDependencies++;
+    }
+
     /// <summary>
     /// Nothing is ready but objects are left: everything still pending is part of, or blocked by,
     /// a cycle. Report the cycle and release its lowest ranked member so the sort can carry on.
     /// </summary>
     private void BreakCycle(Dictionary<DbObject, HashSet<DbObject>> pending, SortedSet<DbObject> ready)
     {
-        var cycle = FindCycle(pending) ?? [pending.Keys.Min(ScriptOrder)!];
-        var victim = cycle.Min(ScriptOrder)!;
+        var cycle = FindCycle(pending) ?? [pending.Keys.Min(_scriptOrder)!];
+        var victim = cycle.Min(_scriptOrder)!;
 
         _brokenCycles.Add(cycle);
 
         _logger.LogWarning(
             "Dependency cycle between {ObjectCount} object(s): {Cycle}. Scripting {Victim} first; " +
-            "objects in the cycle may be created invalid and will be recompiled by Oracle on first use",
+            "objects in the cycle may be created invalid and will need a recompilation",
             cycle.Count,
             string.Join(" -> ", cycle.Select(o => o.Key).Append(cycle[0].Key)),
             victim.Key);
@@ -145,14 +158,14 @@ public sealed class OracleObjectsGraph
     /// Depth first search over the objects still pending, returning the first cycle found.
     /// Iterative on purpose: schemas with tens of thousands of objects would blow the stack.
     /// </summary>
-    private static List<DbObject>? FindCycle(Dictionary<DbObject, HashSet<DbObject>> pending)
+    private List<DbObject>? FindCycle(Dictionary<DbObject, HashSet<DbObject>> pending)
     {
         const int visiting = 1;
         const int visited = 2;
 
         var state = new Dictionary<DbObject, int>();
 
-        foreach (var start in pending.Keys.OrderBy(o => o, ScriptOrder))
+        foreach (var start in pending.Keys.OrderBy(o => o, _scriptOrder))
         {
             if (state.ContainsKey(start))
                 continue;
@@ -162,7 +175,7 @@ public sealed class OracleObjectsGraph
 
             state[start] = visiting;
             path.Add(start);
-            stack.Push((start, pending[start].OrderBy(o => o, ScriptOrder).GetEnumerator()));
+            stack.Push((start, pending[start].OrderBy(o => o, _scriptOrder).GetEnumerator()));
 
             while (stack.Count > 0)
             {
@@ -200,14 +213,14 @@ public sealed class OracleObjectsGraph
 
                 state[next] = visiting;
                 path.Add(next);
-                stack.Push((next, nextRequires.OrderBy(o => o, ScriptOrder).GetEnumerator()));
+                stack.Push((next, nextRequires.OrderBy(o => o, _scriptOrder).GetEnumerator()));
             }
         }
 
         return null;
     }
 
-    private sealed class ScriptOrderComparer : IComparer<DbObject>
+    private sealed class ScriptOrderComparer(Func<string, int> rankOf) : IComparer<DbObject>
     {
         public int Compare(DbObject? x, DbObject? y)
         {
@@ -218,7 +231,7 @@ public sealed class OracleObjectsGraph
             if (y is null)
                 return 1;
 
-            var compare = OracleObjectType.RankOf(x.Type).CompareTo(OracleObjectType.RankOf(y.Type));
+            var compare = rankOf(x.Type).CompareTo(rankOf(y.Type));
             if (compare != 0)
                 return compare;
 

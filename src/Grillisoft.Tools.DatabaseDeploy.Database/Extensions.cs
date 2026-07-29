@@ -13,36 +13,26 @@ public static class Extensions
         return command;
     }
 
-    public static IEnumerable<int> AllIndexes(this string value, string search)
+    /// <summary>
+    /// "TABLE (12), VIEW (3), INDEX (25)": how many objects of each type there are, in the order
+    /// they are written to a generated script. Used in the logs a whole generation is judged from.
+    /// </summary>
+    /// <param name="types">The type of every object, one entry per object.</param>
+    /// <param name="rankOf">Position of a type in the script; lower comes first.</param>
+    public static string Breakdown(this IEnumerable<string> types, Func<string, int> rankOf)
     {
-        return value.AllIndexes(search, StringComparison.OrdinalIgnoreCase);
+        return types.GroupBy(type => type)
+                    .Select(group => new KeyValuePair<string, int>(group.Key, group.Count()))
+                    .Breakdown(rankOf);
     }
 
-    public static IEnumerable<int> AllIndexes(this string value, IEnumerable<string> searches)
+    /// <summary>
+    /// Same, for counts that have already been totalled up.
+    /// </summary>
+    public static string Breakdown(this IEnumerable<KeyValuePair<string, int>> counts, Func<string, int> rankOf)
     {
-        return value.AllIndexes(searches, StringComparison.OrdinalIgnoreCase);
+        return string.Join(", ", counts.OrderBy(count => rankOf(count.Key))
+                                       .Select(count => $"{count.Key} ({count.Value})"));
     }
 
-    public static IEnumerable<int> AllIndexes(this string value, IEnumerable<string> searches, StringComparison comparison)
-    {
-        var ret = new List<int>();
-
-        foreach (var search in searches)
-        {
-            ret.AddRange(value.AllIndexes(search, comparison));
-        }
-
-        return ret;
-    }
-
-    public static IEnumerable<int> AllIndexes(this string value, string search, StringComparison comparison)
-    {
-        var index = value.IndexOf(search, comparison);
-
-        while (index >= 0)
-        {
-            yield return index;
-            index = value.IndexOf(search, index + search.Length, comparison);
-        }
-    }
 }

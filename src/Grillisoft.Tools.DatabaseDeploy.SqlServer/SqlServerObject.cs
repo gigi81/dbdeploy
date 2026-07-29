@@ -25,11 +25,12 @@ internal sealed class SqlServerObject
         ParentSchema = parentSchema;
         ParentName = parentName;
 
-        var owner = parentName is null
-            ? Qualify(schema, name)
-            : Qualify(parentSchema, parentName) + "." + Quote(name);
-
-        DbObject = new DbObject(owner, type.Name);
+        // An index name is only unique within its table, so the parent is part of the identity.
+        DbObject = new DbObject(
+            parentName is null
+                ? name.Qualify(schema)
+                : parentName.Qualify(parentSchema) + "." + name.Quote(),
+            type.Name);
     }
 
     public SqlServerObjectType Type { get; }
@@ -53,10 +54,4 @@ internal sealed class SqlServerObject
     public string Key => DbObject.Key;
 
     public override string ToString() => $"{Type.Name} {QualifiedName}";
-
-    public static string Qualify(string? schema, string name)
-        => string.IsNullOrEmpty(schema) ? Quote(name) : Quote(schema) + "." + Quote(name);
-
-    public static string Quote(string name)
-        => "[" + name.Replace("]", "]]", StringComparison.Ordinal) + "]";
 }

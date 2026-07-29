@@ -7,16 +7,25 @@ namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests.Ddl;
 
 public class StreamWriterExtensionsTests
 {
-    private static async Task<string[]> Write(Func<StreamWriter, Task> write)
+    /// <summary>
+    /// The lines of the written output, however they were broken. A statement keeps whatever line
+    /// endings the server sent, while the writer ends each line it adds with
+    /// <see cref="Environment.NewLine"/>, so on Windows one piece of output holds both kinds. The
+    /// order of the separators matters: "\r\n" has to be tried before "\n".
+    /// </summary>
+    private static async Task<string[]> Write(Func<StreamWriter, Task> write, string? newLine = null)
     {
         using var stream = new MemoryStream();
 
         await using (var writer = new StreamWriter(stream, new UTF8Encoding(false), 4096, true))
         {
+            if (newLine is not null)
+                writer.NewLine = newLine;
+
             await write(writer);
         }
 
-        return Encoding.UTF8.GetString(stream.ToArray()).Split(Environment.NewLine);
+        return Encoding.UTF8.GetString(stream.ToArray()).Split(["\r\n", "\n"], StringSplitOptions.None);
     }
 
     [Fact]
@@ -68,10 +77,18 @@ public class StreamWriterExtensionsTests
         lines.Should().StartWith(["SET ANSI_NULLS ON", "GO", ""]);
     }
 
-    [Fact]
-    public async Task WriteStatement_WhenTheStatementSpansLines_ShouldKeepItWhole()
+    /// <summary>
+    /// A statement keeps the line endings the server sent it with, while the terminator the writer
+    /// adds gets the platform's. Both are exercised here so that a run on either platform catches a
+    /// change that only shows up on the other.
+    /// </summary>
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public async Task WriteStatement_WhenTheStatementSpansLines_ShouldKeepItWhole(string newLine)
     {
-        var lines = await Write(writer => writer.WriteStatement("CREATE TABLE [T1](\n\t[Id] [int] NOT NULL\n)"));
+        var lines = await Write(
+            writer => writer.WriteStatement("CREATE TABLE [T1](\n\t[Id] [int] NOT NULL\n)"), newLine);
 
         lines.Should().StartWith(["CREATE TABLE [T1](", "\t[Id] [int] NOT NULL", ")", "GO", ""]);
     }

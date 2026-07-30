@@ -74,9 +74,12 @@ Two invariants hold the design up, and both are covered by tests that must keep 
   significant tokens against the source. Layout, keyword casing and comment indentation may differ;
   nothing else may. A file that fails verification is left untouched and the run reports a failure.
 
-The `*CorpusTests` in each provider's test project run every `examples/**/*.sql` through the
-formatter and assert both verification and idempotency. They are the real regression net - prefer
-adding a case to `examples/` over hand-writing a fixture when reproducing a layout bug.
+The `*CorpusTests` in each provider's test project run the `examples/**/*.sql` scripts through the
+formatter and assert both verification and idempotency, via `CorpusFiles.AssertFormatsCleanly`. They
+are the real regression net - prefer adding a case to `examples/` over hand-writing a fixture when
+reproducing a layout bug. `CorpusFiles` skips anything over 2 MB, which drops the bulk
+`_Init.Data*.sql` dumps only: they are never formatted by the product, and they cost four minutes of
+CI time. Keep a new fixture under that size or it will be silently ignored.
 
 ## Unit Test and Integration Test Strategy
 

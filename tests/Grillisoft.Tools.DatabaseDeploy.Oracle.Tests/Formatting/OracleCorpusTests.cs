@@ -1,5 +1,3 @@
-using AwesomeAssertions;
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Oracle.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Formatting;
 using Xunit;
@@ -24,20 +22,6 @@ public class OracleCorpusTests
 
     [Theory]
     [MemberData(nameof(Scripts))]
-    public async Task Format_ShouldVerifyAndBeIdempotent(string relativePath)
-    {
-        var sql = await File.ReadAllTextAsync(CorpusFiles.Resolve(relativePath));
-        var formatter = new OracleFormatter();
-        var options = SqlFormatterOptions.Default with { NewLine = "\n" };
-
-        var first = formatter.Format(sql, options);
-        _output.WriteLine(first.Sql);
-
-        first.VerificationError.Should().BeNull();
-
-        var second = formatter.Format(first.Sql, options);
-
-        second.VerificationError.Should().BeNull();
-        second.Sql.Should().Be(first.Sql, "formatting an already formatted script must change nothing");
-    }
+    public Task Format_ShouldVerifyAndBeIdempotent(string relativePath) =>
+        CorpusFiles.AssertFormatsCleanly(new OracleFormatter(), relativePath, _output);
 }

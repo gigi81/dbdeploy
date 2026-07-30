@@ -1,7 +1,9 @@
 using System.Data;
 using System.Data.Common;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Database;
 using Grillisoft.Tools.DatabaseDeploy.Oracle.Ddl;
+using Grillisoft.Tools.DatabaseDeploy.Oracle.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer;
 using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
@@ -29,6 +31,8 @@ public class OracleDatabase : DatabaseBase
     }
 
     public override string Dialect => "Oracle";
+
+    public override ISqlFormatter SqlFormatter => OracleFormatter.Instance;
 
     public override string DatabaseName => _schema;
 

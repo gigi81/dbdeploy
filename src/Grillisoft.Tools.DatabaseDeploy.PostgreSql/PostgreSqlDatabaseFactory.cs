@@ -1,5 +1,6 @@
 ﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Grillisoft.Tools.DatabaseDeploy.PostgreSql.Formatting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -25,6 +26,8 @@ internal class PostgreSqlDatabaseFactory : IDatabaseFactory
     }
 
     public string Name => ProviderName;
+
+    public ISqlFormatter SqlFormatter => PostgreSqlFormatter.Instance;
 
     public Task<IDatabase> GetDatabase(string name, IConfigurationSection config, CancellationToken cancellationToken)
     {

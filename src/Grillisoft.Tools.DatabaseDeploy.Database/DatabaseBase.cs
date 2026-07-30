@@ -40,6 +40,12 @@ public abstract class DatabaseBase : IDatabase
 
     public IScriptParser ScriptParser => _parser;
 
+    /// <summary>
+    /// The formatter for this provider's dialect. Formatters hold no state and no connection, so a
+    /// single instance per provider is all that is ever needed.
+    /// </summary>
+    public abstract ISqlFormatter SqlFormatter { get; }
+
     public int ScriptTimeout { get; set; } = 60 * 60;
 
     protected DbConnection Connection => _connection;

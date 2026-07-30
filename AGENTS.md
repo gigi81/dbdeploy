@@ -47,6 +47,40 @@ The code standards are defined in the `.editorconfig` file. The main rules are:
 `SonarAnalyzer.CSharp` runs on every project under `src`. A clean build has zero Sonar warnings in
 the files being changed; the pre-existing ones are S1075, S4790 and S6444.
 
+## SQL Formatting
+
+`dbdeploy format` has two modes. By default it walks the branch layout and re-lays-out the
+`.Deploy.sql` and `.Rollback.sql` script of every step, skipping init steps. Given `--include`
+globs it formats whatever they match instead, reading no branch files and contacting no database;
+the dialect then comes from the nearest folder named after a configured database, else
+`--provider`, else `global:defaultProvider`. `ISqlFormatter` is exposed on `IDatabaseFactory` as
+well as `IDatabase` precisely so that this second mode needs no connection string, and
+`dbsettings.json` is optional for it (see `Program.cs`). Matching is
+`Microsoft.Extensions.FileSystemGlobbing`, which supports only `*`, `**` and `?` - a character class
+such as `[Ii]` silently matches nothing.
+
+The shared machinery
+lives in `Grillisoft.Tools.DatabaseDeploy.Database/Formatting` (`SqlLexer`, `SqlEmitter`,
+`SqlFormatVerifier`, `SqlKeywords`, `SqlDialect`), and each provider contributes a `Formatting/`
+folder with its own `SqlDialect` subclass and keyword sets - the same shared-plus-per-dialect shape
+as the `Ddl/` folders. `.editorconfig` is read in `Grillisoft.Tools.DatabaseDeploy/Formatting`,
+because the core project cannot reference the provider base.
+
+Two invariants hold the design up, and both are covered by tests that must keep passing:
+
+- **The lexer is lossless.** Concatenating every token's `Text` reproduces the input byte for byte.
+  Any new token kind or dialect hook has to preserve this.
+- **Every format is verified.** `SqlFormatVerifier` re-tokenises the output and compares the
+  significant tokens against the source. Layout, keyword casing and comment indentation may differ;
+  nothing else may. A file that fails verification is left untouched and the run reports a failure.
+
+The `*CorpusTests` in each provider's test project run the `examples/**/*.sql` scripts through the
+formatter and assert both verification and idempotency, via `CorpusFiles.AssertFormatsCleanly`. They
+are the real regression net - prefer adding a case to `examples/` over hand-writing a fixture when
+reproducing a layout bug. `CorpusFiles` skips anything over 2 MB, which drops the bulk
+`_Init.Data*.sql` dumps only: they are never formatted by the product, and they cost four minutes of
+CI time. Keep a new fixture under that size or it will be silently ignored.
+
 ## Unit Test and Integration Test Strategy
 
 The solution has a comprehensive test suite. The unit tests are located in the `tests` folder. The integration tests are located in the `.github/workflows/integration-tests.yml` file.

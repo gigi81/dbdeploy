@@ -1,5 +1,7 @@
 ﻿using System.Data.Common;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Database;
+using Grillisoft.Tools.DatabaseDeploy.MySql.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer;
 using Microsoft.Extensions.Logging;
 using MySqlConnector;
@@ -24,6 +26,8 @@ public class MySqlDatabase : DatabaseBase
     }
 
     public override string Dialect => "MySql";
+
+    public override ISqlFormatter SqlFormatter => MySqlFormatter.Instance;
 
     protected override ISqlScripts CreateSqlScripts()
     {

@@ -12,7 +12,7 @@ using Serilog;
 
 try
 {
-    var result = Parser.Default.ParseArguments<ValidateOptions, DeployOptions, RollbackOptions, CiOptions, GenerateOptions, GenerateSchemaDdlOptions>(args);
+    var result = Parser.Default.ParseArguments<ValidateOptions, DeployOptions, RollbackOptions, CiOptions, GenerateOptions, GenerateSchemaDdlOptions, FormatOptions>(args);
 
     if (result.Errors.Any())
     {
@@ -36,7 +36,11 @@ static IHost CreateHostBuilder(OptionsBase options, string[] args)
     var environmentName = builder.Environment.EnvironmentName;
     var configRoot = Path.GetFullPath(options.Path);
 
-    builder.Configuration.AddJsonFile(Path.Combine(configRoot, "dbsettings.json"), optional: false);
+    // Formatting a loose folder of scripts has no databases to configure, so the settings file is
+    // only mandatory for the verbs that talk to one.
+    builder.Configuration.AddJsonFile(
+        Path.Combine(configRoot, "dbsettings.json"),
+        optional: options is FormatOptions { IsDirectoryMode: true });
     builder.Configuration.AddJsonFile(Path.Combine(configRoot, $"dbsettings.{environmentName}.json"), optional: true);
 
     builder.Services.AddSerilog(config =>

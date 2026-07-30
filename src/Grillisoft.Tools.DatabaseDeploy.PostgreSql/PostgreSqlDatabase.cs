@@ -1,5 +1,7 @@
 using System.Data.Common;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Database;
+using Grillisoft.Tools.DatabaseDeploy.PostgreSql.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -25,6 +27,8 @@ public class PostgreSqlDatabase : DatabaseBase
     }
 
     public override string Dialect => "PostgreSQL";
+
+    public override ISqlFormatter SqlFormatter => PostgreSqlFormatter.Instance;
 
     /// <summary>
     /// Gets the migration table name prefixed by "public"

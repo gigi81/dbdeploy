@@ -1,6 +1,8 @@
 ﻿using System.Data.Common;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Database;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer.Ddl;
+using Grillisoft.Tools.DatabaseDeploy.SqlServer.Formatting;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 
@@ -31,6 +33,8 @@ public class SqlServerDatabase : DatabaseBase
     }
 
     public override string Dialect => "Microsoft SQL Server";
+
+    public override ISqlFormatter SqlFormatter => SqlServerFormatter.Instance;
 
     protected override ISqlScripts CreateSqlScripts()
     {

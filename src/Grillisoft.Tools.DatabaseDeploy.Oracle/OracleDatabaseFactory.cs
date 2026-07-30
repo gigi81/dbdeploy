@@ -1,5 +1,6 @@
 ﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Grillisoft.Tools.DatabaseDeploy.Oracle.Formatting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -25,6 +26,8 @@ public class OracleDatabaseFactory : IDatabaseFactory
     }
 
     public string Name => ProviderName;
+
+    public ISqlFormatter SqlFormatter => OracleFormatter.Instance;
 
     public Task<IDatabase> GetDatabase(string name, IConfigurationSection config, CancellationToken cancellationToken)
     {

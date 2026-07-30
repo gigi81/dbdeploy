@@ -7,7 +7,9 @@ public class DatabaseFactoryMock : IDatabaseFactory
 {
     private readonly Dictionary<string, IDatabase> _databases = new();
 
-    public string Name => "mock";
+    public string Name { get; init; } = "mock";
+
+    public ISqlFormatter SqlFormatter { get; init; } = new SqlFormatterMock();
 
     public DatabaseFactoryMock()
     {

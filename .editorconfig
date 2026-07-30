@@ -209,3 +209,14 @@ dotnet_style_prefer_simplified_interpolation = true:suggestion
 # resharper suggestions
 resharper_enforce_foreach_statement_braces_highlighting = none
 resharper_enforce_if_statement_braces_highlighting = none
+# SQL migration scripts, formatted by `dbdeploy format`.
+# See the Format section of README.md for the dbdeploy_sql_* properties.
+[*.sql]
+indent_style = space
+indent_size = 4
+tab_width = 4
+end_of_line = lf
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 120

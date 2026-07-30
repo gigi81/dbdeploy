@@ -16,12 +16,20 @@ public class DatabaseMock : IDatabase
     public string Dialect => "ANSI SQL";
 
     public DatabaseMock(string name, IScriptParser scriptParser)
+        : this(name, scriptParser, new SqlFormatterMock())
+    {
+    }
+
+    public DatabaseMock(string name, IScriptParser scriptParser, ISqlFormatter sqlFormatter)
     {
         this.Name = name;
         this.ScriptParser = scriptParser;
+        this.SqlFormatter = sqlFormatter;
     }
 
     public string Name { get; }
+
+    public ISqlFormatter SqlFormatter { get; }
     public Task<bool> Exists(CancellationToken cancellationToken) => Task.FromResult(true);
 
     public Task Create(CancellationToken cancellationToken) => Task.CompletedTask;
@@ -41,7 +49,7 @@ public class DatabaseMock : IDatabase
         return Task.CompletedTask;
     }
 
-    public Task<ICollection<DatabaseMigration>> GetMigrations(CancellationToken cancellationToken)
+    public virtual Task<ICollection<DatabaseMigration>> GetMigrations(CancellationToken cancellationToken)
     {
         return Task.FromResult((ICollection<DatabaseMigration>)_migrations);
     }

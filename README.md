@@ -56,91 +56,6 @@ This command will create databases (if they don't already exits) and deploy both
 dbdeploy deploy --path examples/examples01 --branch release/1.1 --create --test
 ```
 
-### Configuration
-
-Standard `.editorconfig` properties are honoured for `*.sql`:
-
-```ini
-[*.sql]
-indent_style = space
-indent_size = 4
-end_of_line = lf
-charset = utf-8
-insert_final_newline = true
-max_line_length = 120
-```
-
-`indent_style`/`indent_size` set one indentation level, `end_of_line` the line endings (with no
-setting, each file keeps the endings it already has), `charset` the encoding, and `max_line_length`
-the width above which a parenthesised group is broken over several lines instead of being kept
-inline.
-
-`trim_trailing_whitespace` needs no work in the laid-out code, which never ends a line with
-whitespace; it controls whether the continuation lines of a block comment are trimmed as they are
-re-indented. Trailing whitespace inside a string literal is content and is never touched.
-
-Alongside those, these `dbdeploy`-specific properties are available:
-
-| Property | Values | Default | Effect |
-| --- | --- | --- | --- |
-| `dbdeploy_sql_enabled` | `true`, `false` | `true` | Set to `false` to exempt a glob from formatting entirely |
-| `dbdeploy_sql_keyword_case` | `upper`, `lower`, `preserve` | `upper` | Casing of keywords |
-| `dbdeploy_sql_data_type_case` | as above | follows `keyword_case` | Casing of data types |
-| `dbdeploy_sql_function_case` | as above | `upper` | Casing of built-in functions only; your own routines keep the casing you gave them |
-| `dbdeploy_sql_batch_separator_case` | as above | `upper` | Casing of `GO` |
-| `dbdeploy_sql_blank_lines_between_statements` | a number | `1` | Blank lines between statements |
-
-For example, to leave a folder of vendor scripts alone:
-
-```ini
-[vendor/**.sql]
-dbdeploy_sql_enabled = false
-```
-
-### Layout
-
-Clause keywords go on a line of their own with their body indented; joins and boolean connectives
-start a new line and keep their operands beside them:
-
-```sql
-SELECT
-    Field1,
-    Field2
-FROM
-    TABLE1 t1
-    INNER JOIN TABLE2 t2 ON t1.id = t2.id
-WHERE
-    Field1 = 'a'
-    AND Field2 = 'b'
-```
-
-Statement keywords keep their object name inline, and a `CREATE` or `ALTER` column list becomes a
-block:
-
-```sql
-CREATE TABLE dbo.Customers
-(
-    CustomerId INT NOT NULL IDENTITY(1, 1),
-    FirstName NVARCHAR(30) NULL,
-    CONSTRAINT PK_Customers PRIMARY KEY CLUSTERED (CustomerId)
-)
-GO
-```
-
-Procedural code is indented by block, and the things that are not SQL — SQL\*Plus directives,
-MySQL `DELIMITER` statements, batch separators — are reproduced exactly as written:
-
-```sql
-CREATE OR REPLACE PROCEDURE secure_dml
-IS
-BEGIN
-    IF TO_CHAR(SYSDATE, 'HH24:MI') NOT BETWEEN '08:00' AND '18:00'
-        OR TO_CHAR(SYSDATE, 'DY') IN ('SAT', 'SUN') THEN
-        RAISE_APPLICATION_ERROR(-20205, 'Only during office hours');
-    END IF;
-END secure_dml;
-/
-```
 
 ## Files structure
 The files structure and content is designed to play nice with source control systems like git.
@@ -153,7 +68,6 @@ ordered sequence of scripts that needs deploying.
 The tools support both **deploy** and **rollback** scripts along with (optional) **test** scripts that can be used to load test
 data during development or for your integration tests and also (optional) **data** scripts that can be used to load data
 for example to prime a database table. 
-
 
 
 ## Sample structure of files
@@ -236,10 +150,9 @@ It is recommended for this file name to match your release branch name (if any) 
 Database02,TKT-002.SampleDescription
 ```
 
-
 ## Format
 
-To lay out the SQL of every `.Deploy.sql` and `.Rollback.sql` script consistently, run:
+To format the SQL of every `.Deploy.sql` and `.Rollback.sql` script consistently, run:
 
 ```shell
 dbdeploy format --path examples/examples01
@@ -287,6 +200,93 @@ Formatting is checked before anything is written: the result is tokenised again 
 the source, and a file whose significant tokens changed is left alone and reported as a failure
 (`dbdeploy format` then exits non-zero). Layout, keyword casing and comment indentation may change;
 identifiers, string literals and comment content never do.
+
+
+### Formatting Configuration
+
+Standard `.editorconfig` properties are honored for `*.sql`:
+
+```ini
+[*.sql]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+insert_final_newline = true
+max_line_length = 120
+```
+
+`indent_style`/`indent_size` set one indentation level, `end_of_line` the line endings (with no
+setting, each file keeps the endings it already has), `charset` the encoding, and `max_line_length`
+the width above which a parenthesised group is broken over several lines instead of being kept
+inline.
+
+`trim_trailing_whitespace` needs no work in the laid-out code, which never ends a line with
+whitespace; it controls whether the continuation lines of a block comment are trimmed as they are
+re-indented. Trailing whitespace inside a string literal is content and is never touched.
+
+Alongside those, these `dbdeploy`-specific properties are available:
+
+| Property | Values | Default | Effect |
+| --- | --- | --- | --- |
+| `dbdeploy_sql_enabled` | `true`, `false` | `true` | Set to `false` to exempt a glob from formatting entirely |
+| `dbdeploy_sql_keyword_case` | `upper`, `lower`, `preserve` | `upper` | Casing of keywords |
+| `dbdeploy_sql_data_type_case` | as above | follows `keyword_case` | Casing of data types |
+| `dbdeploy_sql_function_case` | as above | `upper` | Casing of built-in functions only; your own routines keep the casing you gave them |
+| `dbdeploy_sql_batch_separator_case` | as above | `upper` | Casing of `GO` |
+| `dbdeploy_sql_blank_lines_between_statements` | a number | `1` | Blank lines between statements |
+
+For example, to leave a folder of vendor scripts alone:
+
+```ini
+[vendor/**.sql]
+dbdeploy_sql_enabled = false
+```
+
+### Formatting rules
+
+Clause keywords go on a line of their own with their body indented; joins and boolean connectives
+start a new line and keep their operands beside them:
+
+```sql
+SELECT
+    Field1,
+    Field2
+FROM
+    TABLE1 t1
+    INNER JOIN TABLE2 t2 ON t1.id = t2.id
+WHERE
+    Field1 = 'a'
+    AND Field2 = 'b'
+```
+
+Statement keywords keep their object name inline, and a `CREATE` or `ALTER` column list becomes a
+block:
+
+```sql
+CREATE TABLE dbo.Customers
+(
+    CustomerId INT NOT NULL IDENTITY(1, 1),
+    FirstName NVARCHAR(30) NULL,
+    CONSTRAINT PK_Customers PRIMARY KEY CLUSTERED (CustomerId)
+)
+GO
+```
+
+Procedural code is indented by block, and the things that are not SQL — SQL\*Plus directives,
+MySQL `DELIMITER` statements, batch separators — are reproduced exactly as written:
+
+```sql
+CREATE OR REPLACE PROCEDURE secure_dml
+IS
+BEGIN
+    IF TO_CHAR(SYSDATE, 'HH24:MI') NOT BETWEEN '08:00' AND '18:00'
+        OR TO_CHAR(SYSDATE, 'DY') IN ('SAT', 'SUN') THEN
+        RAISE_APPLICATION_ERROR(-20205, 'Only during office hours');
+    END IF;
+END secure_dml;
+/
+```
 
 
 ## Alternatives

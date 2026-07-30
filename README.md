@@ -80,6 +80,16 @@ Globs are relative to `--path`, and several can follow one flag separated by spa
 (`-i "**/*.sql" "setup/*.ddl"`). With `--include` the branch structure is not read, **no database is
 contacted**, and nothing is filtered out — init scripts included.
 
+Only `*`, `**` and `?` are supported. A character class such as `[Ii]` is **not**, and matches
+nothing rather than reporting an error, so write two patterns instead:
+
+```shell
+dbdeploy format --path ./db --include "**/*.sql" --exclude "**/_Init*" "**/_init*"
+```
+
+Note that init scripts are generated schema dumps and can be very large; excluding them is usually
+what you want in directory mode.
+
 The dialect is then worked out per file: the nearest folder above it named after a configured
 database wins, so a normal layout still formats each database in its own dialect without any extra
 flag. Failing that, `--provider` is used, then `global:defaultProvider`. If none of those apply the

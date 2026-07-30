@@ -55,7 +55,9 @@ globs it formats whatever they match instead, reading no branch files and contac
 the dialect then comes from the nearest folder named after a configured database, else
 `--provider`, else `global:defaultProvider`. `ISqlFormatter` is exposed on `IDatabaseFactory` as
 well as `IDatabase` precisely so that this second mode needs no connection string, and
-`dbsettings.json` is optional for it (see `Program.cs`).
+`dbsettings.json` is optional for it (see `Program.cs`). Matching is
+`Microsoft.Extensions.FileSystemGlobbing`, which supports only `*`, `**` and `?` - a character class
+such as `[Ii]` silently matches nothing.
 
 The shared machinery
 lives in `Grillisoft.Tools.DatabaseDeploy.Database/Formatting` (`SqlLexer`, `SqlEmitter`,

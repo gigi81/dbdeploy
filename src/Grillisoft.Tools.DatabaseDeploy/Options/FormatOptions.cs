@@ -12,11 +12,13 @@ public sealed class FormatOptions : OptionsBase
         HelpText = "Glob(s) of scripts to format, relative to the path, for example \"**/*.sql\". " +
                    "Given one, every matching file is formatted instead of the deploy and rollback " +
                    "scripts of each branch, no database is contacted, and nothing is skipped. " +
-                   "Separate several globs with spaces after the one flag: -i \"**/*.sql\" \"setup/*.ddl\"")]
+                   "Separate several globs with spaces after the one flag: -i \"**/*.sql\" \"setup/*.ddl\". " +
+                   "Only *, ** and ? are supported: a character class such as [Ii] matches nothing.")]
     public IEnumerable<string> Include { get; set; } = [];
 
     [Option(shortName: 'e', longName: "exclude",
-        HelpText = "Glob(s) to leave out of --include, several separated by spaces after the one flag.")]
+        HelpText = "Glob(s) to leave out of --include, several separated by spaces after the one flag. " +
+                   "Same syntax as --include, so write \"_Init*\" \"_init*\" rather than \"_[Ii]nit*\".")]
     public IEnumerable<string> Exclude { get; set; } = [];
 
     [Option(longName: "provider",

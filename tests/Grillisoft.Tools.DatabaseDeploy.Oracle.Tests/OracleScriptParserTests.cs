@@ -1,6 +1,4 @@
 using System.IO.Abstractions.TestingHelpers;
-using AwesomeAssertions;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests;
 
@@ -20,7 +18,7 @@ public class OracleScriptParserTests
         return commands;
     }
 
-    [Fact]
+    [Test]
     public async Task Parse_ShouldSplitStatementsOnTheirTerminator()
     {
         var commands = await Parse("""
@@ -40,7 +38,7 @@ public class OracleScriptParserTests
     /// <summary>
     /// The header dbdeploy writes at the top of a generated script must never reach the server.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task Parse_ShouldIgnoreRemComments()
     {
         var commands = await Parse("""
@@ -64,7 +62,7 @@ public class OracleScriptParserTests
     /// parser convinced it was still inside a string literal, so it swallowed every statement that
     /// followed. A lone "/" ends the statement the way SQL*Plus does, whatever the quotes did.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task Parse_WhenAStatementHoldsAnOddNumberOfQuotes_ShouldStillTerminateOnALoneSlash()
     {
         var commands = await Parse("""
@@ -85,7 +83,7 @@ public class OracleScriptParserTests
         commands[1].Should().Be("CREATE TABLE \"T1\" (\"ID\" NUMBER)");
     }
 
-    [Fact]
+    [Test]
     public async Task Parse_ShouldKeepQuotedSemicolonsInsideTheStatement()
     {
         var commands = await Parse("""

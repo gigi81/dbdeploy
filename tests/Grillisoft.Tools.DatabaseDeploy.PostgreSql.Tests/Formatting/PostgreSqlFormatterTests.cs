@@ -1,8 +1,5 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.PostgreSql.Formatting;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.PostgreSql.Tests.Formatting;
 
@@ -10,18 +7,11 @@ public class PostgreSqlFormatterTests
 {
     private static readonly SqlFormatterOptions Options = SqlFormatterOptions.Default with { NewLine = "\n" };
 
-    private readonly ITestOutputHelper _output;
-
-    public PostgreSqlFormatterTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
-    private string Format(string sql)
+    private static string Format(string sql)
     {
         var result = new PostgreSqlFormatter().Format(sql, Options);
 
-        _output.WriteLine(result.Sql);
+        TestContext.Current?.OutputWriter.WriteLine(result.Sql);
         result.VerificationError.Should().BeNull();
 
         return result.Sql;
@@ -38,7 +28,7 @@ public class PostgreSqlFormatterTests
     /// A dollar-quoted body is one literal. Reading it any other way would let the semicolons inside
     /// a function terminate the CREATE that contains it.
     /// </summary>
-    [Fact]
+    [Test]
     public void Format_ShouldReadADollarQuotedBodyAsOneLiteral()
     {
         const string Body = "$$\n  BEGIN\n    RETURN 1;\n  END;\n$$";
@@ -47,7 +37,7 @@ public class PostgreSqlFormatterTests
             .Should().Contain(Body);
     }
 
-    [Fact]
+    [Test]
     public void Format_ShouldReadATaggedDollarQuotedBodyAsOneLiteral()
     {
         const string Body = "$fn$ SELECT 'a;b'; $fn$";
@@ -56,7 +46,7 @@ public class PostgreSqlFormatterTests
             .Should().Contain(Body);
     }
 
-    [Fact]
+    [Test]
     public void Format_ShouldIndentTheArmsOfACase()
     {
         var result = Format(
@@ -76,7 +66,7 @@ public class PostgreSqlFormatterTests
     }
 
     /// <summary>A group broken over lines can still be followed by the rest of the expression.</summary>
-    [Fact]
+    [Test]
     public void Format_ShouldKeepAnAliasAfterAMultiLineGroup()
     {
         var result = Format(
@@ -86,14 +76,14 @@ public class PostgreSqlFormatterTests
         result.Should().Contain(") AS film_info");
     }
 
-    [Fact]
+    [Test]
     public void Format_ShouldPutTheViewBodyAfterAsOnItsOwnLine()
     {
         Format("create view public.v as select a from t;")
             .Should().StartWith("CREATE VIEW public.v\nAS\nSELECT\n");
     }
 
-    [Fact]
+    [Test]
     public void Format_ShouldBeIdempotent()
     {
         var once = Format("select a, b from t where a = 1 or b = 2 order by a;");

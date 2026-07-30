@@ -1,20 +1,18 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer.Ddl;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests.Ddl;
 
 public class SqlServerObjectTypeTests
 {
-    [Theory]
-    [InlineData("U", SqlServerObjectType.Table)]
-    [InlineData("V", SqlServerObjectType.View)]
-    [InlineData("P", SqlServerObjectType.Procedure)]
-    [InlineData("FN", SqlServerObjectType.Function)]
-    [InlineData("IF", SqlServerObjectType.Function)]
-    [InlineData("TF", SqlServerObjectType.Function)]
-    [InlineData("SN", SqlServerObjectType.Synonym)]
-    [InlineData("SO", SqlServerObjectType.Sequence)]
+    [Test]
+    [Arguments("U", SqlServerObjectType.Table)]
+    [Arguments("V", SqlServerObjectType.View)]
+    [Arguments("P", SqlServerObjectType.Procedure)]
+    [Arguments("FN", SqlServerObjectType.Function)]
+    [Arguments("IF", SqlServerObjectType.Function)]
+    [Arguments("TF", SqlServerObjectType.Function)]
+    [Arguments("SN", SqlServerObjectType.Synonym)]
+    [Arguments("SO", SqlServerObjectType.Sequence)]
     public void FromSysType_ShouldMapTheCatalogCode(string sysType, string expected)
     {
         SqlServerObjectType.FromSysType(sysType)!.Name.Should().Be(expected);
@@ -23,7 +21,7 @@ public class SqlServerObjectTypeTests
     /// <summary>
     /// <c>sys.objects.type</c> is a char(2), so every code but the two letter ones comes back padded.
     /// </summary>
-    [Fact]
+    [Test]
     public void FromSysType_ShouldIgnoreTheCatalogPadding()
     {
         SqlServerObjectType.FromSysType("U ")!.Name.Should().Be(SqlServerObjectType.Table);
@@ -33,18 +31,18 @@ public class SqlServerObjectTypeTests
     /// A CLR module cannot be created without its assembly, and an assembly is not something a text
     /// script can carry, so those are reported as unsupported rather than scripted badly.
     /// </summary>
-    [Theory]
-    [InlineData("PC")]
-    [InlineData("FS")]
-    [InlineData("FT")]
-    [InlineData("TA")]
-    [InlineData("SQ")]
+    [Test]
+    [Arguments("PC")]
+    [Arguments("FS")]
+    [Arguments("FT")]
+    [Arguments("TA")]
+    [Arguments("SQ")]
     public void FromSysType_WhenTheTypeCannotBeScripted_ShouldReturnNull(string sysType)
     {
         SqlServerObjectType.FromSysType(sysType).Should().BeNull();
     }
 
-    [Fact]
+    [Test]
     public void RankOf_ShouldPutEverythingAfterWhatItIsBuiltOn()
     {
         SqlServerObjectType.RankOf(SqlServerObjectType.Schema)
@@ -67,13 +65,13 @@ public class SqlServerObjectTypeTests
     }
 
     /// <summary>An unknown type must never push a known one down the script.</summary>
-    [Fact]
+    [Test]
     public void RankOf_WhenTheTypeIsUnknown_ShouldSortLast()
     {
         SqlServerObjectType.RankOf("SOMETHING NEW").Should().Be(int.MaxValue);
     }
 
-    [Fact]
+    [Test]
     public void All_ShouldHaveDistinctNamesAndRanks()
     {
         SqlServerObjectType.All.Select(t => t.Name).Should().OnlyHaveUniqueItems();

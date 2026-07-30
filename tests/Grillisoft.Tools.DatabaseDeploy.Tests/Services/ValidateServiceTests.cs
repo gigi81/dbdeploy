@@ -1,27 +1,18 @@
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Grillisoft.Tools.DatabaseDeploy.Services;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Mocks;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 using ExtensionsOptions = Microsoft.Extensions.Options.Options;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests.Services;
 
 public class ValidateServiceTests
 {
-    private readonly ITestOutputHelper _output;
-
-    public ValidateServiceTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
-    [Fact]
+    [Test]
     public async Task Execute_WhenValidationSucceeds_ReturnsZero()
     {
         // Arrange
@@ -39,7 +30,7 @@ public class ValidateServiceTests
         result.Should().Be(0);
     }
 
-    [Fact]
+    [Test]
     public async Task Execute_WhenValidationFailsWithConfigurationErrors_ReturnsErrorCount()
     {
         // Arrange
@@ -57,7 +48,7 @@ public class ValidateServiceTests
         result.Should().BeGreaterThan(0);
     }
 
-    [Fact]
+    [Test]
     public async Task Execute_WhenValidationFailsWithUnexpectedError_ReturnsMinusOne()
     {
         // Arrange
@@ -74,7 +65,7 @@ public class ValidateServiceTests
 
     private ValidateService CreateService(IFileSystem fileSystem, GlobalSettings globalSettings)
     {
-        var provider = new TestServiceCollection<ValidateService>(_output)
+        var provider = new TestServiceCollection<ValidateService>()
             .AddSingleton(new ValidateOptions { Path = "/path" })
             .AddSingleton(fileSystem)
             .AddSingleton<IProgress<int>>(new Progress<int>())

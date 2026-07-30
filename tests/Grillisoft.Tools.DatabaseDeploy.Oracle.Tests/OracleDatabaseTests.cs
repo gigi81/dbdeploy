@@ -1,15 +1,14 @@
-﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Tests;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
-using Testcontainers.Oracle;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests;
 
-public class OracleDatabaseTests : DatabaseTest<OracleDatabase, OracleContainer>
+[InheritsTests]
+[ClassDataSource<OracleFixture>(Shared = SharedType.PerClass)]
+public class OracleDatabaseTests : DatabaseTest<OracleDatabase>
 {
-    public OracleDatabaseTests(ITestOutputHelper output)
-        : base(new OracleBuilder(ContainerImages.Oracle).Build(), output)
+    public OracleDatabaseTests(OracleFixture fixture)
+        : base(fixture)
     {
     }
 

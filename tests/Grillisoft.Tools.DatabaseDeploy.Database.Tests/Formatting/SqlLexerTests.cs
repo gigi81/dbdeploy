@@ -1,6 +1,4 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Database.Formatting;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Database.Tests.Formatting;
 
@@ -16,15 +14,15 @@ public class SqlLexerTests
     /// The invariant the verifier depends on: nothing may be dropped or invented by the scan, so
     /// the tokens always reassemble into the exact input.
     /// </summary>
-    [Theory]
-    [InlineData("select 1")]
-    [InlineData("SELECT 'it''s' FROM t -- trailing\r\n")]
-    [InlineData("/* block\n   comment */ SELECT \"quoted \"\" id\"")]
-    [InlineData("a.b::text || @p1 + :bind + $2 + ?")]
-    [InlineData("SELECT 1.5e-3, .5, 0.0 FROM t;\n\nGO\n")]
-    [InlineData("   \t \n\n  ")]
-    [InlineData("unterminated 'string")]
-    [InlineData("unterminated /* comment")]
+    [Test]
+    [Arguments("select 1")]
+    [Arguments("SELECT 'it''s' FROM t -- trailing\r\n")]
+    [Arguments("/* block\n   comment */ SELECT \"quoted \"\" id\"")]
+    [Arguments("a.b::text || @p1 + :bind + $2 + ?")]
+    [Arguments("SELECT 1.5e-3, .5, 0.0 FROM t;\n\nGO\n")]
+    [Arguments("   \t \n\n  ")]
+    [Arguments("unterminated 'string")]
+    [Arguments("unterminated /* comment")]
     public void Tokenize_ShouldBeLossless(string sql)
     {
         var tokens = Tokenize(sql);
@@ -32,7 +30,7 @@ public class SqlLexerTests
         string.Concat(tokens.Select(t => t.Text)).Should().Be(sql);
     }
 
-    [Fact]
+    [Test]
     public void Tokenize_ShouldReadAStringLiteralWithADoubledQuoteAsOneToken()
     {
         var tokens = Significant("'it''s here'");
@@ -42,7 +40,7 @@ public class SqlLexerTests
         tokens[0].Text.Should().Be("'it''s here'");
     }
 
-    [Fact]
+    [Test]
     public void Tokenize_ShouldReadABracketedIdentifierAsOneToken()
     {
         var dialect = new TestDialect(identifierQuotes: ['[', '"']);
@@ -55,7 +53,7 @@ public class SqlLexerTests
     }
 
     /// <summary>A semicolon inside a literal is not a statement terminator.</summary>
-    [Fact]
+    [Test]
     public void Tokenize_ShouldNotFindATerminatorInsideALiteral()
     {
         var tokens = Significant("SELECT 'a;b'");
@@ -63,7 +61,7 @@ public class SqlLexerTests
         tokens.Should().NotContain(t => t.Kind == SqlTokenKind.Terminator);
     }
 
-    [Fact]
+    [Test]
     public void Tokenize_WhenTheDialectAllowsIt_ShouldReadAHashAsAComment()
     {
         var tokens = Significant("SELECT 1 # note", new TestDialect(hashComments: true));
@@ -72,7 +70,7 @@ public class SqlLexerTests
     }
 
     /// <summary>Without the dialect flag a hash starts an identifier, as it does for a temp table.</summary>
-    [Fact]
+    [Test]
     public void Tokenize_WhenTheDialectDoesNotAllowIt_ShouldReadAHashAsAWord()
     {
         var tokens = Significant("SELECT * FROM #temp");
@@ -80,7 +78,7 @@ public class SqlLexerTests
         tokens.Should().ContainSingle(t => t.Kind == SqlTokenKind.Word && t.Text == "#temp");
     }
 
-    [Fact]
+    [Test]
     public void Tokenize_ShouldReadABatchSeparatorOnItsOwnLine()
     {
         var tokens = Significant("SELECT 1\ngo\n", new TestDialect(batchSeparator: "GO"));
@@ -92,7 +90,7 @@ public class SqlLexerTests
     /// A separator is only a separator on a line of its own, so a column that happens to be called
     /// "go" survives.
     /// </summary>
-    [Fact]
+    [Test]
     public void Tokenize_WhenTheSeparatorSharesALine_ShouldReadItAsAWord()
     {
         var tokens = Significant("SELECT go FROM t", new TestDialect(batchSeparator: "GO"));
@@ -100,7 +98,7 @@ public class SqlLexerTests
         tokens.Should().NotContain(t => t.Kind == SqlTokenKind.BatchSeparator);
     }
 
-    [Fact]
+    [Test]
     public void Tokenize_ShouldMarkTheFirstTokenOnALine()
     {
         var tokens = Tokenize("SELECT 1\n    FROM t");
@@ -110,7 +108,7 @@ public class SqlLexerTests
         tokens.First(t => t.Text == "t").StartsLine.Should().BeFalse();
     }
 
-    [Fact]
+    [Test]
     public void Tokenize_WhenTheDialectAllowsIt_ShouldHonourABackslashEscape()
     {
         var tokens = Significant(@"'a\'b'", new TestDialect(backslashEscapes: true));
@@ -119,12 +117,12 @@ public class SqlLexerTests
         tokens[0].Text.Should().Be(@"'a\'b'");
     }
 
-    [Theory]
-    [InlineData("<>")]
-    [InlineData("!=")]
-    [InlineData(">=")]
-    [InlineData("::")]
-    [InlineData("||")]
+    [Test]
+    [Arguments("<>")]
+    [Arguments("!=")]
+    [Arguments(">=")]
+    [Arguments("::")]
+    [Arguments("||")]
     public void Tokenize_ShouldReadAMultiCharacterOperatorAsOneToken(string op)
     {
         var tokens = Significant($"a {op} b");

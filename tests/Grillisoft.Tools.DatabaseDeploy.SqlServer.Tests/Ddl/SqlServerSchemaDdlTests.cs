@@ -1,14 +1,9 @@
 using System.IO.Abstractions.TestingHelpers;
 using System.Text;
-using AwesomeAssertions;
-using DotNet.Testcontainers.Containers;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Tests;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
 using Microsoft.Data.SqlClient;
-using Testcontainers.MsSql;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests.Ddl;
 
@@ -17,23 +12,15 @@ namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests.Ddl;
 /// application database uses, script it, wipe the database and replay the script through the very
 /// parser dbdeploy uses at deploy time. Whatever comes back has to match what was there before.
 /// </summary>
-public class SqlServerSchemaDdlTests : DatabaseTest<SqlServerDatabase, MsSqlContainer>
+[InheritsTests]
+[ClassDataSource<SqlServerFixture>(Shared = SharedType.PerClass)]
+public class SqlServerSchemaDdlTests : DatabaseTest<SqlServerDatabase>
 {
     private const string DatabaseName = "dbdeploy_ddl";
 
-    private readonly ITestOutputHelper _output;
-
-    public SqlServerSchemaDdlTests(ITestOutputHelper output)
-        : base(new MsSqlBuilder(ContainerImages.SqlServer).Build(), output)
+    public SqlServerSchemaDdlTests(SqlServerFixture fixture)
+        : base(fixture)
     {
-        _output = output;
-    }
-
-    protected override IDictionary<string, string?> GetConfigurationSettings()
-    {
-        var ret = base.GetConfigurationSettings();
-        ret["databases:test:connectionString"] = this.TargetConnectionString;
-        return ret;
     }
 
     protected override IDatabaseFactory CreateDatabaseFactory()
@@ -47,19 +34,18 @@ public class SqlServerSchemaDdlTests : DatabaseTest<SqlServerDatabase, MsSqlCont
     protected override string ProviderName => SqlServerDatabaseFactory.ProviderName;
 
     /// <summary>The container hands out a connection to master; the test needs one of its own.</summary>
-    private string TargetConnectionString =>
-        new SqlConnectionStringBuilder(this.ConnectionString) { InitialCatalog = DatabaseName }.ConnectionString;
+    protected override string ConnectionString =>
+        new SqlConnectionStringBuilder(this.ContainerConnectionString) { InitialCatalog = DatabaseName }.ConnectionString;
 
     /// <summary>
     /// The container only ever has master, and scripting master is not a thing anybody wants.
     /// </summary>
-    public async override Task InitializeAsync()
+    [Before(Test)]
+    public async Task CreateTargetDatabase(CancellationToken cancellationToken)
     {
-        await base.InitializeAsync();
-
-        var database = await this.CreateDatabase();
-        if (!await database.Exists(CancellationToken.None))
-            await database.Create(CancellationToken.None);
+        var database = await this.CreateDatabase(cancellationToken);
+        if (!await database.Exists(cancellationToken))
+            await database.Create(cancellationToken);
     }
 
     /// <summary>
@@ -176,12 +162,12 @@ public class SqlServerSchemaDdlTests : DatabaseTest<SqlServerDatabase, MsSqlCont
         """,
     ];
 
-    [Fact]
-    [Trait(nameof(DockerPlatform), nameof(DockerPlatform.Linux))]
-    public async Task GenerateSchemaDdl_ShouldProduceAScriptThatRebuildsTheDatabase()
+    [Test]
+    [Category(TestCategories.Docker)]
+    public async Task GenerateSchemaDdl_ShouldProduceAScriptThatRebuildsTheDatabase(CancellationToken cancellationToken)
     {
         // arrange
-        var sut = await this.CreateDatabase();
+        var sut = await this.CreateDatabase(cancellationToken);
         await DropEverything();
 
         // the migrations table and everything hanging off it must stay out of the script
@@ -201,7 +187,7 @@ public class SqlServerSchemaDdlTests : DatabaseTest<SqlServerDatabase, MsSqlCont
 
         // act
         var script = await GenerateScript(sut);
-        _output.WriteLine(script);
+        TestContext.Current?.OutputWriter.WriteLine(script);
 
         await DropEverything();
         (await GetObjects()).Should().BeEmpty("the database must be wiped before replaying the script");
@@ -262,13 +248,13 @@ public class SqlServerSchemaDdlTests : DatabaseTest<SqlServerDatabase, MsSqlCont
             }
         }
 
-        _output.WriteLine($"Replayed {executed} batches");
+        TestContext.Current?.OutputWriter.WriteLine($"Replayed {executed} batches");
         executed.Should().BeGreaterThan(0);
     }
 
     private async Task<List<string>> Read(string sql)
     {
-        await using var connection = new SqlConnection(this.TargetConnectionString);
+        await using var connection = new SqlConnection(this.ConnectionString);
         await connection.OpenAsync();
 
         await using var command = connection.CreateCommand();
@@ -388,7 +374,7 @@ public class SqlServerSchemaDdlTests : DatabaseTest<SqlServerDatabase, MsSqlCont
             DEALLOCATE statements;
             """;
 
-        await using var connection = new SqlConnection(this.TargetConnectionString);
+        await using var connection = new SqlConnection(this.ConnectionString);
         await connection.OpenAsync();
 
         // views can depend on views and functions on functions, so one pass is not always enough

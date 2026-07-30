@@ -1,13 +1,11 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Oracle.Ddl;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Ddl;
 
 public class OracleObjectsGraphTests
 {
-    [Fact]
+    [Test]
     public void GetGraph_WhenObjectsHaveDependencies_ShouldReturnCorrectOrder()
     {
         // Arrange
@@ -33,7 +31,7 @@ public class OracleObjectsGraphTests
         result.Should().Equal(table1, table2, view1, function1);
     }
 
-    [Fact]
+    [Test]
     public void GetGraph_WhenObjectsHaveMultipleDependencies_ShouldReturnCorrectOrder()
     {
         // Arrange
@@ -66,7 +64,7 @@ public class OracleObjectsGraphTests
     /// Mutually recursive package bodies are legal in Oracle, so a cycle must not stop the
     /// generation: the objects are still written and the cycle is reported.
     /// </summary>
-    [Fact]
+    [Test]
     public void GetGraph_WhenCircularDependencyDetected_ShouldStillReturnAllObjects()
     {
         // Arrange
@@ -94,7 +92,7 @@ public class OracleObjectsGraphTests
     /// <summary>
     /// A dependency cycle must not drag the objects sitting behind it out of the result.
     /// </summary>
-    [Fact]
+    [Test]
     public void GetGraph_WhenObjectDependsOnCycle_ShouldReturnItAfterTheCycle()
     {
         // Arrange
@@ -124,7 +122,7 @@ public class OracleObjectsGraphTests
     /// ALL_DEPENDENCIES happily points at objects that are not being scripted (unsupported types,
     /// filtered objects, objects dropped between two queries). Those must be dropped, not fatal.
     /// </summary>
-    [Fact]
+    [Test]
     public void GetGraph_WhenDependencyIsNotScripted_ShouldIgnoreIt()
     {
         // Arrange
@@ -154,7 +152,7 @@ public class OracleObjectsGraphTests
     /// The whole point of the ordering: a foreign key can only be created once both tables exist,
     /// even when the table it points at is scripted late because of its own dependencies.
     /// </summary>
-    [Fact]
+    [Test]
     public void GetGraph_WhenTableDependsOnFunction_ShouldStillWriteForeignKeyLast()
     {
         // Arrange
@@ -181,7 +179,7 @@ public class OracleObjectsGraphTests
         result.Should().Equal(child, function, parent, foreignKey);
     }
 
-    [Fact]
+    [Test]
     public void GetGraph_ShouldWriteSpecificationBeforeBody()
     {
         // Arrange
@@ -205,7 +203,7 @@ public class OracleObjectsGraphTests
         result.Should().Equal(table, spec, body);
     }
 
-    [Fact]
+    [Test]
     public void GetGraph_WhenObjectDependsOnItself_ShouldNotDeadlock()
     {
         // Arrange

@@ -1,6 +1,4 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer.Ddl;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests.Ddl;
 
@@ -9,7 +7,7 @@ public class SqlServerDdlGenerationExceptionTests
     private static IEnumerable<(string Object, string Error)> Failures(int count)
         => Enumerable.Range(1, count).Select(i => ($"[dbo].[T{i}]---TABLE", $"Msg {i}: something"));
 
-    [Fact]
+    [Test]
     public void Message_ShouldNameTheDatabaseAndEveryFailure()
     {
         // Arrange
@@ -28,7 +26,7 @@ public class SqlServerDdlGenerationExceptionTests
     /// The script is written out in full before this is raised, so the message has to be clear that
     /// what is on disk is not deployable.
     /// </summary>
-    [Fact]
+    [Test]
     public void Message_ShouldSayTheScriptMustNotBeDeployed()
     {
         new SqlServerDdlGenerationException("HR", Failures(1)).Message
@@ -38,7 +36,7 @@ public class SqlServerDdlGenerationExceptionTests
     /// <summary>
     /// A schema that fails wholesale would otherwise put thousands of lines into one log entry.
     /// </summary>
-    [Fact]
+    [Test]
     public void Message_WhenThereAreManyFailures_ShouldTruncateAndSayHowManyAreLeft()
     {
         // Arrange
@@ -54,14 +52,14 @@ public class SqlServerDdlGenerationExceptionTests
                .And.Contain("... and 5 more");
     }
 
-    [Fact]
+    [Test]
     public void Message_WhenNothingIsTruncated_ShouldNotSayThereIsMore()
     {
         new SqlServerDdlGenerationException("HR", Failures(20)).Message
             .Should().NotContain("more");
     }
 
-    [Fact]
+    [Test]
     public void Failures_ShouldExposeWhatCouldNotBeScripted()
     {
         new SqlServerDdlGenerationException("HR", Failures(3)).Failures

@@ -1,7 +1,5 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Microsoft.Extensions.Logging;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Database.Tests;
 
@@ -13,7 +11,7 @@ public class ProgressReporterTests
 {
     private static readonly DbObject Object = new("TABLE1", "TABLE");
 
-    [Fact]
+    [Test]
     public void Advance_WhenThereAreFewObjects_ShouldOnlyReportTheLastOne()
     {
         // Arrange
@@ -29,7 +27,7 @@ public class ProgressReporterTests
     }
 
     /// <summary>Twenty reports over the run, plus the last object landing on the interval.</summary>
-    [Fact]
+    [Test]
     public void Advance_WhenThereAreManyObjects_ShouldReportAboutTwentyTimes()
     {
         // Arrange
@@ -47,7 +45,7 @@ public class ProgressReporterTests
     /// <summary>
     /// Below the floor the interval would report every object, which is what the floor is for.
     /// </summary>
-    [Fact]
+    [Test]
     public void Advance_ShouldNeverReportMoreOftenThanEveryTwentyFiveObjects()
     {
         // Arrange
@@ -62,7 +60,7 @@ public class ProgressReporterTests
         logger.Messages.Should().HaveCount(4);
     }
 
-    [Fact]
+    [Test]
     public void Advance_ShouldReportHowFarAlongItIs()
     {
         // Arrange

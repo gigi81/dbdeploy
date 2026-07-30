@@ -1,14 +1,9 @@
 using System.IO.Abstractions.TestingHelpers;
 using System.Text;
-using AwesomeAssertions;
-using DotNet.Testcontainers.Containers;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Tests;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
 using Oracle.ManagedDataAccess.Client;
-using Testcontainers.Oracle;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Ddl;
 
@@ -17,14 +12,13 @@ namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Ddl;
 /// application database uses, script it, wipe the schema and replay the script through the very
 /// parser dbdeploy uses at deploy time. Whatever comes back has to match what was there before.
 /// </summary>
-public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase, OracleContainer>
+[InheritsTests]
+[ClassDataSource<OracleFixture>(Shared = SharedType.PerClass)]
+public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase>
 {
-    private readonly ITestOutputHelper _output;
-
-    public OracleSchemaDdlTests(ITestOutputHelper output)
-        : base(new OracleBuilder(ContainerImages.Oracle).Build(), output)
+    public OracleSchemaDdlTests(OracleFixture fixture)
+        : base(fixture)
     {
-        _output = output;
     }
 
     protected override IDictionary<string, string?> GetConfigurationSettings()
@@ -180,12 +174,12 @@ public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase, OracleContainer
         """,
     ];
 
-    [Fact]
-    [Trait(nameof(DockerPlatform), nameof(DockerPlatform.Linux))]
-    public async Task GenerateSchemaDdl_ShouldProduceAScriptThatRebuildsTheSchema()
+    [Test]
+    [Category(TestCategories.Docker)]
+    public async Task GenerateSchemaDdl_ShouldProduceAScriptThatRebuildsTheSchema(CancellationToken cancellationToken)
     {
         // arrange
-        var sut = await this.CreateDatabase();
+        var sut = await this.CreateDatabase(cancellationToken);
         await DropEverything();
 
         foreach (var statement in Schema)
@@ -200,7 +194,7 @@ public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase, OracleContainer
 
         // act
         var script = await GenerateScript(sut);
-        _output.WriteLine(script);
+        TestContext.Current?.OutputWriter.WriteLine(script);
 
         await DropEverything();
         (await GetObjects()).Should().BeEmpty("the schema must be wiped before replaying the script");
@@ -260,7 +254,7 @@ public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase, OracleContainer
             }
         }
 
-        _output.WriteLine($"Replayed {executed} statements");
+        TestContext.Current?.OutputWriter.WriteLine($"Replayed {executed} statements");
         executed.Should().BeGreaterThan(0);
     }
 

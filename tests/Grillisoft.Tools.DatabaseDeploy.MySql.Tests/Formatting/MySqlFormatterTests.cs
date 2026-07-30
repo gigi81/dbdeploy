@@ -1,8 +1,5 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.MySql.Formatting;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.MySql.Tests.Formatting;
 
@@ -10,18 +7,11 @@ public class MySqlFormatterTests
 {
     private static readonly SqlFormatterOptions Options = SqlFormatterOptions.Default with { NewLine = "\n" };
 
-    private readonly ITestOutputHelper _output;
-
-    public MySqlFormatterTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
-    private string Format(string sql)
+    private static string Format(string sql)
     {
         var result = new MySqlFormatter().Format(sql, Options);
 
-        _output.WriteLine(result.Sql);
+        TestContext.Current?.OutputWriter.WriteLine(result.Sql);
         result.VerificationError.Should().BeNull();
 
         return result.Sql;
@@ -38,7 +28,7 @@ public class MySqlFormatterTests
     /// While a custom delimiter is in force the semicolons inside a routine body are inner
     /// statements, and the delimiter itself closes the routine.
     /// </summary>
-    [Fact]
+    [Test]
     public void Format_ShouldHonourACustomDelimiter()
     {
         var result = Format("delimiter //\ncreate function f() returns int begin return 1; end //\ndelimiter ;");
@@ -61,14 +51,14 @@ public class MySqlFormatterTests
     /// The IF of DROP ... IF EXISTS belongs to the DROP; treating it as a procedural IF would open a
     /// block that never closes.
     /// </summary>
-    [Fact]
+    [Test]
     public void Format_ShouldKeepDropIfExistsOnOneLine()
     {
         Format("drop function if exists emp_dept_id;")
             .Should().Be("DROP FUNCTION IF EXISTS emp_dept_id;\n");
     }
 
-    [Fact]
+    [Test]
     public void Format_ShouldKeepTheLimitValueBesideTheKeyword()
     {
         var result = Format("select a from t where b = 1 limit 1;");
@@ -86,7 +76,7 @@ public class MySqlFormatterTests
             """));
     }
 
-    [Fact]
+    [Test]
     public void Format_ShouldPreserveBacktickIdentifiersAndHashComments()
     {
         var result = Format("select `to_date` from t # a note\n");
@@ -95,7 +85,7 @@ public class MySqlFormatterTests
     }
 
     /// <summary>A multi-line string literal is content and must survive byte for byte.</summary>
-    [Fact]
+    [Test]
     public void Format_ShouldNotTouchAMultiLineStringLiteral()
     {
         const string Literal = "'\n    == USAGE ==\n    text\n'";
@@ -104,7 +94,7 @@ public class MySqlFormatterTests
             .Should().Contain(Literal);
     }
 
-    [Fact]
+    [Test]
     public void Format_ShouldBeIdempotent()
     {
         var once = Format("delimiter //\ncreate procedure p() begin select 1; end //\ndelimiter ;");

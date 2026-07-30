@@ -29,28 +29,44 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+      # TUnit runs on Microsoft.Testing.Platform (see global.json): the xUnit trait filter is now a
+      # tree node filter on the test category, and the reports come from the platform rather than
+      # from VSTest loggers and collectors.
       - name: Run Tests
-        run: dotnet test --collect:"XPlat Code Coverage" --logger "GitHubActions" --logger "trx;LogFileName=test-results.trx" --filter DockerPlatform!=Linux /p:CoverletOutputFormat=opencover || true
+        run: >
+          dotnet test --results-directory ./TestResults
+          --treenode-filter "/*/*/*/*[Category!=Docker]"
+          --report-trx --report-trx-filename "{asm}-test-results.trx"
+          --coverage --coverage-output-format cobertura
+          || true
+      # The projects with no Docker test exit 8 (zero tests ran), which is not a failure here.
       - name: Run Integration Tests
-        run: dotnet test --collect:"XPlat Code Coverage" --logger "GitHubActions" --logger "trx;LogFileName=integration-results.trx" --filter DockerPlatform=Linux /p:CoverletOutputFormat=opencover || true
+        run: >
+          dotnet test --results-directory ./TestResults
+          --treenode-filter "/*/*/*/*[Category=Docker]"
+          --report-trx --report-trx-filename "{asm}-integration-results.trx"
+          --coverage --coverage-output-format cobertura
+          --ignore-exit-code 8
+          || true
         if: runner.os == 'Linux'
       - name: Test Report
         uses: dorny/test-reporter@v1.9.1
         if: always()
         with:
           name: test-results-${{ matrix.os }}
-          path: "**/*-results.trx"
+          path: "./TestResults/*-results.trx"
           reporter: dotnet-trx
           fail-on-error: true
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
           name: Code coverage ${{ matrix.os }}
-          path: "**/coverage.cobertura.xml"
+          path: "./TestResults/*.cobertura.xml"
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         if: runner.os == 'Linux'
         with:
+          files: "./TestResults/*.cobertura.xml"
           token: ${{ secrets.CODECOV_TOKEN }}
   pack:
     name: Pack

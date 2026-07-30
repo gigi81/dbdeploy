@@ -1,6 +1,5 @@
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
@@ -8,7 +7,6 @@ using Grillisoft.Tools.DatabaseDeploy.Options;
 using Grillisoft.Tools.DatabaseDeploy.Services;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Mocks;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 using ExtensionsOptions = Microsoft.Extensions.Options.Options;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests.Services;
@@ -23,13 +21,6 @@ public class FormatServiceTests
     private const string RollbackPath = "/path/MyDb/TKT001.Change.Rollback.sql";
     private const string InitPath = "/path/MyDb/_Init.sql";
 
-    private readonly ITestOutputHelper _output;
-
-    public FormatServiceTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
     private static MockFileSystem CreateFileSystem() =>
         new(new Dictionary<string, MockFileData>
         {
@@ -39,7 +30,7 @@ public class FormatServiceTests
             [RollbackPath] = new("select 3")
         });
 
-    [Fact]
+    [Test]
     public async Task Execute_ShouldFormatTheDeployAndRollbackScripts()
     {
         var fileSystem = CreateFileSystem();
@@ -55,7 +46,7 @@ public class FormatServiceTests
     /// Init scripts are generated schema dumps. Reformatting one produces an enormous diff of
     /// something nobody reads by hand, so they are left alone.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task Execute_ShouldLeaveInitScriptsAlone()
     {
         var fileSystem = CreateFileSystem();
@@ -65,7 +56,7 @@ public class FormatServiceTests
         fileSystem.File.ReadAllText(InitPath).Should().Be("select 1");
     }
 
-    [Fact]
+    [Test]
     public async Task Execute_WhenAScriptIsAlreadyFormatted_ShouldNotRewriteIt()
     {
         var fileSystem = CreateFileSystem();
@@ -81,7 +72,7 @@ public class FormatServiceTests
     /// A formatter that cannot reproduce the script must not be allowed to write it, and the run has
     /// to fail so the problem cannot pass unnoticed.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task Execute_WhenVerificationFails_ShouldLeaveTheFileAloneAndReportAFailure()
     {
         var fileSystem = CreateFileSystem();
@@ -93,7 +84,7 @@ public class FormatServiceTests
         fileSystem.File.ReadAllText(DeployPath).Should().Be("select 2");
     }
 
-    [Fact]
+    [Test]
     public async Task Execute_WhenTheRollbackScriptIsMissing_ShouldStillFormatTheDeployScript()
     {
         var fileSystem = CreateFileSystem();
@@ -114,7 +105,7 @@ public class FormatServiceTests
     /// The deploy script's MD5 is the migration hash, so reformatting one that has already been
     /// deployed has to be called out.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task Execute_WhenTheStepIsAlreadyDeployed_ShouldWarn()
     {
         var fileSystem = CreateFileSystem();
@@ -133,12 +124,12 @@ public class FormatServiceTests
     /// Formatting has to work with no database in reach, so an unreachable one only costs the
     /// already-deployed warning.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task Execute_WhenTheDatabaseCannotBeRead_ShouldStillFormat()
     {
         var fileSystem = CreateFileSystem();
 
-        var provider = new TestServiceCollection<FormatService>(_output)
+        var provider = new TestServiceCollection<FormatService>()
             .AddSingleton(new FormatOptions { Path = "/path" })
             .AddSingleton<IFileSystem>(fileSystem)
             .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock())
@@ -158,7 +149,7 @@ public class FormatServiceTests
     /// Globs pick the files, so nothing is filtered out - including the init scripts that branch
     /// mode deliberately leaves alone.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task Execute_WhenGlobsAreGiven_ShouldFormatEveryMatchIncludingInitScripts()
     {
         var fileSystem = CreateFileSystem();
@@ -174,7 +165,7 @@ public class FormatServiceTests
         fileSystem.File.ReadAllText("/path/MyDb/notes.txt").Should().Be("select 4", "it is not a match");
     }
 
-    [Fact]
+    [Test]
     public async Task Execute_ShouldHonourExcludeGlobs()
     {
         var fileSystem = CreateFileSystem();
@@ -192,7 +183,7 @@ public class FormatServiceTests
         fileSystem.File.ReadAllText(DeployPath).Should().Be("SELECT 2");
     }
 
-    [Fact]
+    [Test]
     public async Task Execute_WhenNothingMatches_ShouldSucceedWithoutWriting()
     {
         var fileSystem = CreateFileSystem();
@@ -208,7 +199,7 @@ public class FormatServiceTests
     /// A folder named after a configured database says which dialect its scripts are in, so a
     /// normal layout needs no --provider.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task Execute_ShouldTakeTheDialectFromTheDatabaseFolder()
     {
         var fileSystem = CreateFileSystem();
@@ -232,7 +223,7 @@ public class FormatServiceTests
     /// <summary>
     /// Scripts outside any database folder fall back to the provider named on the command line.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task Execute_WhenAFileIsOutsideADatabaseFolder_ShouldUseTheNamedProvider()
     {
         var fileSystem = CreateFileSystem();
@@ -252,7 +243,7 @@ public class FormatServiceTests
         fileSystem.File.ReadAllText("/path/loose.sql").Should().Be("SELECT 9");
     }
 
-    [Fact]
+    [Test]
     public async Task Execute_WhenTheDialectCannotBeResolved_ShouldSayWhichProvidersAreKnown()
     {
         var fileSystem = CreateFileSystem();
@@ -268,7 +259,7 @@ public class FormatServiceTests
     }
 
     /// <summary>Directory mode is a pure file operation and must never reach for a database.</summary>
-    [Fact]
+    [Test]
     public async Task Execute_WhenGlobsAreGiven_ShouldNotReadTheMigrations()
     {
         var fileSystem = CreateFileSystem();
@@ -286,7 +277,7 @@ public class FormatServiceTests
     }
 
     /// <summary>Globs are relative to the path, and a branch layout is not needed at all.</summary>
-    [Fact]
+    [Test]
     public async Task Execute_WhenGlobsAreGiven_ShouldNotNeedTheBranchFiles()
     {
         var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
@@ -301,7 +292,7 @@ public class FormatServiceTests
         fileSystem.File.ReadAllText("/loose/one.sql").Should().Be("SELECT 1");
     }
 
-    private FormatService CreateService(
+    private static FormatService CreateService(
         IFileSystem fileSystem,
         out DatabaseMock database,
         ISqlFormatter? formatter = null,
@@ -312,7 +303,7 @@ public class FormatServiceTests
     {
         database = new DatabaseMock("MyDb", new ScriptParserMock(), formatter ?? new SqlFormatterMock());
 
-        var provider = new TestServiceCollection<FormatService>(_output)
+        var provider = new TestServiceCollection<FormatService>()
             .AddSingleton(options ?? new FormatOptions { Path = "/path" })
             .AddSingleton(fileSystem)
             .AddSingleton(factory ?? new DatabaseFactoryMock())

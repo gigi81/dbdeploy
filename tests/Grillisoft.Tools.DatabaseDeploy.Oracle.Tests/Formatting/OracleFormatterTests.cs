@@ -1,8 +1,5 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Oracle.Formatting;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Formatting;
 
@@ -10,18 +7,11 @@ public class OracleFormatterTests
 {
     private static readonly SqlFormatterOptions Options = SqlFormatterOptions.Default with { NewLine = "\n" };
 
-    private readonly ITestOutputHelper _output;
-
-    public OracleFormatterTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
-    private string Format(string sql)
+    private static string Format(string sql)
     {
         var result = new OracleFormatter().Format(sql, Options);
 
-        _output.WriteLine(result.Sql);
+        TestContext.Current?.OutputWriter.WriteLine(result.Sql);
         result.VerificationError.Should().BeNull();
 
         return result.Sql;
@@ -34,7 +24,7 @@ public class OracleFormatterTests
     /// </summary>
     private static string Lf(string text) => text.Replace("\r\n", "\n");
 
-    [Fact]
+    [Test]
     public void Format_ShouldIndentAProgramUnitBody()
     {
         var result = Format(
@@ -56,7 +46,7 @@ public class OracleFormatterTests
     }
 
     /// <summary>SQL*Plus directives are not SQL and have to reach the server exactly as written.</summary>
-    [Fact]
+    [Test]
     public void Format_ShouldLeaveSqlPlusDirectivesAlone()
     {
         var result = Format("SET  LINESIZE  80\nREM   a note\nselect 1 from dual;");
@@ -67,7 +57,7 @@ public class OracleFormatterTests
     /// <summary>
     /// A SET that assigns is the SET clause of an UPDATE, not a SQL*Plus directive.
     /// </summary>
-    [Fact]
+    [Test]
     public void Format_ShouldTreatAnAssigningSetAsAnUpdateClause()
     {
         var result = Format("update employees set salary = 1 where id = 2;");
@@ -85,7 +75,7 @@ public class OracleFormatterTests
     }
 
     /// <summary>The terminator belongs directly under the statement it closes.</summary>
-    [Fact]
+    [Test]
     public void Format_ShouldPutTheSlashDirectlyAfterTheStatement()
     {
         var result = Format("alter trigger t disable;\n/\n");
@@ -97,7 +87,7 @@ public class OracleFormatterTests
     /// A trigger's event list reads INSERT OR UPDATE OR DELETE. Those are event names, and laying
     /// them out as statements would wreck the header.
     /// </summary>
-    [Fact]
+    [Test]
     public void Format_ShouldKeepATriggerEventListOnOneLine()
     {
         var result = Format(
@@ -109,7 +99,7 @@ public class OracleFormatterTests
     /// <summary>
     /// <c>%TYPE</c> is an attribute reference, and spacing it out would not compile.
     /// </summary>
-    [Fact]
+    [Test]
     public void Format_ShouldKeepAnAttributeReferenceTight()
     {
         Format("create procedure p (a job_history.employee_id%type) is begin null; end;")
@@ -121,7 +111,7 @@ public class OracleFormatterTests
     /// checked-in scripts write it. A short one stays inline - see
     /// <see cref="Format_WhenAParameterListIsShort_ShouldKeepItInline"/>.
     /// </summary>
-    [Fact]
+    [Test]
     public void Format_ShouldPutALongRoutineParameterListOnItsOwnLine()
     {
         var result = Format(
@@ -146,14 +136,14 @@ public class OracleFormatterTests
     /// A name followed by a parenthesis closes up, the same rule that keeps <c>COUNT(*)</c> and
     /// <c>NVARCHAR(30)</c> together.
     /// </summary>
-    [Fact]
+    [Test]
     public void Format_WhenAParameterListIsShort_ShouldKeepItInline()
     {
         Format("create procedure p (a number, b date) is begin null; end;")
             .Should().StartWith("CREATE PROCEDURE p(a NUMBER, b DATE)\nIS\n");
     }
 
-    [Fact]
+    [Test]
     public void Format_ShouldBeIdempotent()
     {
         var once = Format("begin\nif a then b; else c; end if;\nend;\n/\n");

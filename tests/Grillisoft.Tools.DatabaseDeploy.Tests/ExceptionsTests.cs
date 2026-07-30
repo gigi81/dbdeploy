@@ -1,4 +1,3 @@
-
 using System.IO.Abstractions.TestingHelpers;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
@@ -7,7 +6,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.Tests;
 
 public class ExceptionsTests
 {
-    [Fact]
+    [Test]
     public void BranchNotFoundException_Message_IsCorrect()
     {
         // Arrange
@@ -18,11 +17,11 @@ public class ExceptionsTests
         var message = exception.Message;
 
         // Assert
-        Assert.Equal($"Branch {branchName} not found", message);
-        Assert.Equal(branchName, exception.BranchName);
+        message.Should().Be($"Branch {branchName} not found");
+        exception.BranchName.Should().Be(branchName);
     }
 
-    [Fact]
+    [Test]
     public void CircularDependencyException_Message_IsCorrect()
     {
         // Arrange
@@ -33,10 +32,10 @@ public class ExceptionsTests
         var message = exception.Message;
 
         // Assert
-        Assert.Equal($"Circular dependency detected: {string.Join(",", names)}", message);
+        message.Should().Be($"Circular dependency detected: {string.Join(",", names)}");
     }
 
-    [Fact]
+    [Test]
     public void CircularIncludeException_Message_IsCorrect()
     {
         // Arrange
@@ -47,10 +46,10 @@ public class ExceptionsTests
         var message = exception.Message;
 
         // Assert
-        Assert.Equal($"Circular include detected on file {filename}", message);
+        message.Should().Be($"Circular include detected on file {filename}");
     }
 
-    [Fact]
+    [Test]
     public void DatabaseConfigNotFoundException_Message_IsCorrect()
     {
         // Arrange
@@ -61,10 +60,10 @@ public class ExceptionsTests
         var message = exception.Message;
 
         // Assert
-        Assert.Equal($"Database configuration for '{databaseName}' was not found.", message);
+        message.Should().Be($"Database configuration for '{databaseName}' was not found.");
     }
 
-    [Fact]
+    [Test]
     public void DatabaseProviderNotFoundException_Message_IsCorrect()
     {
         // Arrange
@@ -76,10 +75,10 @@ public class ExceptionsTests
         var message = exception.Message;
 
         // Assert
-        Assert.Equal($"Could not find database factory of type '{providerName}' for database '{databaseName}'", message);
+        message.Should().Be($"Could not find database factory of type '{providerName}' for database '{databaseName}'");
     }
 
-    [Fact]
+    [Test]
     public void DatabasesNotFoundException_Message_IsCorrect()
     {
         // Arrange
@@ -90,10 +89,10 @@ public class ExceptionsTests
         var message = exception.Message;
 
         // Assert
-        Assert.Equal($"Databases not found: {string.Join(", ", missingDatabases)}", message);
+        message.Should().Be($"Databases not found: {string.Join(", ", missingDatabases)}");
     }
 
-    [Fact]
+    [Test]
     public void DbObjectNotFoundException_Message_IsCorrect()
     {
         // Arrange
@@ -104,10 +103,10 @@ public class ExceptionsTests
         var message = exception.Message;
 
         // Assert
-        Assert.Equal($"Database Object {dbObject.Name} of type {dbObject.Type} not found", message);
+        message.Should().Be($"Database Object {dbObject.Name} of type {dbObject.Type} not found");
     }
 
-    [Fact]
+    [Test]
     public void InvalidBranchesConfigurationException_Message_IsCorrect()
     {
         // Arrange
@@ -118,11 +117,11 @@ public class ExceptionsTests
         var message = exception.Message;
 
         // Assert
-        Assert.Equal($"Invalid branches configuration: {string.Join(", ", errors)}", message);
-        Assert.Equal(errors, exception.Errors);
+        message.Should().Be($"Invalid branches configuration: {string.Join(", ", errors)}");
+        exception.Errors.Should().Equal(errors);
     }
 
-    [Fact]
+    [Test]
     public void StepMigrationMismatchException_Message_IsCorrect()
     {
         // Arrange
@@ -135,6 +134,6 @@ public class ExceptionsTests
         var message = exception.Message;
 
         // Assert
-        Assert.Equal($"Expected step {step.Name} on database {step.Database} but found {migration.Name}", message);
+        message.Should().Be($"Expected step {step.Name} on database {step.Database} but found {migration.Name}");
     }
 }

@@ -1,5 +1,3 @@
-using AwesomeAssertions;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Database.Tests;
 
@@ -9,7 +7,7 @@ public class ExtensionsTests
     /// The breakdown is read straight off a log line to judge whether a generation did what it was
     /// supposed to, so the order has to be the order of the script, not the order of the input.
     /// </summary>
-    [Fact]
+    [Test]
     public void Breakdown_ShouldCountByTypeInScriptOrder()
     {
         // Arrange
@@ -23,7 +21,7 @@ public class ExtensionsTests
         result.Should().Be("SCHEMA (1), TABLE (3), VIEW (2)");
     }
 
-    [Fact]
+    [Test]
     public void Breakdown_WhenCountsAreAlreadyTotalled_ShouldFormatThemTheSameWay()
     {
         // Arrange
@@ -38,7 +36,7 @@ public class ExtensionsTests
     }
 
     /// <summary>An unknown type must not push a known one down the list.</summary>
-    [Fact]
+    [Test]
     public void Breakdown_WhenATypeHasNoRank_ShouldPutItLast()
     {
         // Arrange
@@ -52,7 +50,7 @@ public class ExtensionsTests
         result.Should().Be("TABLE (1), SOMETHING NEW (1)");
     }
 
-    [Fact]
+    [Test]
     public void Breakdown_WhenThereIsNothingToCount_ShouldBeEmpty()
     {
         Array.Empty<string>().Breakdown(_ => 0).Should().BeEmpty();

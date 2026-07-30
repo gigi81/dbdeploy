@@ -17,8 +17,11 @@ public interface IDatabaseFixture
 /// <remarks>
 /// Under xUnit the container lived on the test class, which is built again for every test method, so
 /// a provider paid for a container per test. A TUnit fixture is a data source: declared with
-/// <c>[ClassDataSource&lt;T&gt;(Shared = SharedType.PerClass)]</c> the container is started once for
-/// the whole class and disposed after its last test.
+/// <c>[ClassDataSource&lt;T&gt;(Shared = SharedType.PerAssembly)]</c> the container is started once
+/// for the whole test project and disposed when it has finished. Per assembly rather than per class
+/// because starting a database is far and away the most expensive thing these tests do - an Oracle
+/// one costs the best part of a minute - and the two classes a provider has would otherwise pay for
+/// it twice.
 /// </remarks>
 public abstract class DatabaseFixture<TContainer> : IDatabaseFixture, IAsyncInitializer, IAsyncDisposable
     where TContainer : DockerContainer, IDatabaseContainer

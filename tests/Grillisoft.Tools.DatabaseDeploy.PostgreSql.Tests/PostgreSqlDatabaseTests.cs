@@ -4,7 +4,7 @@ using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
 namespace Grillisoft.Tools.DatabaseDeploy.PostgreSql.Tests;
 
 [InheritsTests]
-[ClassDataSource<PostgreSqlFixture>(Shared = SharedType.PerClass)]
+[ClassDataSource<PostgreSqlFixture>(Shared = SharedType.PerAssembly)]
 public class PostgreSqlDatabaseTests : DatabaseTest<PostgreSqlDatabase>
 {
     public PostgreSqlDatabaseTests(PostgreSqlFixture fixture)

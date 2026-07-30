@@ -4,7 +4,7 @@ using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests;
 
 [InheritsTests]
-[ClassDataSource<OracleFixture>(Shared = SharedType.PerClass)]
+[ClassDataSource<OracleFixture>(Shared = SharedType.PerAssembly)]
 public class OracleDatabaseTests : DatabaseTest<OracleDatabase>
 {
     public OracleDatabaseTests(OracleFixture fixture)

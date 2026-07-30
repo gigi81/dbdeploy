@@ -12,8 +12,15 @@ namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests.Ddl;
 /// application database uses, script it, wipe the database and replay the script through the very
 /// parser dbdeploy uses at deploy time. Whatever comes back has to match what was there before.
 /// </summary>
+/// <remarks>
+/// Shares <see cref="SqlServerFixture"/> with <see cref="SqlServerDatabaseTests"/> - one container
+/// for the whole project - so the migration cases it inherits run a second time on the same server,
+/// against <c>dbdeploy_ddl</c> rather than <c>master</c>. They are safe to repeat: every case starts
+/// by clearing and re-creating the migrations table, and <c>[NotInParallel]</c> keeps them off each
+/// other.
+/// </remarks>
+[ClassDataSource<SqlServerFixture>(Shared = SharedType.PerAssembly)]
 [InheritsTests]
-[ClassDataSource<SqlServerFixture>(Shared = SharedType.PerClass)]
 public class SqlServerSchemaDdlTests : DatabaseTest<SqlServerDatabase>
 {
     private const string DatabaseName = "dbdeploy_ddl";

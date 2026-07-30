@@ -4,7 +4,7 @@ using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
 namespace Grillisoft.Tools.DatabaseDeploy.MySql.Tests;
 
 [InheritsTests]
-[ClassDataSource<MySqlFixture>(Shared = SharedType.PerClass)]
+[ClassDataSource<MySqlFixture>(Shared = SharedType.PerAssembly)]
 public class MySqlDatabaseTests : DatabaseTest<MySqlDatabase>
 {
     public MySqlDatabaseTests(MySqlFixture fixture)

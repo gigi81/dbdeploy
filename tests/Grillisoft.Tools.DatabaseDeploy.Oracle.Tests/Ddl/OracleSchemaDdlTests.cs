@@ -12,8 +12,14 @@ namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Ddl;
 /// application database uses, script it, wipe the schema and replay the script through the very
 /// parser dbdeploy uses at deploy time. Whatever comes back has to match what was there before.
 /// </summary>
+/// <remarks>
+/// Shares <see cref="OracleFixture"/> with <see cref="OracleDatabaseTests"/> - one container for the
+/// whole project - so the migration cases it inherits run a second time against the same schema
+/// rather than against a second database. They are safe to repeat: every case starts by clearing
+/// and re-creating the migrations table, and <c>[NotInParallel]</c> keeps them off each other.
+/// </remarks>
+[ClassDataSource<OracleFixture>(Shared = SharedType.PerAssembly)]
 [InheritsTests]
-[ClassDataSource<OracleFixture>(Shared = SharedType.PerClass)]
 public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase>
 {
     public OracleSchemaDdlTests(OracleFixture fixture)

@@ -10,7 +10,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
 /// <summary>
 /// The contract every provider has to honour against a real database. A derived class supplies the
 /// factory and points at a <see cref="DatabaseFixture{TContainer}"/> with
-/// <c>[ClassDataSource&lt;T&gt;(Shared = SharedType.PerClass)]</c>, and marks itself
+/// <c>[ClassDataSource&lt;T&gt;(Shared = SharedType.PerAssembly)]</c>, and marks itself
 /// <c>[InheritsTests]</c> so the cases below run for it.
 /// </summary>
 /// <remarks>

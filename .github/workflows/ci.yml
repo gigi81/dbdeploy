@@ -32,6 +32,10 @@ jobs:
       # TUnit runs on Microsoft.Testing.Platform (see global.json): the xUnit trait filter is now a
       # tree node filter on the test category, and the reports come from the platform rather than
       # from VSTest loggers and collectors.
+      #
+      # One invocation per leg, rather than a unit and an integration pass. A filter that matches
+      # nothing in a project still writes that project's TRX, and a TRX with no test in it is one
+      # dorny/test-reporter cannot read ("td.UnitTest is not iterable").
       - name: Run Tests
         run: >
           dotnet test --results-directory ./TestResults
@@ -39,14 +43,13 @@ jobs:
           --report-trx --report-trx-filename "{asm}-test-results.trx"
           --coverage --coverage-output-format cobertura
           || true
-      # The projects with no Docker test exit 8 (zero tests ran), which is not a failure here.
-      - name: Run Integration Tests
+        if: runner.os != 'Linux'
+      # Only Linux has a Docker engine, so it is the leg that also runs the Testcontainers tests.
+      - name: Run Tests and Integration Tests
         run: >
           dotnet test --results-directory ./TestResults
-          --treenode-filter "/*/*/*/*[Category=Docker]"
-          --report-trx --report-trx-filename "{asm}-integration-results.trx"
+          --report-trx --report-trx-filename "{asm}-test-results.trx"
           --coverage --coverage-output-format cobertura
-          --ignore-exit-code 8
           || true
         if: runner.os == 'Linux'
       - name: Test Report

@@ -108,14 +108,18 @@ file needs none of them.
 
 A provider test class derives from `DatabaseTest<TDatabase>` and carries three attributes:
 `[InheritsTests]` so the shared cases run for it, `[ClassDataSource<TFixture>(Shared =
-SharedType.PerClass)]` to be handed its `DatabaseFixture<TContainer>`, and - from the base -
+SharedType.PerAssembly)]` to be handed its `DatabaseFixture<TContainer>`, and - from the base -
 `[NotInParallel]`, because every case clears and re-creates the one migrations table of the one
-container the class shares. Each such class starts one Testcontainers database, not one per test.
+container they all share. Starting a database is by far the most expensive thing these tests do, so
+a test project starts exactly one: not one per test as under xUnit, and not one per class either.
+That is why the sharing is `PerAssembly` - a provider has two such classes, and `PerClass` would
+buy a second container for the `*SchemaDdlTests` one.
 
-Tests that need a Docker engine are marked `[Category(TestCategories.Docker)]`. CI runs everything
-else on all three platforms with `--treenode-filter "/*/*/*/*[Category!=Docker]"` and the Docker ones
-on Linux only with `[Category=Docker]`; a test project with no Docker test exits 8 (zero tests ran),
-which that step ignores.
+Tests that need a Docker engine are marked `[Category(TestCategories.Docker)]`. Windows and macOS
+have no engine, so CI runs them with `--treenode-filter "/*/*/*/*[Category!=Docker]"`; Linux runs
+everything unfiltered in one pass. Keep it to one `dotnet test` per platform: a filter matching
+nothing in a project still writes that project's TRX, and `dorny/test-reporter` fails on a TRX with
+no test in it.
 
 ### Integration Tests
 

@@ -4,7 +4,7 @@ using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests;
 
 [InheritsTests]
-[ClassDataSource<SqlServerFixture>(Shared = SharedType.PerClass)]
+[ClassDataSource<SqlServerFixture>(Shared = SharedType.PerAssembly)]
 public class SqlServerDatabaseTests : DatabaseTest<SqlServerDatabase>
 {
     public SqlServerDatabaseTests(SqlServerFixture fixture)

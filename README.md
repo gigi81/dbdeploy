@@ -56,57 +56,6 @@ This command will create databases (if they don't already exits) and deploy both
 dbdeploy deploy --path examples/examples01 --branch release/1.1 --create --test
 ```
 
-## Format
-
-To lay out the SQL of every `.Deploy.sql` and `.Rollback.sql` script consistently, run:
-
-```shell
-dbdeploy format --path examples/examples01
-```
-
-Every branch is formatted. `_Init` scripts are never touched, because they are generated schema
-dumps and reformatting one produces an enormous diff of something nobody reads by hand.
-
-To format scripts that are not part of a branch — or a folder that is not a `dbdeploy` layout at
-all — pass one or more globs with `--include`:
-
-```shell
-dbdeploy format --path ./db --include "**/*.sql"
-dbdeploy format --path ./scratch --include "**/*.sql" --provider oracle
-dbdeploy format --path ./db --include "**/*.Test.sql" --exclude "**/legacy/**"
-```
-
-Globs are relative to `--path`, and several can follow one flag separated by spaces
-(`-i "**/*.sql" "setup/*.ddl"`). With `--include` the branch structure is not read, **no database is
-contacted**, and nothing is filtered out — init scripts included.
-
-Only `*`, `**` and `?` are supported. A character class such as `[Ii]` is **not**, and matches
-nothing rather than reporting an error, so write two patterns instead:
-
-```shell
-dbdeploy format --path ./db --include "**/*.sql" --exclude "**/_Init*" "**/_init*"
-```
-
-Note that init scripts are generated schema dumps and can be very large; excluding them is usually
-what you want in directory mode.
-
-The dialect is then worked out per file: the nearest folder above it named after a configured
-database wins, so a normal layout still formats each database in its own dialect without any extra
-flag. Failing that, `--provider` is used, then `global:defaultProvider`. If none of those apply the
-command stops and lists the providers it knows. `dbsettings.json` is optional in this mode, so a
-loose folder of scripts works with nothing but `--provider`.
-
-The formatter is driven by the **script repository's own `.editorconfig`**, resolved from each
-script's directory, and it understands the dialect of the database the script belongs to. It works
-without a database connection; if one is reachable it also warns when you are about to format a
-deploy script whose step has already been deployed, since the migration hash is the MD5 of that
-file and it will no longer match.
-
-Formatting is checked before anything is written: the result is tokenised again and compared against
-the source, and a file whose significant tokens changed is left alone and reported as a failure
-(`dbdeploy format` then exits non-zero). Layout, keyword casing and comment indentation may change;
-identifiers, string literals and comment content never do.
-
 ### Configuration
 
 Standard `.editorconfig` properties are honoured for `*.sql`:
@@ -286,6 +235,59 @@ It is recommended for this file name to match your release branch name (if any) 
 @include release_1.1
 Database02,TKT-002.SampleDescription
 ```
+
+
+## Format
+
+To lay out the SQL of every `.Deploy.sql` and `.Rollback.sql` script consistently, run:
+
+```shell
+dbdeploy format --path examples/examples01
+```
+
+Every branch is formatted. `_Init` scripts are never touched, because they are generated schema
+dumps and reformatting one produces an enormous diff of something nobody reads by hand.
+
+To format scripts that are not part of a branch — or a folder that is not a `dbdeploy` layout at
+all — pass one or more globs with `--include`:
+
+```shell
+dbdeploy format --path ./db --include "**/*.sql"
+dbdeploy format --path ./scratch --include "**/*.sql" --provider oracle
+dbdeploy format --path ./db --include "**/*.Test.sql" --exclude "**/legacy/**"
+```
+
+Globs are relative to `--path`, and several can follow one flag separated by spaces
+(`-i "**/*.sql" "setup/*.ddl"`). With `--include` the branch structure is not read, **no database is
+contacted**, and nothing is filtered out — init scripts included.
+
+Only `*`, `**` and `?` are supported. A character class such as `[Ii]` is **not**, and matches
+nothing rather than reporting an error, so write two patterns instead:
+
+```shell
+dbdeploy format --path ./db --include "**/*.sql" --exclude "**/_Init*" "**/_init*"
+```
+
+Note that init scripts are generated schema dumps and can be very large; excluding them is usually
+what you want in directory mode.
+
+The dialect is then worked out per file: the nearest folder above it named after a configured
+database wins, so a normal layout still formats each database in its own dialect without any extra
+flag. Failing that, `--provider` is used, then `global:defaultProvider`. If none of those apply the
+command stops and lists the providers it knows. `dbsettings.json` is optional in this mode, so a
+loose folder of scripts works with nothing but `--provider`.
+
+The formatter is driven by the **script repository's own `.editorconfig`**, resolved from each
+script's directory, and it understands the dialect of the database the script belongs to. It works
+without a database connection; if one is reachable it also warns when you are about to format a
+deploy script whose step has already been deployed, since the migration hash is the MD5 of that
+file and it will no longer match.
+
+Formatting is checked before anything is written: the result is tokenised again and compared against
+the source, and a file whose significant tokens changed is left alone and reported as a failure
+(`dbdeploy format` then exits non-zero). Layout, keyword casing and comment indentation may change;
+identifiers, string literals and comment content never do.
+
 
 ## Alternatives
 

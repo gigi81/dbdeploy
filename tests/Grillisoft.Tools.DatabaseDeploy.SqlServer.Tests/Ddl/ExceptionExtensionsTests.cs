@@ -1,19 +1,17 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer.Ddl;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests.Ddl;
 
 public class ExceptionExtensionsTests
 {
-    [Fact]
+    [Test]
     public void Describe_ShouldUseTheMessage()
     {
         new InvalidOperationException("something went wrong").Describe()
             .Should().Be("something went wrong");
     }
 
-    [Fact]
+    [Test]
     public void Describe_ShouldTrimTheMessage()
     {
         new InvalidOperationException("  padded  \n").Describe().Should().Be("padded");
@@ -24,7 +22,7 @@ public class ExceptionExtensionsTests
     /// FailedOperationException around an ExecutionFailureException, and the outer messages say
     /// nothing a user can act on.
     /// </summary>
-    [Fact]
+    [Test]
     public void Describe_WhenTheExceptionIsWrapped_ShouldReachTheInnermostOne()
     {
         // Arrange

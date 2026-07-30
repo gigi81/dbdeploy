@@ -1,29 +1,25 @@
 ﻿using System.IO.Abstractions;
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Grillisoft.Tools.DatabaseDeploy.Services;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Mocks;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests.Services;
 
 public class DeployServiceTests
 {
-    private readonly ITestOutputHelper _output;
     private readonly GlobalSettings _globalSettings = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly CancellationToken _cancellationToken;
 
-    public DeployServiceTests(ITestOutputHelper output)
+    public DeployServiceTests()
     {
-        _output = output;
         _cancellationToken = _cancellationTokenSource.Token;
     }
 
-    [Fact]
+    [Test]
     public async Task Execute_WhenDeployingMainBranch_IsSuccessful()
     {
         //arrange
@@ -48,7 +44,7 @@ public class DeployServiceTests
         migrations02.First().Name.Should().Be(_globalSettings.InitStepName);
     }
 
-    [Fact]
+    [Test]
     public async Task Execute_WhenDeployingRelease1_1Branch_IsSuccessful()
     {
         //arrange
@@ -75,7 +71,7 @@ public class DeployServiceTests
         migrations02.First().Name.Should().Be(_globalSettings.InitStepName);
     }
 
-    [Fact]
+    [Test]
     public async Task Execute_WhenDeployingRelease1_2Branch_IsSuccessful()
     {
         //arrange
@@ -106,7 +102,7 @@ public class DeployServiceTests
 
     private DeployService CreateService(DeployOptions deployOptions, params IDatabase[] databases)
     {
-        var provider = new TestServiceCollection<DeployService>(_output)
+        var provider = new TestServiceCollection<DeployService>()
             .AddSingleton(deployOptions)
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
             .AddSingleton<IProgress<int>>(new Progress<int>())

@@ -87,7 +87,11 @@ The solution has a comprehensive test suite. The unit tests are located in the `
 
 ### Unit Tests
 
-The unit tests are written using xUnit. For each source project, there is a corresponding test project with the `.Tests` suffix. The tests are located in the following projects:
+The unit tests are written using TUnit, which runs on Microsoft.Testing.Platform: `global.json`
+selects that runner, every test project is an `Exe`, and the platform options are passed straight to
+`dotnet test` (there are no VSTest loggers or collectors). For each source project, there is a
+corresponding test project with the `.Tests` suffix. The tests are located in the following
+projects:
 
 - **Grillisoft.Tools.DatabaseDeploy.Tests**: Contains the unit tests for the core project.
 - **Grillisoft.Tools.DatabaseDeploy.Database.Tests**: Contains the unit tests for the database providers.
@@ -98,9 +102,24 @@ The unit tests are written using xUnit. For each source project, there is a corr
 
 The unit tests are run on every push and pull request to the `main` and `feature/**` branches. The tests are run on Windows, Linux, and macOS.
 
-Assertions use AwesomeAssertions (`Should()`), not the xUnit `Assert` class. Provider test classes
-that derive from `DatabaseTest<TDatabase, TContainer>` get a Testcontainers database per `[Fact]`,
-so a full provider run is slow - the Oracle project takes about five minutes.
+Assertions use AwesomeAssertions (`Should()`), not `Assert.That`. `AwesomeAssertions`, `TUnit.Core`
+and the TUnit assertion namespaces are global usings from `tests/Directory.Build.props`, so a test
+file needs none of them.
+
+A provider test class derives from `DatabaseTest<TDatabase>` and carries three attributes:
+`[InheritsTests]` so the shared cases run for it, `[ClassDataSource<TFixture>(Shared =
+SharedType.PerAssembly)]` to be handed its `DatabaseFixture<TContainer>`, and - from the base -
+`[NotInParallel]`, because every case clears and re-creates the one migrations table of the one
+container they all share. Starting a database is by far the most expensive thing these tests do, so
+a test project starts exactly one: not one per test as under xUnit, and not one per class either.
+That is why the sharing is `PerAssembly` - a provider has two such classes, and `PerClass` would
+buy a second container for the `*SchemaDdlTests` one.
+
+Tests that need a Docker engine are marked `[Category(TestCategories.Docker)]`. Windows and macOS
+have no engine, so CI runs them with `--treenode-filter "/*/*/*/*[Category!=Docker]"`; Linux runs
+everything unfiltered in one pass. Keep it to one `dotnet test` per platform: a filter matching
+nothing in a project still writes that project's TRX, and `dorny/test-reporter` fails on a TRX with
+no test in it.
 
 ### Integration Tests
 
@@ -115,6 +134,10 @@ The integration tests run the `dbdeploy` tool against the example databases loca
 
 ## Agent Instructions
 
-- When running tests, only target the specific tests that were added or changed by using the `--filter` option with `dotnet test` to speed up the process. For example: `dotnet test --filter "FullyQualifiedName~MyNewTests"`.
+- When running tests, only target the specific tests that were added or changed, to speed up the
+  process. Microsoft.Testing.Platform filters by tree node, not by `--filter`: for example
+  `dotnet test --treenode-filter "/*/*/MyNewTests/*"` (the path is
+  `/assembly/namespace/class/test`), or run the test project's executable directly with the same
+  option.
 - Run `dotnet format` after finishing a change set, before reporting the work as done.
 - Do not commit or push unless asked.

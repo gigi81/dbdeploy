@@ -1,7 +1,5 @@
 using Grillisoft.Tools.DatabaseDeploy.Oracle.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Formatting;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Formatting;
 
@@ -11,17 +9,10 @@ namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Formatting;
 /// </summary>
 public class OracleCorpusTests
 {
-    private readonly ITestOutputHelper _output;
+    public static IEnumerable<string> Scripts() => CorpusFiles.For("oracle-01", "oracle-02");
 
-    public OracleCorpusTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
-    public static TheoryData<string> Scripts => CorpusFiles.For("oracle-01", "oracle-02");
-
-    [Theory]
-    [MemberData(nameof(Scripts))]
+    [Test]
+    [MethodDataSource(nameof(Scripts))]
     public Task Format_ShouldVerifyAndBeIdempotent(string relativePath) =>
-        CorpusFiles.AssertFormatsCleanly(new OracleFormatter(), relativePath, _output);
+        CorpusFiles.AssertFormatsCleanly(new OracleFormatter(), relativePath);
 }

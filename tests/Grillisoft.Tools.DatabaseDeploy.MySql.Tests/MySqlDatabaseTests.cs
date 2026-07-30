@@ -1,15 +1,14 @@
-﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Tests;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
-using Testcontainers.MySql;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.MySql.Tests;
 
-public class MySqlDatabaseTests : DatabaseTest<MySqlDatabase, MySqlContainer>
+[InheritsTests]
+[ClassDataSource<MySqlFixture>(Shared = SharedType.PerAssembly)]
+public class MySqlDatabaseTests : DatabaseTest<MySqlDatabase>
 {
-    public MySqlDatabaseTests(ITestOutputHelper output)
-        : base(new MySqlBuilder(ContainerImages.MySql).Build(), output)
+    public MySqlDatabaseTests(MySqlFixture fixture)
+        : base(fixture)
     {
     }
 

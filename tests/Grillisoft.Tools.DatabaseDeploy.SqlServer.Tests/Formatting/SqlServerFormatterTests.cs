@@ -1,8 +1,5 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer.Formatting;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests.Formatting;
 
@@ -14,18 +11,11 @@ public class SqlServerFormatterTests
 {
     private static readonly SqlFormatterOptions Options = SqlFormatterOptions.Default with { NewLine = "\n" };
 
-    private readonly ITestOutputHelper _output;
-
-    public SqlServerFormatterTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
-    private string Format(string sql, SqlFormatterOptions? options = null)
+    private static string Format(string sql, SqlFormatterOptions? options = null)
     {
         var result = new SqlServerFormatter().Format(sql, options ?? Options);
 
-        _output.WriteLine(result.Sql);
+        TestContext.Current?.OutputWriter.WriteLine(result.Sql);
         result.VerificationError.Should().BeNull();
 
         return result.Sql;
@@ -38,7 +28,7 @@ public class SqlServerFormatterTests
     /// </summary>
     private static string Lf(string text) => text.Replace("\r\n", "\n");
 
-    [Fact]
+    [Test]
     public void Format_ShouldPutEachClauseOnItsOwnLineWithTheBodyIndented()
     {
         var result = Format(
@@ -60,7 +50,7 @@ public class SqlServerFormatterTests
             """));
     }
 
-    [Fact]
+    [Test]
     public void Format_ShouldKeepAShortParenthesisedGroupInline()
     {
         var result = Format("select count(*) from Customers where Country in ('IT', 'FR', 'DE')");
@@ -77,7 +67,7 @@ public class SqlServerFormatterTests
             """));
     }
 
-    [Fact]
+    [Test]
     public void Format_ShouldPutTheColumnListOfACreateOnItsOwnLine()
     {
         var result = Format(
@@ -96,7 +86,7 @@ public class SqlServerFormatterTests
             """));
     }
 
-    [Fact]
+    [Test]
     public void Format_ShouldKeepTheBatchSeparatorOnItsOwnLine()
     {
         var result = Format("alter table Customers drop column ContactName\ngo");
@@ -110,7 +100,7 @@ public class SqlServerFormatterTests
     }
 
     /// <summary>An identifier must never be re-cased, however the author wrote it.</summary>
-    [Fact]
+    [Test]
     public void Format_ShouldLeaveIdentifiersAlone()
     {
         var result = Format("select [myColumn], MyOther from [dbo].[myTable]");
@@ -118,7 +108,7 @@ public class SqlServerFormatterTests
         result.Should().Contain("[myColumn]").And.Contain("MyOther").And.Contain("[dbo].[myTable]");
     }
 
-    [Fact]
+    [Test]
     public void Format_ShouldPreserveComments()
     {
         var result = Format("-- keep me\nselect 1 /* and me */");
@@ -126,7 +116,7 @@ public class SqlServerFormatterTests
         result.Should().Contain("-- keep me").And.Contain("/* and me */");
     }
 
-    [Fact]
+    [Test]
     public void Format_ShouldBeIdempotent()
     {
         const string Sql =
@@ -138,7 +128,7 @@ public class SqlServerFormatterTests
         twice.Should().Be(once);
     }
 
-    [Fact]
+    [Test]
     public void Format_ShouldUseTheConfiguredIndentAndNewLine()
     {
         var result = Format(
@@ -148,7 +138,7 @@ public class SqlServerFormatterTests
         result.Should().Be("SELECT\r\n\ta\r\nFROM\r\n\tT\r\n");
     }
 
-    [Fact]
+    [Test]
     public void Format_WhenDisabled_ShouldReturnTheScriptUntouched()
     {
         const string Sql = "select    a   from T";

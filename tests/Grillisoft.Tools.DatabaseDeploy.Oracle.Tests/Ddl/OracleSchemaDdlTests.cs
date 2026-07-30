@@ -1,14 +1,9 @@
 using System.IO.Abstractions.TestingHelpers;
 using System.Text;
-using AwesomeAssertions;
-using DotNet.Testcontainers.Containers;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Tests;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Databases;
 using Oracle.ManagedDataAccess.Client;
-using Testcontainers.Oracle;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Ddl;
 
@@ -17,14 +12,19 @@ namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Ddl;
 /// application database uses, script it, wipe the schema and replay the script through the very
 /// parser dbdeploy uses at deploy time. Whatever comes back has to match what was there before.
 /// </summary>
-public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase, OracleContainer>
+/// <remarks>
+/// Shares <see cref="OracleFixture"/> with <see cref="OracleDatabaseTests"/> - one container for the
+/// whole project - so the migration cases it inherits run a second time against the same schema
+/// rather than against a second database. They are safe to repeat: every case starts by clearing
+/// and re-creating the migrations table, and <c>[NotInParallel]</c> keeps them off each other.
+/// </remarks>
+[ClassDataSource<OracleFixture>(Shared = SharedType.PerAssembly)]
+[InheritsTests]
+public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase>
 {
-    private readonly ITestOutputHelper _output;
-
-    public OracleSchemaDdlTests(ITestOutputHelper output)
-        : base(new OracleBuilder(ContainerImages.Oracle).Build(), output)
+    public OracleSchemaDdlTests(OracleFixture fixture)
+        : base(fixture)
     {
-        _output = output;
     }
 
     protected override IDictionary<string, string?> GetConfigurationSettings()
@@ -180,12 +180,12 @@ public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase, OracleContainer
         """,
     ];
 
-    [Fact]
-    [Trait(nameof(DockerPlatform), nameof(DockerPlatform.Linux))]
-    public async Task GenerateSchemaDdl_ShouldProduceAScriptThatRebuildsTheSchema()
+    [Test]
+    [Category(TestCategories.Docker)]
+    public async Task GenerateSchemaDdl_ShouldProduceAScriptThatRebuildsTheSchema(CancellationToken cancellationToken)
     {
         // arrange
-        var sut = await this.CreateDatabase();
+        var sut = await this.CreateDatabase(cancellationToken);
         await DropEverything();
 
         foreach (var statement in Schema)
@@ -200,7 +200,7 @@ public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase, OracleContainer
 
         // act
         var script = await GenerateScript(sut);
-        _output.WriteLine(script);
+        TestContext.Current?.OutputWriter.WriteLine(script);
 
         await DropEverything();
         (await GetObjects()).Should().BeEmpty("the schema must be wiped before replaying the script");
@@ -260,7 +260,7 @@ public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase, OracleContainer
             }
         }
 
-        _output.WriteLine($"Replayed {executed} statements");
+        TestContext.Current?.OutputWriter.WriteLine($"Replayed {executed} statements");
         executed.Should().BeGreaterThan(0);
     }
 

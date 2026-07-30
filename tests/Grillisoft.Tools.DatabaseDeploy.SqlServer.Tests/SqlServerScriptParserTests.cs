@@ -1,6 +1,4 @@
 using System.IO.Abstractions.TestingHelpers;
-using AwesomeAssertions;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests;
 
@@ -20,7 +18,7 @@ public class SqlServerScriptParserTests
         return commands;
     }
 
-    [Fact]
+    [Test]
     public async Task Parse_ShouldSplitBatchesOnTheirTerminator()
     {
         var commands = await Parse("""
@@ -41,7 +39,7 @@ public class SqlServerScriptParserTests
     /// An empty batch - a terminator with nothing before it, or the trailing one every generated
     /// script ends with - is rejected by the server, so it must never leave the parser.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task Parse_ShouldNotYieldEmptyBatches()
     {
         var commands = await Parse("""
@@ -59,7 +57,7 @@ public class SqlServerScriptParserTests
     }
 
     /// <summary>The header dbdeploy writes at the top of a generated script is not a batch.</summary>
-    [Fact]
+    [Test]
     public async Task Parse_ShouldKeepCommentsWithTheBatchTheyBelongTo()
     {
         var commands = await Parse("""
@@ -76,7 +74,7 @@ public class SqlServerScriptParserTests
                 .Which.Should().Contain("-- Database HR").And.Contain("CREATE TABLE [T1]");
     }
 
-    [Fact]
+    [Test]
     public async Task Parse_ShouldIgnoreTheCaseAndTheIndentationOfTheTerminator()
     {
         var commands = await Parse("""
@@ -96,7 +94,7 @@ public class SqlServerScriptParserTests
     /// A batch that is never terminated is still a batch: a hand written script does not have to end
     /// with a terminator.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task Parse_ShouldYieldTheLastBatchWithoutATerminator()
     {
         var commands = await Parse("CREATE TABLE [T1] ([Id] int)\n");
@@ -105,7 +103,7 @@ public class SqlServerScriptParserTests
                 .Which.Trim().Should().Be("CREATE TABLE [T1] ([Id] int)");
     }
 
-    [Fact]
+    [Test]
     public async Task Parse_WhenTheWordAppearsInsideAStatement_ShouldNotSplit()
     {
         var commands = await Parse("""

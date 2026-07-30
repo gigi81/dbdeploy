@@ -1,7 +1,5 @@
 using Grillisoft.Tools.DatabaseDeploy.SqlServer.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Formatting;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests.Formatting;
 
@@ -13,17 +11,10 @@ namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests.Formatting;
 /// </summary>
 public class SqlServerCorpusTests
 {
-    private readonly ITestOutputHelper _output;
+    public static IEnumerable<string> Scripts() => CorpusFiles.For("mssql-01", "mssql-02");
 
-    public SqlServerCorpusTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
-    public static TheoryData<string> Scripts => CorpusFiles.For("mssql-01", "mssql-02");
-
-    [Theory]
-    [MemberData(nameof(Scripts))]
+    [Test]
+    [MethodDataSource(nameof(Scripts))]
     public Task Format_ShouldVerifyAndBeIdempotent(string relativePath) =>
-        CorpusFiles.AssertFormatsCleanly(new SqlServerFormatter(), relativePath, _output);
+        CorpusFiles.AssertFormatsCleanly(new SqlServerFormatter(), relativePath);
 }

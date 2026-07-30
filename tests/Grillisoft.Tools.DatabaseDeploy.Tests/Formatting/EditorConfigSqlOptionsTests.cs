@@ -1,10 +1,7 @@
 using System.IO.Abstractions.TestingHelpers;
 using System.Text;
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Formatting;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests.Formatting;
 
@@ -12,14 +9,7 @@ public class EditorConfigSqlOptionsTests
 {
     private const string ScriptPath = "/repo/db/TKT001.Deploy.sql";
 
-    private readonly ITestOutputHelper _output;
-
-    public EditorConfigSqlOptionsTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
-    private SqlFormatterOptions Resolve(string? editorConfig, string? detectedNewLine = null)
+    private static SqlFormatterOptions Resolve(string? editorConfig, string? detectedNewLine = null)
     {
         var files = new Dictionary<string, MockFileData>
         {
@@ -30,12 +20,11 @@ public class EditorConfigSqlOptionsTests
             files["/repo/.editorconfig"] = new("root = true\n\n" + editorConfig);
 
         var fileSystem = new MockFileSystem(files);
-        var logger = _output.BuildLogger();
 
-        return new EditorConfigSqlOptions(fileSystem, logger).For(ScriptPath, detectedNewLine);
+        return new EditorConfigSqlOptions(fileSystem, TestLogger.Instance).For(ScriptPath, detectedNewLine);
     }
 
-    [Fact]
+    [Test]
     public void For_WhenThereIsNoEditorConfig_ShouldUseTheDefaults()
     {
         var options = Resolve(null);
@@ -43,17 +32,17 @@ public class EditorConfigSqlOptionsTests
         options.Should().BeEquivalentTo(SqlFormatterOptions.Default);
     }
 
-    [Fact]
+    [Test]
     public void For_ShouldTakeTheIndentFromTheCoreProperties()
     {
         Resolve("[*.sql]\nindent_style = space\nindent_size = 2\n").Indent.Should().Be("  ");
         Resolve("[*.sql]\nindent_style = tab\n").Indent.Should().Be("\t");
     }
 
-    [Theory]
-    [InlineData("lf", "\n")]
-    [InlineData("crlf", "\r\n")]
-    [InlineData("cr", "\r")]
+    [Test]
+    [Arguments("lf", "\n")]
+    [Arguments("crlf", "\r\n")]
+    [Arguments("cr", "\r")]
     public void For_ShouldTakeTheNewLineFromEndOfLine(string setting, string expected)
     {
         Resolve($"[*.sql]\nend_of_line = {setting}\n").NewLine.Should().Be(expected);
@@ -63,13 +52,13 @@ public class EditorConfigSqlOptionsTests
     /// With nothing configured the file keeps the endings it already has, so formatting does not
     /// rewrite every line of a script it was only meant to lay out.
     /// </summary>
-    [Fact]
+    [Test]
     public void For_WhenEndOfLineIsNotSet_ShouldKeepTheEndingsTheFileAlreadyHas()
     {
         Resolve("[*.sql]\nindent_size = 4\n", detectedNewLine: "\r\n").NewLine.Should().Be("\r\n");
     }
 
-    [Fact]
+    [Test]
     public void For_ShouldTakeTheEncodingFromCharset()
     {
         Resolve("[*.sql]\ncharset = utf-8-bom\n")
@@ -79,7 +68,7 @@ public class EditorConfigSqlOptionsTests
             .Encoding.GetPreamble().Should().BeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void For_ShouldReadTheDbDeployProperties()
     {
         var options = Resolve(
@@ -105,7 +94,7 @@ public class EditorConfigSqlOptionsTests
     }
 
     /// <summary>Data types follow the keyword casing unless they are given one of their own.</summary>
-    [Fact]
+    [Test]
     public void For_WhenOnlyTheKeywordCaseIsSet_ShouldApplyItToDataTypesToo()
     {
         Resolve("[*.sql]\ndbdeploy_sql_keyword_case = lower\n").DataTypeCase.Should().Be(SqlCase.Lower);
@@ -115,13 +104,13 @@ public class EditorConfigSqlOptionsTests
     }
 
     /// <summary>The per-glob escape hatch for scripts that must not be touched.</summary>
-    [Fact]
+    [Test]
     public void For_WhenDisabledForTheGlob_ShouldReportItDisabled()
     {
         Resolve("[*.sql]\ndbdeploy_sql_enabled = false\n").Enabled.Should().BeFalse();
     }
 
-    [Fact]
+    [Test]
     public void For_WhenAValueIsNotUnderstood_ShouldFallBackToTheDefault()
     {
         var options = Resolve(
@@ -132,7 +121,7 @@ public class EditorConfigSqlOptionsTests
     }
 
     /// <summary>A section that does not match a .sql file must not reach the formatter.</summary>
-    [Fact]
+    [Test]
     public void For_WhenTheSectionIsForAnotherGlob_ShouldIgnoreIt()
     {
         Resolve("[*.cs]\nindent_size = 2\ndbdeploy_sql_keyword_case = lower\n")

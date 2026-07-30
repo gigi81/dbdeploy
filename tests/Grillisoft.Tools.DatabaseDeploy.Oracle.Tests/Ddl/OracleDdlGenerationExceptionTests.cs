@@ -1,6 +1,4 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Oracle.Ddl;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Ddl;
 
@@ -9,7 +7,7 @@ public class OracleDdlGenerationExceptionTests
     private static IEnumerable<(string Object, string Error)> Failures(int count)
         => Enumerable.Range(1, count).Select(i => ($"PKG{i}---PACKAGE BODY", $"ORA-3160{i}: something"));
 
-    [Fact]
+    [Test]
     public void Message_ShouldNameTheSchemaAndEveryFailure()
     {
         // Arrange
@@ -28,7 +26,7 @@ public class OracleDdlGenerationExceptionTests
     /// The script is written out in full before this is raised, so the message has to be clear that
     /// what is on disk is not deployable.
     /// </summary>
-    [Fact]
+    [Test]
     public void Message_ShouldSayTheScriptMustNotBeDeployed()
     {
         new OracleDdlGenerationException("HR", Failures(1)).Message
@@ -38,7 +36,7 @@ public class OracleDdlGenerationExceptionTests
     /// <summary>
     /// A schema that fails wholesale would otherwise put thousands of lines into one log entry.
     /// </summary>
-    [Fact]
+    [Test]
     public void Message_WhenThereAreManyFailures_ShouldTruncateAndSayHowManyAreLeft()
     {
         // Arrange
@@ -54,14 +52,14 @@ public class OracleDdlGenerationExceptionTests
                .And.Contain("... and 5 more");
     }
 
-    [Fact]
+    [Test]
     public void Message_WhenNothingIsTruncated_ShouldNotSayThereIsMore()
     {
         new OracleDdlGenerationException("HR", Failures(20)).Message
             .Should().NotContain("more");
     }
 
-    [Fact]
+    [Test]
     public void Failures_ShouldExposeWhatCouldNotBeScripted()
     {
         new OracleDdlGenerationException("HR", Failures(3)).Failures

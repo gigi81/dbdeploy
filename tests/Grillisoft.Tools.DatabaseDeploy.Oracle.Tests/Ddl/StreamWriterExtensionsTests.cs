@@ -1,7 +1,5 @@
 using System.Text;
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Oracle.Ddl;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Ddl;
 
@@ -32,7 +30,7 @@ public class StreamWriterExtensionsTests
     /// SQL*Plus REM rather than a double dash, because that is what
     /// <see cref="OracleScriptParser"/> drops instead of sending to the server.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task WriteComment_ShouldPrefixTheLineWithRem()
     {
         var lines = await Write(writer => writer.WriteComment("Schema HR - 3 object(s)"));
@@ -44,7 +42,7 @@ public class StreamWriterExtensionsTests
     /// The failure notes written into the script carry whatever the server said, which can hold a
     /// line break. Every line has to be commented, or the rest of the message is read as PL/SQL.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task WriteComment_WhenTheCommentSpansLines_ShouldPrefixEveryLine()
     {
         var lines = await Write(writer => writer.WriteComment("first\nsecond\nthird"));
@@ -52,7 +50,7 @@ public class StreamWriterExtensionsTests
         lines.Should().StartWith(["REM first", "REM second", "REM third"]);
     }
 
-    [Fact]
+    [Test]
     public async Task WriteComment_ShouldNotLeaveACarriageReturnBehind()
     {
         var lines = await Write(writer => writer.WriteComment("first\r\nsecond"));
@@ -60,7 +58,7 @@ public class StreamWriterExtensionsTests
         lines.Should().StartWith(["REM first", "REM second"]);
     }
 
-    [Fact]
+    [Test]
     public async Task WriteStatement_ShouldFollowTheStatementWithATerminatorAndABlankLine()
     {
         var lines = await Write(writer => writer.WriteStatement("CREATE TABLE \"T1\" (\"ID\" NUMBER)"));
@@ -72,7 +70,7 @@ public class StreamWriterExtensionsTests
     /// A lone slash only ends the statement when it sits on a line of its own, so the statement
     /// cannot bring trailing blank lines with it.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task WriteStatement_ShouldTrimTheStatement()
     {
         var lines = await Write(writer => writer.WriteStatement("\n  CREATE SEQUENCE \"S1\"  \n\n"));
@@ -86,9 +84,9 @@ public class StreamWriterExtensionsTests
     /// are exercised here: a run on either platform then catches a change that only shows up on the
     /// other.
     /// </summary>
-    [Theory]
-    [InlineData("\n")]
-    [InlineData("\r\n")]
+    [Test]
+    [Arguments("\n")]
+    [Arguments("\r\n")]
     public async Task WriteStatement_WhenTheStatementSpansLines_ShouldKeepItWhole(string newLine)
     {
         var lines = await Write(

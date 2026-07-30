@@ -1,7 +1,4 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests.Formatting;
 
@@ -22,10 +19,8 @@ public static class CorpusFiles
 
     private static readonly string Root = FindRepositoryRoot();
 
-    public static TheoryData<string> For(params string[] examples)
+    public static IEnumerable<string> For(params string[] examples)
     {
-        var data = new TheoryData<string>();
-
         foreach (var example in examples)
         {
             var directory = new DirectoryInfo(Path.Combine(Root, "examples", example));
@@ -35,11 +30,9 @@ public static class CorpusFiles
             foreach (var file in directory.EnumerateFiles("*.sql", SearchOption.AllDirectories))
             {
                 if (file.Length <= MaxBytes)
-                    data.Add(Path.GetRelativePath(Root, file.FullName));
+                    yield return Path.GetRelativePath(Root, file.FullName);
             }
         }
-
-        return data;
     }
 
     public static string Resolve(string relativePath) => Path.Combine(Root, relativePath);
@@ -48,10 +41,7 @@ public static class CorpusFiles
     /// The two properties every example has to satisfy: the formatted script verifies against its
     /// source, and formatting it again changes nothing.
     /// </summary>
-    public static async Task AssertFormatsCleanly(
-        ISqlFormatter formatter,
-        string relativePath,
-        ITestOutputHelper output)
+    public static async Task AssertFormatsCleanly(ISqlFormatter formatter, string relativePath)
     {
         var sql = await File.ReadAllTextAsync(Resolve(relativePath));
         var options = SqlFormatterOptions.Default with { NewLine = "\n" };
@@ -62,7 +52,7 @@ public static class CorpusFiles
         // Only when something is wrong: writing every formatted script would put a copy of the
         // whole corpus into the test log.
         if (!first.Verified || !second.Verified || second.Sql != first.Sql)
-            output.WriteLine(first.Sql);
+            TestContext.Current?.OutputWriter.WriteLine(first.Sql);
 
         first.VerificationError.Should().BeNull();
         second.VerificationError.Should().BeNull();

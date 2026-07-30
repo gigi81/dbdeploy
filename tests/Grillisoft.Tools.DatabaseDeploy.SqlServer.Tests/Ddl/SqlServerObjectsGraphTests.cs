@@ -1,8 +1,6 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Database;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer.Ddl;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests.Ddl;
 
@@ -18,7 +16,7 @@ public class SqlServerObjectsGraphTests
         params (DbObject DbObject, DbObject DependsOn)[] dependencies)
         => new(objects, dependencies, SqlServerObjectType.RankOf);
 
-    [Fact]
+    [Test]
     public void GetGraph_ShouldCreateTheSchemaBeforeAnythingInIt()
     {
         var schema = new DbObject("[app]", SqlServerObjectType.Schema);
@@ -38,7 +36,7 @@ public class SqlServerObjectsGraphTests
     /// The whole point of scripting foreign keys on their own: two tables pointing at each other is
     /// ordinary in SQL Server, and neither can be created with the constraint inline.
     /// </summary>
-    [Fact]
+    [Test]
     public void GetGraph_WhenTwoTablesPointAtEachOther_ShouldWriteBothKeysLast()
     {
         var customer = new DbObject("[app].[Customer]", SqlServerObjectType.Table);
@@ -63,7 +61,7 @@ public class SqlServerObjectsGraphTests
     /// A table can only be created once the type of one of its columns exists, and the index on it
     /// only once the table does.
     /// </summary>
-    [Fact]
+    [Test]
     public void GetGraph_ShouldOrderTypeThenTableThenIndex()
     {
         var type = new DbObject("[app].[Code]", SqlServerObjectType.Type);
@@ -78,7 +76,7 @@ public class SqlServerObjectsGraphTests
     /// <summary>
     /// A view calling a function has to come after it, even though a view outranks a function.
     /// </summary>
-    [Fact]
+    [Test]
     public void GetGraph_WhenAViewCallsAFunction_ShouldWriteTheFunctionFirst()
     {
         var function = new DbObject("[app].[fn_Tax]", SqlServerObjectType.Function);
@@ -92,7 +90,7 @@ public class SqlServerObjectsGraphTests
     /// <summary>
     /// An indexed view carries an index of its own, which cannot be created before the view.
     /// </summary>
-    [Fact]
+    [Test]
     public void GetGraph_ShouldWriteAnIndexOnAViewAfterTheView()
     {
         var table = new DbObject("[app].[Orders]", SqlServerObjectType.Table);
@@ -107,7 +105,7 @@ public class SqlServerObjectsGraphTests
     /// <summary>
     /// Two procedures calling each other is legal, and must not stop the generation.
     /// </summary>
-    [Fact]
+    [Test]
     public void GetGraph_WhenTwoProceduresCallEachOther_ShouldStillReturnBoth()
     {
         var first = new DbObject("[dbo].[pr_First]", SqlServerObjectType.Procedure);
@@ -124,7 +122,7 @@ public class SqlServerObjectsGraphTests
     /// A dependency on something that is not being scripted - a CLR module, an object in another
     /// database, an object dropped between two queries - is dropped, not fatal.
     /// </summary>
-    [Fact]
+    [Test]
     public void GetGraph_WhenADependencyIsNotScripted_ShouldIgnoreIt()
     {
         var table = new DbObject("[dbo].[Orders]", SqlServerObjectType.Table);

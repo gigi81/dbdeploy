@@ -1,4 +1,3 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Microsoft.Extensions.Configuration;
@@ -17,7 +16,7 @@ public class DatabaseCollectionTests
         return configurationBuilder.Build();
     }
 
-    [Fact]
+    [Test]
     public async Task GetDatabase_WhenProviderSpecified_ReturnsDatabase()
     {
         //arrange
@@ -45,7 +44,7 @@ public class DatabaseCollectionTests
         actualDatabase02.Should().BeSameAs(database);
     }
 
-    [Fact]
+    [Test]
     public async Task GetDatabase_WhenDefaultProvider_ReturnsDatabase()
     {
         //arrange
@@ -73,7 +72,7 @@ public class DatabaseCollectionTests
         actualDatabase02.Should().BeSameAs(database);
     }
 
-    [Fact]
+    [Test]
     public async Task GetDatabase_WhenProviderMissing_Throws()
     {
         //arrange
@@ -87,11 +86,10 @@ public class DatabaseCollectionTests
         await using var collection = new DatabasesCollection([factory.Object], configuration);
 
         //act
-        var ex = await Record.ExceptionAsync(() => collection.GetDatabase("test", cts.Token));
+        var act = () => collection.GetDatabase("test", cts.Token);
 
         //assert
-        Assert.True(ex != null, "The DatabaseProviderNotFoundException exception was not thrown.");
-        ex.GetType().Should().Be(typeof(DatabaseProviderNotFoundException));
+        await act.Should().ThrowExactlyAsync<DatabaseProviderNotFoundException>();
     }
 
     private static Mock<IDatabaseFactory> GetDatabaseFactory()

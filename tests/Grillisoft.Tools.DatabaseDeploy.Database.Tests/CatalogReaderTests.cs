@@ -1,6 +1,4 @@
 using System.Data.Common;
-using AwesomeAssertions;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Database.Tests;
 
@@ -15,7 +13,7 @@ public class CatalogReaderTests
     private static CatalogReader Reader(DbCommand command, RecordingLogger logger)
         => new(_ => command, "HR", logger);
 
-    [Fact]
+    [Test]
     public async Task Query_ShouldReturnOneItemPerRow()
     {
         // Arrange
@@ -29,7 +27,7 @@ public class CatalogReaderTests
         result.Should().Equal("CUSTOMER", "ORDERS");
     }
 
-    [Fact]
+    [Test]
     public async Task Query_ShouldBindTheParametersItWasGiven()
     {
         // Arrange
@@ -48,7 +46,7 @@ public class CatalogReaderTests
     /// Without the object list there is nothing to script, so this failure has to be the caller's
     /// problem.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task Query_WhenTheServerRefuses_ShouldThrow()
     {
         // Arrange
@@ -66,7 +64,7 @@ public class CatalogReaderTests
     /// A login that is not granted on one of the optional views should cost a warning and a slightly
     /// poorer script, not the whole generation.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task TryQuery_WhenTheServerRefuses_ShouldWarnAndReturnNothing()
     {
         // Arrange
@@ -83,7 +81,7 @@ public class CatalogReaderTests
               .Which.Should().Contain("constraint indexes").And.Contain("HR");
     }
 
-    [Fact]
+    [Test]
     public async Task TryQuery_WhenTheServerAnswers_ShouldReturnTheRows()
     {
         // Arrange
@@ -102,7 +100,7 @@ public class CatalogReaderTests
     /// Oracle folds unquoted names to upper case and compares them ordinally; SQL Server does not
     /// care about case. The caller says which, and the set has to honour it.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task TryQueryNames_ShouldCompareNamesTheWayTheCallerAsked()
     {
         // Arrange
@@ -121,7 +119,7 @@ public class CatalogReaderTests
         ordinal.Should().HaveCount(2);
     }
 
-    [Fact]
+    [Test]
     public async Task TryQueryNames_WhenTheServerRefuses_ShouldReturnAnEmptySet()
     {
         // Arrange

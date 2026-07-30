@@ -1,7 +1,5 @@
 using Grillisoft.Tools.DatabaseDeploy.MySql.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Formatting;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.MySql.Tests.Formatting;
 
@@ -11,17 +9,10 @@ namespace Grillisoft.Tools.DatabaseDeploy.MySql.Tests.Formatting;
 /// </summary>
 public class MySqlCorpusTests
 {
-    private readonly ITestOutputHelper _output;
+    public static IEnumerable<string> Scripts() => CorpusFiles.For("mysql-01");
 
-    public MySqlCorpusTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
-    public static TheoryData<string> Scripts => CorpusFiles.For("mysql-01");
-
-    [Theory]
-    [MemberData(nameof(Scripts))]
+    [Test]
+    [MethodDataSource(nameof(Scripts))]
     public Task Format_ShouldVerifyAndBeIdempotent(string relativePath) =>
-        CorpusFiles.AssertFormatsCleanly(new MySqlFormatter(), relativePath, _output);
+        CorpusFiles.AssertFormatsCleanly(new MySqlFormatter(), relativePath);
 }

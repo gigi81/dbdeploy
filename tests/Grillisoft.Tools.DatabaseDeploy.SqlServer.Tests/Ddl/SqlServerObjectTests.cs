@@ -1,6 +1,4 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer.Ddl;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Tests.Ddl;
 
@@ -12,7 +10,7 @@ public class SqlServerObjectTests
     private static SqlServerObject Index(string schema, string table, string name)
         => new(SqlServerObjectType.Find(SqlServerObjectType.Index)!, schema, name, schema, table);
 
-    [Fact]
+    [Test]
     public void QualifiedName_ShouldQuoteAndSchemaQualifyTheName()
     {
         Table("app", "Orders").QualifiedName.Should().Be("[app].[Orders]");
@@ -22,7 +20,7 @@ public class SqlServerObjectTests
     /// Schemas, partition functions and partition schemes are not schema scoped, so there is nothing
     /// to qualify them with.
     /// </summary>
-    [Fact]
+    [Test]
     public void QualifiedName_WhenTheObjectIsNotSchemaScoped_ShouldBeTheNameAlone()
     {
         var schema = new SqlServerObject(SqlServerObjectType.Find(SqlServerObjectType.Schema)!, string.Empty, "app");
@@ -34,13 +32,13 @@ public class SqlServerObjectTests
     /// An index name is only unique within its table, so two tables carrying an index of the same
     /// name have to stay two objects.
     /// </summary>
-    [Fact]
+    [Test]
     public void QualifiedName_WhenTheObjectHangsOffATable_ShouldIncludeIt()
     {
         Index("app", "Orders", "IX_Created").QualifiedName.Should().Be("[app].[Orders].[IX_Created]");
     }
 
-    [Fact]
+    [Test]
     public void Key_ShouldDistinguishTwoIndexesOfTheSameNameOnDifferentTables()
     {
         Index("app", "Orders", "IX_Created").Key
@@ -51,19 +49,19 @@ public class SqlServerObjectTests
     /// A table and a view of the same name cannot both exist, but a table and its trigger can share
     /// one, so the type has to be part of the identity.
     /// </summary>
-    [Fact]
+    [Test]
     public void Key_ShouldIncludeTheType()
     {
         Table("app", "Orders").Key.Should().Be("[app].[Orders]---TABLE");
     }
 
-    [Fact]
+    [Test]
     public void DbObject_ShouldCarryTheTypeNameTheGraphOrdersBy()
     {
         Table("app", "Orders").DbObject.Type.Should().Be(SqlServerObjectType.Table);
     }
 
-    [Fact]
+    [Test]
     public void ParentName_ShouldBeNullForAnObjectThatDoesNotHangOffAnother()
     {
         var table = Table("app", "Orders");
@@ -72,7 +70,7 @@ public class SqlServerObjectTests
         table.ParentSchema.Should().BeNull();
     }
 
-    [Fact]
+    [Test]
     public void ToString_ShouldReadAsTheTypeAndTheName()
     {
         Table("app", "Orders").ToString().Should().Be("TABLE [app].[Orders]");

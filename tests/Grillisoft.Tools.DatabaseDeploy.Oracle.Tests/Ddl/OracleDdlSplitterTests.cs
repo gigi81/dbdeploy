@@ -1,12 +1,10 @@
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Oracle.Ddl;
-using Xunit;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Ddl;
 
 public class OracleDdlSplitterTests
 {
-    [Fact]
+    [Test]
     public void Split_WhenDdlIsASingleStatement_ShouldReturnIt()
     {
         var ddl = """
@@ -27,7 +25,7 @@ public class OracleDdlSplitterTests
     /// A table often comes back as a CREATE followed by the constraints Oracle would not inline.
     /// Each one has to be sent to the server separately.
     /// </summary>
-    [Fact]
+    [Test]
     public void Split_WhenDdlHoldsSeveralStatements_ShouldSplitThem()
     {
         var ddl = """
@@ -50,7 +48,7 @@ public class OracleDdlSplitterTests
     /// The old implementation searched for "ALTER TABLE" anywhere in the text, which cut a table in
     /// half whenever those words appeared inside a literal.
     /// </summary>
-    [Fact]
+    [Test]
     public void Split_WhenKeywordIsInsideALiteral_ShouldNotSplit()
     {
         var ddl = """
@@ -67,7 +65,7 @@ public class OracleDdlSplitterTests
         statements.Should().ContainSingle();
     }
 
-    [Fact]
+    [Test]
     public void Split_WhenKeywordIsInsideAComment_ShouldNotSplit()
     {
         var ddl = """
@@ -84,7 +82,7 @@ public class OracleDdlSplitterTests
         statements.Should().ContainSingle();
     }
 
-    [Fact]
+    [Test]
     public void Split_WhenEscapedQuotesAreUsed_ShouldTrackTheLiteralCorrectly()
     {
         var ddl = """
@@ -103,7 +101,7 @@ public class OracleDdlSplitterTests
     /// PL/SQL is full of statement keywords at the start of a line and must be kept whole,
     /// trailing END; included.
     /// </summary>
-    [Fact]
+    [Test]
     public void Split_WhenObjectIsPlSql_ShouldNeverSplitAndShouldKeepTheTrailingSemicolon()
     {
         var ddl = """
@@ -126,7 +124,7 @@ public class OracleDdlSplitterTests
     /// DBMS_METADATA appends the enable statement to a trigger body; sending the two together
     /// fails with ORA-24344.
     /// </summary>
-    [Fact]
+    [Test]
     public void Split_WhenPlSqlEndsWithAnAlter_ShouldPeelItOff()
     {
         var ddl = """
@@ -149,7 +147,7 @@ public class OracleDdlSplitterTests
     /// <summary>
     /// An ALTER inside the body is part of the program unit and must be left alone.
     /// </summary>
-    [Fact]
+    [Test]
     public void Split_WhenPlSqlHoldsAnAlterInItsBody_ShouldKeepItWhole()
     {
         var ddl = """
@@ -164,7 +162,7 @@ public class OracleDdlSplitterTests
         statements.Should().ContainSingle().Which.Should().EndWith("END;");
     }
 
-    [Fact]
+    [Test]
     public void Split_ShouldStripTheStatementTerminator()
     {
         var statements = OracleDdlSplitter.Split("CREATE SEQUENCE \"S1\" START WITH 1;\n", isPlSql: false);
@@ -173,10 +171,10 @@ public class OracleDdlSplitterTests
                   .Which.Should().Be("CREATE SEQUENCE \"S1\" START WITH 1");
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   \n\n  ")]
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments("   \n\n  ")]
     public void Split_WhenThereIsNothingToSplit_ShouldReturnEmpty(string? ddl)
     {
         OracleDdlSplitter.Split(ddl, isPlSql: false).Should().BeEmpty();

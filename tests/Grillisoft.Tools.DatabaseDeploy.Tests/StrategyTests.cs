@@ -1,9 +1,7 @@
 ﻿using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Microsoft.Extensions.Logging;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests;
 
@@ -16,13 +14,13 @@ public class StrategyTests
     private readonly IDirectoryInfo _directory;
     private readonly ILogger<Strategy> _logger;
 
-    public StrategyTests(ITestOutputHelper output)
+    public StrategyTests()
     {
         _directory = CreateDatabaseDirectory(Database01);
-        _logger = output.BuildLoggerFor<Strategy>();
+        _logger = TestLogger<Strategy>.Instance;
     }
 
-    [Fact]
+    [Test]
     public async Task GetDeploySteps_WhenAllStepsAreDeployed_ShouldReturnEmptyCollection()
     {
         //arrange
@@ -36,7 +34,7 @@ public class StrategyTests
         deploySteps.Length.Should().Be(0);
     }
 
-    [Fact]
+    [Test]
     public async Task GetDeploySteps_WhenOnlyInitStepIsDeployed_ShouldReturnTheStepsAfter()
     {
         //arrange
@@ -50,7 +48,7 @@ public class StrategyTests
         deploySteps.Length.Should().Be(steps.Length - 1);
     }
 
-    [Fact]
+    [Test]
     public async Task GetDeploySteps_WhenDeployingRelease_ShouldDeployOneStep()
     {
         //arrange

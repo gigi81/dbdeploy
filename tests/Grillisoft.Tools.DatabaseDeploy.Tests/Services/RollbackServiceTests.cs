@@ -1,12 +1,10 @@
 ﻿using System.IO.Abstractions;
-using AwesomeAssertions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Grillisoft.Tools.DatabaseDeploy.Services;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Mocks;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests.Services;
 
@@ -14,18 +12,16 @@ public class RollbackServiceTests
 {
     private static readonly string TestHash = new('0', Step.HashLength);
 
-    private readonly ITestOutputHelper _output;
     private readonly GlobalSettings _globalSettings = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly CancellationToken _cancellationToken;
 
-    public RollbackServiceTests(ITestOutputHelper output)
+    public RollbackServiceTests()
     {
-        _output = output;
         _cancellationToken = _cancellationTokenSource.Token;
     }
 
-    [Fact]
+    [Test]
     public async Task Execute_WhenRollingBackRelease1_1_IsSuccessful()
     {
         //arrange
@@ -60,7 +56,7 @@ public class RollbackServiceTests
 
     private RollbackService CreateService(RollbackOptions deployOptions, params IDatabase[] databases)
     {
-        var provider = new TestServiceCollection<RollbackService>(_output)
+        var provider = new TestServiceCollection<RollbackService>()
             .AddSingleton(deployOptions)
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
             .AddSingleton<IProgress<int>>(new Progress<int>())

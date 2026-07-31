@@ -77,7 +77,7 @@ public static class BranchesValidator
         if (string.IsNullOrWhiteSpace(settings.StepsNameRegex))
             yield break;
 
-        var regex = new Regex(settings.StepsNameRegex);
+        var regex = new Regex(settings.StepsNameRegex, RegexOptions.None, TimeSpan.FromSeconds(1));
         foreach (var step in steps.Where(s => !s.IsInit && !regex.IsMatch(s.Name)))
             yield return $"Step {step.Name} for database {step.Database} does not match expected naming convention";
     }

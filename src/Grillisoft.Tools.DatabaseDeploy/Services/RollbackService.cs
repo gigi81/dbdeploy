@@ -42,7 +42,7 @@ public class RollbackService : BaseService
         var strategy = await GetStrategy(steps, cancellationToken);
         var rollbackSteps = strategy.GetRollbackSteps(this.Branch).ToArray();
 
-        _logger.LogInformation("Detected {0} steps to rollback", rollbackSteps.Length);
+        _logger.LogInformation("Detected {Count} steps to rollback", rollbackSteps.Length);
         _progress.Report(0);
         foreach (var (step, migration) in rollbackSteps)
         {
@@ -50,10 +50,8 @@ public class RollbackService : BaseService
             _progress.Report(++count * 100 / steps.Length);
         }
         _progress.Report(100);
-        if (_options.DryRun)
-            _logger.LogInformation("Dry run completed successfully in {0}", stopwatch.Elapsed);
-        else
-            _logger.LogInformation("Rollback completed successfully in {0}", stopwatch.Elapsed);
+        var operation = _options.DryRun ? "Dry run (rollback)" : "Rollback";
+        _logger.LogInformation("{Operation} completed successfully in {ElapsedTime}", operation, stopwatch.Elapsed);
         return 0;
     }
 

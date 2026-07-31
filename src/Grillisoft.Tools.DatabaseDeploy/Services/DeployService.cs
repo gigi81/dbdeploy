@@ -52,7 +52,7 @@ public class DeployService : BaseService
         var strategy = await GetStrategy(steps, cancellationToken);
         var deploySteps = await strategy.GetDeploySteps(this.Branch).ToArrayAsync(cancellationToken);
 
-        _logger.LogInformation("Detected {0} steps to deploy", deploySteps.Length);
+        _logger.LogInformation("Detected {Count} steps to deploy", deploySteps.Length);
         _progress.Report(0);
         foreach (var step in deploySteps)
         {
@@ -60,12 +60,10 @@ public class DeployService : BaseService
             _progress.Report(++count * 100 / steps.Length);
         }
         _progress.Report(100);
-        if (_options.DryRun)
-            _logger.LogInformation("Dry run completed successfully in {0}", stopwatch.Elapsed);
-        else
-            _logger.LogInformation("Deployment completed successfully in {0}", stopwatch.Elapsed);
+        var operation = _options.DryRun ? "Dry run (deploy)" : "Deployment";
+        _logger.LogInformation("{Operation} completed successfully in {ElapsedTime}", operation, stopwatch.Elapsed);
 
-        if (_options.Update)
+        if (_options is { Update: true, DryRun: false })
             await UpdateBranches(branches, branch, cancellationToken);
 
         return 0;
@@ -74,16 +72,7 @@ public class DeployService : BaseService
     private async Task UpdateBranches(BranchesReader branches, Branch branch, CancellationToken cancellationToken)
     {
         var defaultBranch = _globalSettings.Value.DefaultBranch;
-
-        if (_options.DryRun)
-        {
-            _logger.LogInformation(
-                "Dry run: the scripts of branch {Branch} were not moved to {DefaultBranch}",
-                branch.Name,
-                defaultBranch);
-            return;
-        }
-
+        
         if (branch.Name.EqualsIgnoreCase(defaultBranch))
         {
             _logger.LogInformation("Branch {Branch} is the default branch, nothing to update", branch.Name);

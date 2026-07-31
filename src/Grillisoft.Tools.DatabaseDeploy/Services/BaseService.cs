@@ -36,11 +36,8 @@ public abstract class BaseService : IExecutable
 
     protected async Task<Step[]> GetBranchSteps(string path, string branchName, CancellationToken cancellationToken)
     {
-        var manager = await LoadBranchesManager(path, cancellationToken);
-        if (!manager.Branches.TryGetValue(branchName, out var branch))
-            throw new BranchNotFoundException(branchName);
-
-        return manager.GetSteps(branch).ToArray();
+        var branches = await LoadBranches(path, cancellationToken);
+        return branches.GetSteps(branches.GetBranch(branchName)).ToArray();
     }
 
     protected IDirectoryInfo GetDirectory(string path)
@@ -48,13 +45,13 @@ public abstract class BaseService : IExecutable
         return _fileSystem.DirectoryInfo.New(path);
     }
 
-    protected async Task<BranchesManager> LoadBranchesManager(string path, CancellationToken cancellationToken)
+    protected async Task<BranchesReader> LoadBranches(string path, CancellationToken cancellationToken)
     {
         var directory = this.GetDirectory(path);
-        var manager = new BranchesManager(directory, _globalSettings.Value);
+        var branches = new BranchesReader(directory, _globalSettings.Value);
 
         _logger.LogInformation("Loading branches from {Directory}", directory.FullName);
-        var errors = await manager.Load();
+        var errors = await branches.Load();
 
         foreach (var error in errors)
             _logger.LogError(error);
@@ -62,7 +59,7 @@ public abstract class BaseService : IExecutable
         if (errors.Count > 0)
             throw new InvalidBranchesConfigurationException(errors);
 
-        return manager;
+        return branches;
     }
 
     protected async Task RunScripts(IEnumerable<IFileInfo> scriptFiles, IDatabase database, CancellationToken cancellationToken)

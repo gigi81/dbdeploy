@@ -50,6 +50,40 @@ To rollback database changes previously deployed, run:
 dbdeploy rollback --path examples/examples01 --branch release/1.1
 ```
 
+## Dry run
+
+Both `deploy` and `rollback` accept `--dryrun`, which reports the scripts that would run without
+changing anything:
+
+```shell
+dbdeploy deploy --path examples/examples01 --branch release/1.1 --dryrun
+```
+
+No deploy or rollback script is executed, no migration is recorded or removed, the migrations table
+is not created, and neither `--create` nor `--update` is acted on: a database that does not exist is
+reported as an error rather than created. The databases still have to be reachable, because the plan
+is worked out by comparing the branch with the migrations they already have.
+
+The `ci` verb passes the flag on to the `deploy` and `rollback` commands it runs.
+
+## Update the branch files after a release
+
+Once a release branch has been deployed, its scripts belong to the default branch (see
+[main.csv](#maincsv) below). Passing `--update` does that bookkeeping for you: after the
+deployment has succeeded, the steps of the branch are appended to `main.csv`, the branch file is
+deleted, and any `@include` of it left in the other branch files is removed.
+
+```shell
+dbdeploy deploy --path examples/examples01 --branch release/1.1 --update
+```
+
+A branch that includes another one is deployed together with it, so both are moved and both files
+are deleted. Deploying the default branch with `--update` does nothing, since there is nothing to
+move.
+
+The files are only changed on disk: reviewing and committing the result is up to you. With
+`--dryrun` nothing is written and the move is only logged.
+
 ## Deploy during Development/CI
 This command will create databases (if they don't already exits) and deploy both .Deploy.sql scripts and .Test.sql scripts
 ```shell
@@ -119,6 +153,7 @@ specific environment like the connection strings.
 This file contains the list of scripts that are deployed to production.
 
 **After each successful release, developers should move the list of deployed scripts to this file.**
+This can be done automatically by deploying with [`--update`](#update-the-branch-files-after-a-release).
 
 It is recommended for this file name to match your `main` branch name which could be for example `develop`.
 

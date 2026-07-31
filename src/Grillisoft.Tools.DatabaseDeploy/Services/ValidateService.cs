@@ -30,7 +30,7 @@ public class ValidateService : BaseService
         {
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting validation");
-            await LoadBranchesManager(_options.Path, cancellationToken);
+            await LoadBranches(_options.Path, cancellationToken);
             _logger.LogInformation("Validation completed successfully in {Elapsed}", stopwatch.Elapsed);
             return 0;
         }

@@ -11,4 +11,7 @@ public sealed class DeployOptions : BranchOptions
 
     [Option(shortName: 'c', longName: "create", Default = false, HelpText = "Enable creation of the database if the database does not exists")]
     public bool Create { get; set; }
+
+    [Option(shortName: 'u', longName: "update", Default = false, HelpText = "After a successful deployment, move the scripts of the branch to the default branch file and delete the branch file. Ignored when --dryrun is set")]
+    public bool Update { get; set; }
 }

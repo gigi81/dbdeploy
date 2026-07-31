@@ -46,9 +46,9 @@ public class FormatService : BaseService
     private async Task<int> FormatBranchScripts(CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
-        var manager = await LoadBranchesManager(_options.Path, cancellationToken);
+        var branches = await LoadBranches(_options.Path, cancellationToken);
 
-        var steps = manager.Branches.Values
+        var steps = branches.Branches.Values
             .SelectMany(branch => branch.Steps)
             .DistinctBy(step => (step.Database, step.Name))
             .ToArray();
@@ -89,6 +89,8 @@ public class FormatService : BaseService
                         failures++;
                         break;
 
+                    case FormatOutcome.Skipped:
+                    case FormatOutcome.Unchanged:
                     default:
                         break;
                 }
@@ -156,6 +158,8 @@ public class FormatService : BaseService
                     failures++;
                     break;
 
+                case FormatOutcome.Skipped:
+                case FormatOutcome.Unchanged:
                 default:
                     break;
             }

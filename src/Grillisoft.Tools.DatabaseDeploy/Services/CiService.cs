@@ -87,6 +87,9 @@ public class CiService : BaseService
         yield return "-b";
         yield return branch;
 
+        if (_options.DryRun)
+            yield return "--dryrun";
+
         if (_options.Create && verb == DeployVerb)
             yield return "--create";
 

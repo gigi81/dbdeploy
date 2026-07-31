@@ -1,4 +1,5 @@
-﻿using System.IO.Abstractions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.IO.Abstractions;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -30,6 +31,7 @@ public record Step(string Database, string Name, string Branch, bool IsInit, IDi
 
     public async Task<string> GetStepHash() => _hash ??= await ComputeHash(this.DeployScript);
 
+    [SuppressMessage("Critical Vulnerability", "S4790:Weak hashing algorithms should not be used")]
     private static async Task<string> ComputeHash(IFileInfo file)
     {
         using var md5 = MD5.Create();

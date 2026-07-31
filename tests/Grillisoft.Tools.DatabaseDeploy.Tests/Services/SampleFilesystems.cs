@@ -12,7 +12,10 @@ public static class SampleFilesystems
     private static readonly string Sample01Database02Path = IsWindows ? "c:\\demo\\Database02\\" : "/opt/demo/Database02/";
     private static readonly GlobalSettings GlobalSettings = new();
 
-    public static readonly MockFileSystem Sample01 = new(new Dictionary<string, MockFileData>
+    /// <summary>
+    /// A new file system on every access: the tests that deploy with --update write to it.
+    /// </summary>
+    public static MockFileSystem Sample01 => new(new Dictionary<string, MockFileData>
     {
         { $"{Sample01RootPath}main.csv", new MockFileData($@"
                 Database01,{GlobalSettings.InitStepName}

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.AI;
 using Microsoft.Extensions.AI;
@@ -9,6 +10,7 @@ namespace Grillisoft.Tools.DatabaseDeploy;
 
 public static class Extensions
 {
+    [SuppressMessage("Minor Code Smell", "S1075:URIs should not be hardcoded")]
     public static IServiceCollection AddAIGenerator(this IServiceCollection services)
     {
         services.AddSingleton<IChatClient>((_) => new OllamaApiClient(new Uri("http://localhost:11434/"), "llama3.1"));

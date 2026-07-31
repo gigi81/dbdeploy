@@ -114,27 +114,31 @@ jobs:
         with:
           name: NuGet packages
           path: packages
+      # Nerdbank.GitVersioning takes the version from version.json, not from the tag, so the two have
+      # to agree: bump version.json in a PR first, then tag the merge commit. Without this check a
+      # mismatched tag would silently publish whatever version.json happened to say.
+      - name: Verify the tag matches version.json
+        run: |
+          expected="${GITHUB_REF_NAME#v}"
+          actual="$(jq -r .version version.json)"
+          if [ "$expected" != "$actual" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match version.json ($actual). Bump version.json to $expected on main and re-tag."
+            exit 1
+          fi
+          ls -1 "packages/dbdeploy.$expected.nupkg"
       - name: NuGet login (OIDC → temp API key)
         uses: NuGet/login@v1
         id: login
         with:
           user: ${{ secrets.NUGET_USER }}
       - name: Push packages
-        run: dotnet nuget push "packages/*.nupkg" --api-key ${{steps.login.outputs.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
-      - uses: dotnet/nbgv@v0.4.2
-        id: nbgv
-      - name: Push tag
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v6.2
-        with:
-          custom_tag: ${{ steps.nbgv.outputs.SemVer2 }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+        run: dotnet nuget push "packages/*.nupkg" --api-key ${{steps.login.outputs.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json --skip-duplicate
       - name: Create a GitHub release
         uses: ncipollo/release-action@v1
         with:
-          tag: v${{ steps.nbgv.outputs.SemVer2 }}
-          name: Release v${{ steps.nbgv.outputs.SemVer2 }}
-          body: ${{ steps.tag_version.outputs.changelog }}
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generateReleaseNotes: true
       - name: Comment relevant issues and merge requests
         uses: apexskier/github-release-commenter@v1
         with:

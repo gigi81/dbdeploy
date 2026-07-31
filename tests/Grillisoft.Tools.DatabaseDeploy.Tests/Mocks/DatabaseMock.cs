@@ -30,9 +30,24 @@ public class DatabaseMock : IDatabase
     public string Name { get; }
 
     public ISqlFormatter SqlFormatter { get; }
-    public Task<bool> Exists(CancellationToken cancellationToken) => Task.FromResult(true);
 
-    public Task Create(CancellationToken cancellationToken) => Task.CompletedTask;
+    /// <summary>
+    /// Set to false to test what happens against a database that is not there yet.
+    /// </summary>
+    public bool IsExisting { get; set; } = true;
+
+    public bool IsCreated { get; private set; }
+
+    public bool IsMigrationsTableInitialized { get; private set; }
+
+    public Task<bool> Exists(CancellationToken cancellationToken) => Task.FromResult(this.IsExisting);
+
+    public Task Create(CancellationToken cancellationToken)
+    {
+        this.IsCreated = true;
+        this.IsExisting = true;
+        return Task.CompletedTask;
+    }
 
     public IScriptParser ScriptParser { get; }
 
@@ -46,6 +61,7 @@ public class DatabaseMock : IDatabase
 
     public Task InitializeMigrations(CancellationToken cancellationToken)
     {
+        this.IsMigrationsTableInitialized = true;
         return Task.CompletedTask;
     }
 

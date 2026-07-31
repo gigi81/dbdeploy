@@ -54,6 +54,37 @@ public class RollbackServiceTests
         migrations02.First().Name.Should().Be(_globalSettings.InitStepName);
     }
 
+    [Test]
+    public async Task Execute_WhenDryRun_RunsNoScriptAndKeepsTheMigrations()
+    {
+        //arrange
+        var database01 = new DatabaseMock("Database01");
+        await database01.AddMigration(new DatabaseMigration(_globalSettings.InitStepName, "user", TestHash), _cancellationToken);
+        await database01.AddMigration(new DatabaseMigration("TKT-001.SampleDescription", "user", TestHash), _cancellationToken);
+
+        var database02 = new DatabaseMock("Database02");
+        await database02.AddMigration(new DatabaseMigration(_globalSettings.InitStepName, "user", TestHash), _cancellationToken);
+
+        var rollbackOptions = new RollbackOptions
+        {
+            Path = SampleFilesystems.Sample01RootPath,
+            Branch = "release/1.1",
+            DryRun = true
+        };
+        var sut = CreateService(rollbackOptions, database01, database02);
+
+        //act
+        var result = await sut.Execute(_cancellationToken);
+
+        //assert
+        result.Should().Be(0);
+        database01.Scripts.Should().BeEmpty();
+        database02.Scripts.Should().BeEmpty();
+
+        var migrations01 = await database01.GetMigrations(_cancellationToken);
+        migrations01.Count.Should().Be(2);
+    }
+
     private RollbackService CreateService(RollbackOptions deployOptions, params IDatabase[] databases)
     {
         var provider = new TestServiceCollection<RollbackService>()

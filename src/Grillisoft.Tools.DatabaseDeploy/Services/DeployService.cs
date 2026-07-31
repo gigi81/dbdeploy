@@ -7,6 +7,7 @@ using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Soenneker.Extensions.Enumerable;
+using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
@@ -36,7 +37,13 @@ public class DeployService : BaseService
     {
         var count = 0;
         var stopwatch = Stopwatch.StartNew();
-        var steps = await GetBranchSteps(_options.Path, this.Branch, cancellationToken);
+
+        if (_options.DryRun)
+            _logger.LogInformation("Dry run enabled: no script will be run and nothing will be written");
+
+        var branches = await LoadBranches(_options.Path, cancellationToken);
+        var branch = branches.GetBranch(this.Branch);
+        var steps = branches.GetSteps(branch).ToArray();
         var databases = steps.Select(s => s.Database).Distinct().ToArray();
 
         await CheckDatabasesExistsOrCreate(databases, cancellationToken);
@@ -53,8 +60,44 @@ public class DeployService : BaseService
             _progress.Report(++count * 100 / steps.Length);
         }
         _progress.Report(100);
-        _logger.LogInformation("Deployment completed successfully in {0}", stopwatch.Elapsed);
+        if (_options.DryRun)
+            _logger.LogInformation("Dry run completed successfully in {0}", stopwatch.Elapsed);
+        else
+            _logger.LogInformation("Deployment completed successfully in {0}", stopwatch.Elapsed);
+
+        if (_options.Update)
+            await UpdateBranches(branches, branch, cancellationToken);
+
         return 0;
+    }
+
+    private async Task UpdateBranches(BranchesReader branches, Branch branch, CancellationToken cancellationToken)
+    {
+        var defaultBranch = _globalSettings.Value.DefaultBranch;
+
+        if (_options.DryRun)
+        {
+            _logger.LogInformation(
+                "Dry run: the scripts of branch {Branch} were not moved to {DefaultBranch}",
+                branch.Name,
+                defaultBranch);
+            return;
+        }
+
+        if (branch.Name.EqualsIgnoreCase(defaultBranch))
+        {
+            _logger.LogInformation("Branch {Branch} is the default branch, nothing to update", branch.Name);
+            return;
+        }
+
+        //the writer only comes into existence once the run is known to be one that writes
+        var writer = new BranchesWriter(branches.Directory, _globalSettings.Value);
+        var released = await writer.Release(branch.Steps, branches.GetBranchFiles(branch), cancellationToken);
+
+        _logger.LogInformation(
+            "Moved the scripts of branch {ReleasedBranches} to {DefaultBranch}",
+            string.Join(", ", released),
+            defaultBranch);
     }
 
     private async Task CheckDatabasesExistsOrCreate(string[] databases, CancellationToken cancellationToken)
@@ -67,6 +110,13 @@ public class DeployService : BaseService
 
     private async Task InitializeMigrations(IEnumerable<string> databases, CancellationToken stoppingToken)
     {
+        if (_options.DryRun)
+        {
+            //creating the migrations table is a change like any other
+            _logger.LogInformation("Dry run: the migrations table is not initialized");
+            return;
+        }
+
         foreach (var database in databases)
         {
             _dbl[database].LogInformation($"Initializing Migrations");
@@ -77,6 +127,12 @@ public class DeployService : BaseService
 
     private async Task DeployStep(Step step, CancellationToken stoppingToken)
     {
+        if (_options.DryRun)
+        {
+            _dbl[step.Database].LogInformation("Dry run: {StepName} would be deployed", step.Name);
+            return;
+        }
+
         _dbl[step.Database].LogInformation("Deploying {StepName}", step.Name);
         var database = await GetDatabase(step.Database, stoppingToken);
         var hash = await step.GetStepHash();
@@ -111,6 +167,14 @@ public class DeployService : BaseService
         if (!_options.Create)
         {
             _dbl[name].LogError("Database does not exists or current user does not have permission to access database");
+            return true;
+        }
+
+        if (_options.DryRun)
+        {
+            //without the database there is nothing to compare the branch against, so the run stops
+            //here rather than creating it
+            _dbl[name].LogError("Database does not exists. Dry run: the database would have been created");
             return true;
         }
 

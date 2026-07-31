@@ -1,21 +1,23 @@
-﻿using System.IO.Abstractions;
+using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
 
-public class BranchesManager
+/// <summary>
+/// Reads the csv branch files of a directory and exposes the branches they describe.
+/// Nothing here writes: changing the files is <see cref="BranchesWriter"/>'s job.
+/// </summary>
+public class BranchesReader
 {
-    private const string IncludeKeyword = "@include ";
-    private const string ListFileExtension = "csv";
-
     private readonly IDirectoryInfo _directory;
     private readonly GlobalSettings _globalSettings;
     private readonly Dictionary<string, Branch> _branches = new(StringComparer.InvariantCultureIgnoreCase);
+    private readonly Dictionary<string, IFileInfo[]> _branchFiles = new(StringComparer.InvariantCultureIgnoreCase);
     private Branch? _mainBranch;
 
-    public BranchesManager(IDirectoryInfo directory, GlobalSettings globalSettings)
+    public BranchesReader(IDirectoryInfo directory, GlobalSettings globalSettings)
     {
         _directory = directory;
         _globalSettings = globalSettings;
@@ -25,6 +27,14 @@ public class BranchesManager
 
     public IDirectoryInfo Directory => _directory;
 
+    public Branch GetBranch(string name)
+    {
+        if (!_branches.TryGetValue(name, out var branch))
+            throw new BranchNotFoundException(name);
+
+        return branch;
+    }
+
     public IEnumerable<Step> GetSteps(Branch branch)
     {
         if (branch.Name.EqualsIgnoreCase(_globalSettings.DefaultBranch) || _mainBranch == null)
@@ -33,15 +43,26 @@ public class BranchesManager
         return _mainBranch.Steps.Concat(branch.Steps);
     }
 
+    /// <summary>
+    /// The files the branch was read from: its own, plus the file of every branch it includes.
+    /// </summary>
+    public IReadOnlyCollection<IFileInfo> GetBranchFiles(Branch branch)
+    {
+        if (!_branchFiles.TryGetValue(branch.Name, out var files))
+            throw new BranchNotFoundException(branch.Name);
+
+        return files;
+    }
+
     public async Task<List<string>> Load()
     {
         _directory.ThrowIfNotFound();
 
-        _mainBranch = await Load(_directory.File(MainBranchFilename));
+        _mainBranch = await Load(MainBranchFile);
         _branches.Add(_mainBranch.Name, _mainBranch);
 
-        var files = _directory.EnumerateFiles($"*.{ListFileExtension}", SearchOption.TopDirectoryOnly)
-            .Where(f => !f.Name.EqualsIgnoreCase(MainBranchFilename))
+        var files = BranchFiles.EnumerateFiles(_directory)
+            .Where(f => !f.Name.EqualsIgnoreCase(MainBranchFile.Name))
             .ToArray();
 
         foreach (var file in files)
@@ -53,26 +74,23 @@ public class BranchesManager
         return await BranchesValidator.Validate(_branches.Values, _globalSettings, _directory);
     }
 
-    private string MainBranchFilename => $"{_globalSettings.DefaultBranch}.{ListFileExtension}";
+    private IFileInfo MainBranchFile => BranchFiles.GetFile(_globalSettings.DefaultBranch, _directory);
 
     private async Task<Branch> Load(IFileInfo file)
     {
-        return await LoadInternal(file, new HashSet<string>(StringComparer.InvariantCultureIgnoreCase));
+        var files = new Dictionary<string, IFileInfo>(StringComparer.InvariantCultureIgnoreCase);
+        var branch = await LoadInternal(file, files);
+        _branchFiles.Add(branch.Name, files.Values.ToArray());
+        return branch;
     }
 
-    private static IFileInfo GetBranchFile(string branchName, IDirectoryInfo directory)
-    {
-        branchName = branchName.Replace('/', '_');
-        return directory.File($"{branchName}.{ListFileExtension}");
-    }
-
-    private async Task<Branch> LoadInternal(IFileInfo file, ISet<string> files)
+    private async Task<Branch> LoadInternal(IFileInfo file, IDictionary<string, IFileInfo> files)
     {
         file.ThrowIfNotFound();
-        if (!files.Add(file.Name))
+        if (!files.TryAdd(file.Name, file))
             throw new CircularIncludeException(file.Name);
 
-        var branchName = file.Name.BranchName();
+        var branchName = BranchFiles.GetBranchName(file);
         var directory = file.Directory ?? file.FileSystem.CurrentDirectory();
         var steps = new List<Step>();
         var count = 1;
@@ -90,10 +108,10 @@ public class BranchesManager
                 continue; //comment
             }
 
-            if (line.StartsWith(IncludeKeyword))
+            var include = BranchFiles.GetIncludedBranch(line);
+            if (include != null)
             {
-                var includeFile = GetBranchFile(line.Substring(IncludeKeyword.Length).Trim(), directory);
-                var includeBranch = await LoadInternal(includeFile, files);
+                var includeBranch = await LoadInternal(BranchFiles.GetFile(include, directory), files);
                 steps.AddRange(includeBranch.Steps);
                 continue;
             }

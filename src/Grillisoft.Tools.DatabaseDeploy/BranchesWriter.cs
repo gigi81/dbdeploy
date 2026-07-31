@@ -21,35 +21,36 @@ public class BranchesWriter
     }
 
     /// <summary>
-    /// Appends the steps to the default branch file, deletes the given branch files, and drops any
+    /// Appends the steps to the default branch file, deletes the given branch <paramref name="releasedFiles"/>, and drops any
     /// '@include' of them left in the branch files that remain. Returns the names of the branches
     /// that were released.
     /// </summary>
     /// <param name="steps">The steps of the released branch, in deploy order.</param>
-    /// <param name="files">
+    /// <param name="releasedFiles">
     /// The files of the released branch, as read by <see cref="BranchesReader.GetBranchFiles"/>.
     /// </param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     public async Task<IReadOnlyCollection<string>> Release(
         IReadOnlyCollection<Step> steps,
-        IReadOnlyCollection<IFileInfo> files,
+        IReadOnlyCollection<IFileInfo> releasedFiles,
         CancellationToken cancellationToken = default)
     {
         var mainFile = BranchFiles.GetFile(_globalSettings.DefaultBranch, _directory);
-        var released = files.Select(f => f.Name).ToHashSetIgnoreCase();
+        var releasedNames = releasedFiles.Select(f => f.Name).ToHashSetIgnoreCase();
 
-        if (released.Contains(mainFile.Name))
-            throw new ArgumentException($"The default branch {_globalSettings.DefaultBranch} cannot be released", nameof(files));
+        if (releasedNames.Contains(mainFile.Name))
+            throw new ArgumentException($"The default branch {_globalSettings.DefaultBranch} cannot be released", nameof(releasedFiles));
 
         //the steps are appended first so that a failure halfway through leaves them duplicated
         //rather than lost
         await AppendSteps(mainFile, steps, cancellationToken);
 
-        foreach (var file in files)
+        foreach (var file in releasedFiles)
             file.Delete();
 
-        await RemoveIncludes(released, cancellationToken);
+        await RemoveIncludes(releasedNames, cancellationToken);
 
-        return files.Select(BranchFiles.GetBranchName).ToArray();
+        return releasedFiles.Select(BranchFiles.GetBranchName).ToArray();
     }
 
     private static async Task AppendSteps(IFileInfo file, IEnumerable<Step> steps, CancellationToken cancellationToken)

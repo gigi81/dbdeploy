@@ -22,11 +22,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       # TUnit runs on Microsoft.Testing.Platform (see global.json): the xUnit trait filter is now a
@@ -53,7 +53,7 @@ jobs:
           || true
         if: runner.os == 'Linux'
       - name: Test Report
-        uses: dorny/test-reporter@v1.9.1
+        uses: dorny/test-reporter@v3.0.0
         if: always()
         with:
           name: test-results-${{ matrix.os }}
@@ -61,12 +61,12 @@ jobs:
           reporter: dotnet-trx
           fail-on-error: true
       - name: Upload coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Code coverage ${{ matrix.os }}
           path: "./TestResults/*.cobertura.xml"
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         if: runner.os == 'Linux'
         with:
           files: "./TestResults/*.cobertura.xml"
@@ -77,17 +77,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - name: Create packages
         run: dotnet pack --configuration Release --output ./packages
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: NuGet packages
           path: packages/*.*
@@ -103,14 +103,14 @@ jobs:
       id-token: write
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: NuGet packages
           path: packages

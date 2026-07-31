@@ -89,6 +89,8 @@ public class FormatService : BaseService
                         failures++;
                         break;
 
+                    case FormatOutcome.Skipped:
+                    case FormatOutcome.Unchanged:
                     default:
                         break;
                 }
@@ -156,6 +158,8 @@ public class FormatService : BaseService
                     failures++;
                     break;
 
+                case FormatOutcome.Skipped:
+                case FormatOutcome.Unchanged:
                 default:
                     break;
             }

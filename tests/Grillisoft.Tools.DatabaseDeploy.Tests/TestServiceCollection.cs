@@ -1,4 +1,5 @@
 ﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -13,6 +14,7 @@ public class TestServiceCollection<TSystemUnderTest> : ServiceCollection where T
         this.AddSingleton<ILoggerFactory>(TestLoggerFactory.Instance);
         this.AddSingleton<IDatabaseLoggerFactory, DatabaseLoggerFactory>();
         this.AddSingleton<IScriptsRunner, ScriptsRunner>();
+        this.AddSingleton<ServiceDependencies>();
         this.AddSingleton<TSystemUnderTest>();
     }
 }

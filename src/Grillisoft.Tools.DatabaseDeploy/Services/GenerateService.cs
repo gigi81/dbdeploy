@@ -1,10 +1,8 @@
 using System.Diagnostics;
 using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
@@ -16,16 +14,12 @@ public class GenerateService : BaseService
     public GenerateService(
         GenerateOptions options,
         IGenerator generator,
-        IDatabasesCollection databases,
-        IFileSystem fileSystem,
-        IOptions<GlobalSettings> globalSettings,
-        IDatabaseLoggerFactory databaseLoggers,
-        IScriptsRunner scripts,
+        ServiceDependencies dependencies,
         ILogger<GenerateService> logger)
-        : base(databases, fileSystem, globalSettings, databaseLoggers, scripts, logger)
+        : base(dependencies, logger)
     {
         _generator = generator;
-        _directory = fileSystem.DirectoryInfo.New(options.Path);
+        _directory = GetDirectory(options.Path);
     }
 
     public async override Task<int> Execute(CancellationToken cancellationToken)

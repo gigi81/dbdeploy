@@ -7,7 +7,6 @@ using Grillisoft.Tools.DatabaseDeploy.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
@@ -30,18 +29,14 @@ public class FormatService : BaseService
 
     public FormatService(
         FormatOptions options,
-        IDatabasesCollection databases,
         IEnumerable<IDatabaseFactory> factories,
-        IFileSystem fileSystem,
-        IOptions<GlobalSettings> globalSettings,
-        IDatabaseLoggerFactory databaseLoggers,
-        IScriptsRunner scripts,
+        ServiceDependencies dependencies,
         ILogger<FormatService> logger)
-        : base(databases, fileSystem, globalSettings, databaseLoggers, scripts, logger)
+        : base(dependencies, logger)
     {
         _options = options;
-        _fileSystem = fileSystem;
-        _editorConfig = new EditorConfigSqlOptions(fileSystem, logger);
+        _fileSystem = dependencies.FileSystem;
+        _editorConfig = new EditorConfigSqlOptions(_fileSystem, logger);
         _factories = factories.ToDictionary(f => f.Name, f => f, StringComparer.InvariantCultureIgnoreCase);
     }
 

@@ -1,11 +1,8 @@
-using System.IO.Abstractions;
 using System.Reflection;
 using CliWrap;
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
@@ -19,13 +16,9 @@ public class CiService : BaseService
 
     public CiService(
         CiOptions options,
-        IDatabasesCollection databases,
-        IFileSystem fileSystem,
-        IOptions<GlobalSettings> globalOptions,
-        IDatabaseLoggerFactory databaseLoggers,
-        IScriptsRunner scripts,
+        ServiceDependencies dependencies,
         ILogger<CiService> logger
-    ) : base(databases, fileSystem, globalOptions, databaseLoggers, scripts, logger)
+    ) : base(dependencies, logger)
     {
         _options = options;
     }

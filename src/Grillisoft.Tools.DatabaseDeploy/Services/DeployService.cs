@@ -1,11 +1,8 @@
 ﻿using System.Diagnostics;
-using System.IO.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Soenneker.Extensions.Enumerable;
 using Soenneker.Extensions.String;
 
@@ -19,18 +16,19 @@ public class DeployService : BaseService
 
     public DeployService(
         DeployOptions options,
-        IDatabasesCollection databases,
-        IFileSystem fileSystem,
-        IOptions<GlobalSettings> globalOptions,
+        ServiceDependencies dependencies,
         IProgress<int> progress,
-        IDatabaseLoggerFactory databaseLoggers,
-        IScriptsRunner scripts,
         ILogger<DeployService> logger
-    ) : base(databases, fileSystem, globalOptions, databaseLoggers, scripts, logger)
+    ) : base(dependencies, logger)
     {
         _options = options;
         _progress = progress;
-        _hooks = new DatabaseHooksRunner(databases, GetDirectory(options.Path), options.DryRun, scripts, databaseLoggers);
+        _hooks = new DatabaseHooksRunner(
+            dependencies.Databases,
+            GetDirectory(options.Path),
+            options.DryRun,
+            dependencies.Scripts,
+            dependencies.DatabaseLoggers);
     }
 
     private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)

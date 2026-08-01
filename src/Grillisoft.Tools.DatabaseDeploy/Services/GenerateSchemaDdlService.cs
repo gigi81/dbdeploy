@@ -1,11 +1,8 @@
 using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Text;
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
@@ -15,14 +12,10 @@ public class GenerateSchemaDdlService : BaseService
 
     public GenerateSchemaDdlService(
         GenerateSchemaDdlOptions options,
-        IDatabasesCollection databases,
-        IFileSystem fileSystem,
-        IOptions<GlobalSettings> globalOptions,
+        ServiceDependencies dependencies,
         IProgress<int> progress,
-        IDatabaseLoggerFactory databaseLoggers,
-        IScriptsRunner scripts,
         ILogger<GenerateSchemaDdlService> logger
-    ) : base(databases, fileSystem, globalOptions, databaseLoggers, scripts, logger)
+    ) : base(dependencies, logger)
     {
         _options = options;
     }

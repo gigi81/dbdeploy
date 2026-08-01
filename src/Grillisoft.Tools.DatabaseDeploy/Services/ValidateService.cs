@@ -1,11 +1,7 @@
 using System.Diagnostics;
-using System.IO.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
@@ -15,13 +11,9 @@ public class ValidateService : BaseService
 
     public ValidateService(
         ValidateOptions options,
-        IDatabasesCollection databases,
-        IFileSystem fileSystem,
-        IOptions<GlobalSettings> globalSettings,
-        IDatabaseLoggerFactory databaseLoggers,
-        IScriptsRunner scripts,
+        ServiceDependencies dependencies,
         ILogger<ValidateService> logger)
-        : base(databases, fileSystem, globalSettings, databaseLoggers, scripts, logger)
+        : base(dependencies, logger)
     {
         _options = options;
     }

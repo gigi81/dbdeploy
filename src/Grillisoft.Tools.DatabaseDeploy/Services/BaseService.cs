@@ -1,11 +1,9 @@
-﻿using System.Diagnostics;
-using System.IO.Abstractions;
+﻿using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Soenneker.Extensions.String;
 
 // ReSharper disable InconsistentNaming
 
@@ -20,20 +18,14 @@ public abstract class BaseService : IExecutable
     protected readonly IDatabaseLoggerFactory _dbl;
     protected readonly IScriptsRunner _scripts;
 
-    protected BaseService(
-        IDatabasesCollection databases,
-        IFileSystem fileSystem,
-        IOptions<GlobalSettings> globalSettings,
-        IDatabaseLoggerFactory databaseLoggers,
-        IScriptsRunner scripts,
-        ILogger logger)
+    protected BaseService(ServiceDependencies dependencies, ILogger logger)
     {
-        _databases = databases;
-        _fileSystem = fileSystem;
-        _globalSettings = globalSettings;
+        _databases = dependencies.Databases;
+        _fileSystem = dependencies.FileSystem;
+        _globalSettings = dependencies.GlobalSettings;
         _logger = logger;
-        _dbl = databaseLoggers;
-        _scripts = scripts;
+        _dbl = dependencies.DatabaseLoggers;
+        _scripts = dependencies.Scripts;
     }
 
     public abstract Task<int> Execute(CancellationToken cancellationToken);

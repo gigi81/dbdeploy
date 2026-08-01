@@ -35,7 +35,6 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
     public ISqlFormatter? GetSqlFormatter(string name)
     {
         var provider = _configuration.GetProvider(name);
-
         if (string.IsNullOrWhiteSpace(provider))
             return null;
 

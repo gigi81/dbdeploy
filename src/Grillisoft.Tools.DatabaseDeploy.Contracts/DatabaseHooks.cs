@@ -12,6 +12,15 @@ public sealed record DatabaseHooks(string PreDeploy, string PostDeploy, string P
     public static readonly DatabaseHooks None =
         new(string.Empty, string.Empty, string.Empty, string.Empty);
 
+    public IEnumerable<HookScript> GetHookScripts(string database, IDirectoryInfo directory)
+    {
+        foreach (var hook in Enum.GetValues<DatabaseHook>())
+        {
+            if (TryGetHookScript(hook, database, directory, out var script))
+                yield return script;
+        }
+    }
+
     public bool TryGetHookScript(DatabaseHook hook, string database, IDirectoryInfo directory, [NotNullWhen(true)] out HookScript? script)
     {
         if (TryGetHook(hook, out var scriptName))
@@ -23,16 +32,7 @@ public sealed record DatabaseHooks(string PreDeploy, string PostDeploy, string P
         script = null;
         return false;
     }
-
-    public IEnumerable<HookScript> GetHookScripts(string database, IDirectoryInfo directory)
-    {
-        foreach (var hook in Enum.GetValues<DatabaseHook>())
-        {
-            if (TryGetHookScript(hook, database, directory, out var script))
-                yield return script;
-        }
-    }
-
+    
     private bool TryGetHook(DatabaseHook hook, out string scriptName)
     {
         scriptName = hook switch

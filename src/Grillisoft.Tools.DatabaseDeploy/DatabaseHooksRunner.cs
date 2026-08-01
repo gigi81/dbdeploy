@@ -88,7 +88,7 @@ public class DatabaseHooksRunner
         if (!hooks.IsConfigured(hook))
             return;
 
-        var script = new HookScript(database, hook, hooks[hook], _root);
+        var script = hooks.GetHookScript(hook, database, _root);
         var file = script.File ?? throw new HookScriptNotFoundException(script);
 
         if (_dryRun)

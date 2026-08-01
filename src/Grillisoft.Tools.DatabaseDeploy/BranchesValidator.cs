@@ -15,7 +15,7 @@ public static class BranchesValidator
         ICollection<Branch> branches,
         GlobalSettings settings,
         IDirectoryInfo directory,
-        Func<string, DatabaseHooks>? hooks = null)
+        Func<string, DatabaseHooks> hooks)
     {
         var steps = branches.SelectMany(b => b.Steps).Distinct().ToArray();
         var hookScripts = GetHookScripts(steps, directory, hooks);
@@ -35,17 +35,14 @@ public static class BranchesValidator
     /// The hook scripts of every database taking part in the branches. A database with no hook
     /// configured contributes none.
     /// </summary>
-    private static HookScript[] GetHookScripts(Step[] steps, IDirectoryInfo directory, Func<string, DatabaseHooks>? hooks)
+    private static HookScript[] GetHookScripts(Step[] steps, IDirectoryInfo directory, Func<string, DatabaseHooks> hooks)
     {
-        if (hooks == null)
-            return [];
-
         return steps.Select(s => s.Database)
             .Distinct(StringComparer.InvariantCultureIgnoreCase)
             .SelectMany(database => hooks(database).GetHookScripts(database, directory))
             .ToArray();
     }
-    
+
     private static IEnumerable<string> CheckHookFiles(HookScript[] hookScripts)
     {
         foreach (var script in hookScripts.Where(s => s.File == null))

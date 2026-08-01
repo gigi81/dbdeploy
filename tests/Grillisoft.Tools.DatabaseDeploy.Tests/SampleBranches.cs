@@ -11,9 +11,14 @@ public static class SampleBranches
     public static readonly string RootPath = OperatingSystem.IsWindows() ? "c:\\demo\\" : "/opt/demo/";
     public static readonly GlobalSettings GlobalSettings = new();
 
+    /// <summary>
+    /// For the tests that are about the branch layout and have no hook configured.
+    /// </summary>
+    public static readonly Func<string, DatabaseHooks> NoHooks = _ => DatabaseHooks.None;
+
     public static async Task<BranchesReader> Read(MockFileSystem filesystem)
     {
-        var reader = new BranchesReader(filesystem.DirectoryInfo.New(RootPath), GlobalSettings);
+        var reader = new BranchesReader(filesystem.DirectoryInfo.New(RootPath), GlobalSettings, NoHooks);
         var errors = await reader.Load();
         errors.Should().BeEmpty();
         return reader;

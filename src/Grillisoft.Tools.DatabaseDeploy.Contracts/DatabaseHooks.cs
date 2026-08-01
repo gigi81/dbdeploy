@@ -27,9 +27,18 @@ public sealed record DatabaseHooks(string PreDeploy, string PostDeploy, string P
     /// </summary>
     public IEnumerable<DatabaseHook> Configured =>
         Enum.GetValues<DatabaseHook>().Where(IsConfigured);
-    
+
+    /// <summary>
+    /// The script of one hook, configured or not: this is the only place a configured name becomes
+    /// a <see cref="HookScript"/>.
+    /// </summary>
+    public HookScript GetHookScript(DatabaseHook hook, string database, IDirectoryInfo directory)
+    {
+        return new HookScript(database, hook, this[hook], directory);
+    }
+
     public IEnumerable<HookScript> GetHookScripts(string database, IDirectoryInfo directory)
     {
-        return this.Configured.Select(hook => new HookScript(database, hook, this[hook], directory));
+        return this.Configured.Select(hook => GetHookScript(hook, database, directory));
     }
 }

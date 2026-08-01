@@ -13,16 +13,17 @@ public class BranchesReader
 {
     private readonly IDirectoryInfo _directory;
     private readonly GlobalSettings _globalSettings;
-    private readonly Func<string, DatabaseHooks>? _hooks;
+    private readonly Func<string, DatabaseHooks> _hooks;
     private readonly Dictionary<string, Branch> _branches = new(StringComparer.InvariantCultureIgnoreCase);
     private readonly Dictionary<string, IFileInfo[]> _branchFiles = new(StringComparer.InvariantCultureIgnoreCase);
     private Branch? _mainBranch;
 
     /// <param name="hooks">
-    /// Resolves the hook scripts configured for a database. When null no hook is validated, which
-    /// is what the callers that only care about the branch layout want.
+    /// Resolves the hook scripts configured for a database. Required: a caller that does not care
+    /// about hooks says so with <see cref="DatabaseHooks.None"/>, so that no one skips validating
+    /// them by leaving an argument out.
     /// </param>
-    public BranchesReader(IDirectoryInfo directory, GlobalSettings globalSettings, Func<string, DatabaseHooks>? hooks = null)
+    public BranchesReader(IDirectoryInfo directory, GlobalSettings globalSettings, Func<string, DatabaseHooks> hooks)
     {
         _directory = directory;
         _globalSettings = globalSettings;

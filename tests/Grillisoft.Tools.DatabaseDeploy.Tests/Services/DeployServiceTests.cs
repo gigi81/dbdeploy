@@ -208,7 +208,8 @@ public class DeployServiceTests
         //the layout that is left is still valid
         var errors = await new BranchesReader(
             _fileSystem.DirectoryInfo.New(SampleFilesystems.Sample01RootPath),
-            _globalSettings).Load();
+            _globalSettings,
+            SampleBranches.NoHooks).Load();
         errors.Should().BeEmpty();
     }
 

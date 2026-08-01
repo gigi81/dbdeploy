@@ -18,8 +18,10 @@ public class DatabaseHooksRunner
     private readonly ScriptsRunner _scripts;
     private readonly DatabaseLoggerFactory _dbl;
 
+    /// <param name="databases">Where the hooks of a database and the database itself come from</param>
     /// <param name="root">The folder the scripts are looked up in, the one of the branch files</param>
     /// <param name="dryRun">When set the scripts are only reported, like every other script</param>
+    /// <param name="logger">The logger of the service the run belongs to</param>
     public DatabaseHooksRunner(IDatabasesCollection databases, IDirectoryInfo root, bool dryRun, ILogger logger)
     {
         _databases = databases;
@@ -34,6 +36,9 @@ public class DatabaseHooksRunner
     /// scripts that run before a deploy or a rollback need, so that nothing starts after one of
     /// them failed.
     /// </summary>
+    /// <param name="hook">Which of the four scripts to run</param>
+    /// <param name="databases">The databases to run it for, the ones with steps in the plan</param>
+    /// <param name="cancellationToken">Cancels the run, and is not treated as a script failure</param>
     public async Task Run(DatabaseHook hook, IEnumerable<string> databases, CancellationToken cancellationToken)
     {
         foreach (var database in databases)
@@ -46,6 +51,9 @@ public class DatabaseHooksRunner
     /// Runs a hook script on every database, carrying on after a failure: this is what the scripts
     /// that run after a deploy or a rollback need, as the work they follow is already done.
     /// </summary>
+    /// <param name="hook">Which of the four scripts to run</param>
+    /// <param name="databases">The databases to run it for, the ones with steps in the plan</param>
+    /// <param name="cancellationToken">Cancels the run, and is not treated as a script failure</param>
     /// <returns>The number of databases whose hook script failed</returns>
     public async Task<int> TryRun(DatabaseHook hook, IEnumerable<string> databases, CancellationToken cancellationToken)
     {

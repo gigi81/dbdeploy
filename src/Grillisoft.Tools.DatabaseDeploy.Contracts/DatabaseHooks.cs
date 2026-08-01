@@ -1,3 +1,5 @@
+using System.IO.Abstractions;
+
 namespace Grillisoft.Tools.DatabaseDeploy.Contracts;
 
 /// <summary>
@@ -25,4 +27,9 @@ public sealed record DatabaseHooks(string PreDeploy, string PostDeploy, string P
     /// </summary>
     public IEnumerable<DatabaseHook> Configured =>
         Enum.GetValues<DatabaseHook>().Where(IsConfigured);
+    
+    public IEnumerable<HookScript> GetHookScripts(string database, IDirectoryInfo directory)
+    {
+        return this.Configured.Select(hook => new HookScript(database, hook, this[hook], directory));
+    }
 }

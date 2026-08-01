@@ -10,7 +10,6 @@ public record Step(string Database, string Name, string Branch, bool IsInit, IDi
     public const int HashLength = 32;
 
     private string? _hash;
-    private IList<IFileInfo>? _dataFiles;
 
     public IFileInfo DeployScript =>
         this.Directory.File(IsInit ? $"{Name}.sql" : $"{Name}.Deploy.sql");
@@ -20,7 +19,7 @@ public record Step(string Database, string Name, string Branch, bool IsInit, IDi
 
     public IFileInfo TestScript => this.Directory.File($"{Name}.Test.sql");
 
-    public IList<IFileInfo> DataScripts => _dataFiles ??= GetDataFilesList();
+    public IList<IFileInfo> DataScripts => field ??= GetDataFilesList();
 
     private IList<IFileInfo> GetDataFilesList()
     {

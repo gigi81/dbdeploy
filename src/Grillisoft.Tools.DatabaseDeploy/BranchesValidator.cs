@@ -42,15 +42,10 @@ public static class BranchesValidator
 
         return steps.Select(s => s.Database)
             .Distinct(StringComparer.InvariantCultureIgnoreCase)
-            .SelectMany(database => GetHookScripts(database, hooks(database), directory))
+            .SelectMany(database => hooks(database).GetHookScripts(database, directory))
             .ToArray();
     }
-
-    private static IEnumerable<HookScript> GetHookScripts(string database, DatabaseHooks hooks, IDirectoryInfo directory)
-    {
-        return hooks.Configured.Select(hook => new HookScript(database, hook, hooks[hook], directory));
-    }
-
+    
     private static IEnumerable<string> CheckHookFiles(HookScript[] hookScripts)
     {
         foreach (var script in hookScripts.Where(s => s.File == null))

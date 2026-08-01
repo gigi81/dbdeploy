@@ -42,8 +42,9 @@ public class DeployService : BranchService
 
         var strategy = await GetStrategy(steps, cancellationToken);
         var deploySteps = await strategy.GetDeploySteps(this.Branch).ToArrayAsync(cancellationToken);
-
         _logger.LogInformation("Detected {Count} steps to deploy", deploySteps.Length);
+        if (deploySteps.Length <= 0)
+            return 0;
 
         //only the databases that have something to deploy take part in the pre and post scripts
         var deployDatabases = deploySteps.Select(s => s.Database).Distinct().ToArray();

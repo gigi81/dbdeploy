@@ -33,8 +33,9 @@ public class RollbackService : BranchService
         var steps = branches.GetSteps(branches.GetBranch(this.Branch)).ToArray();
         var strategy = await GetStrategy(steps, cancellationToken);
         var rollbackSteps = strategy.GetRollbackSteps(this.Branch).ToArray();
-
         _logger.LogInformation("Detected {Count} steps to rollback", rollbackSteps.Length);
+        if (rollbackSteps.Length <= 0)
+            return 0;
 
         //only the databases that have something to rollback take part in the pre and post scripts
         var rollbackDatabases = rollbackSteps.Select(s => s.Step.Database).Distinct().ToArray();

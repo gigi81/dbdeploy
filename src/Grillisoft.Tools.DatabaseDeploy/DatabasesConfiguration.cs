@@ -49,10 +49,14 @@ public class DatabasesConfiguration
     {
         var section = GetSection(name);
 
-        return new DatabaseHooks(
-            _global.PreDeploy.OverrideWithAllowEmpty(section["preDeploy"]),
-            _global.PostDeploy.OverrideWithAllowEmpty(section["postDeploy"]),
-            _global.PreRollback.OverrideWithAllowEmpty(section["preRollback"]),
-            _global.PostRollback.OverrideWithAllowEmpty(section["postRollback"]));
+        var dictionary = new Dictionary<DatabaseHook, string>()
+        {
+            { DatabaseHook.PreDeploy, _global.PreDeploy.OverrideWithAllowEmpty(section["preDeploy"]) },
+            { DatabaseHook.PostDeploy, _global.PostDeploy.OverrideWithAllowEmpty(section["postDeploy"]) },
+            { DatabaseHook.PreRollback, _global.PreRollback.OverrideWithAllowEmpty(section["preRollback"]) },
+            { DatabaseHook.PostRollback, _global.PostRollback.OverrideWithAllowEmpty(section["postRollback"]) }
+        };
+
+        return new DatabaseHooks(dictionary);
     }
 }

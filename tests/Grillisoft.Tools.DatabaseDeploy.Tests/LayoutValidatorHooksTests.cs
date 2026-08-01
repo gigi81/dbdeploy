@@ -76,7 +76,7 @@ public class LayoutValidatorHooksTests
     /// </summary>
     private static async Task<List<string>> Load(MockFileSystem fileSystem, params string[] databases)
     {
-        var hooks = new DatabaseHooks(PreDeployName, string.Empty, string.Empty, string.Empty);
+        var hooks = TestHooks.Of((DatabaseHook.PreDeploy, PreDeployName));
 
         var reader = new BranchesReader(
             fileSystem.DirectoryInfo.New(SampleBranches.RootPath),

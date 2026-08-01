@@ -149,7 +149,7 @@ public class DatabaseHooksRunnerTests
     private static string RootPath => OperatingSystem.IsWindows() ? "c:\\demo\\" : "/opt/demo/";
 
     private static readonly DatabaseHooks PreDeployOnly =
-        new(HookName, string.Empty, string.Empty, string.Empty);
+        TestHooks.Of((DatabaseHook.PreDeploy, HookName));
 
     private void AddScript(string relativePath, string content)
     {

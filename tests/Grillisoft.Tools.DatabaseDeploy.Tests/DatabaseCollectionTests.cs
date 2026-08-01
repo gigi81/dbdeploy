@@ -188,10 +188,10 @@ public class DatabaseCollectionTests
         var actual = collection.GetHooks("test");
 
         //assert
-        actual.PreDeploy.Should().Be("_PreDeploy");
-        actual.PostRollback.Should().Be("_PostRollback");
-        actual.PostDeploy.Should().BeEmpty();
-        actual.PreRollback.Should().BeEmpty();
+        actual.Hooks[DatabaseHook.PreDeploy].Should().Be("_PreDeploy");
+        actual.Hooks[DatabaseHook.PostRollback].Should().Be("_PostRollback");
+        actual.Hooks[DatabaseHook.PostDeploy].Should().BeEmpty();
+        actual.Hooks[DatabaseHook.PreRollback].Should().BeEmpty();
         ConfiguredHooks(actual).Should().BeEquivalentTo([DatabaseHook.PreDeploy, DatabaseHook.PostRollback]);
     }
 
@@ -213,8 +213,8 @@ public class DatabaseCollectionTests
         var actual = collection.GetHooks("test");
 
         //assert
-        actual.PreDeploy.Should().Be("_TestPreDeploy");
-        actual.PostDeploy.Should().Be("_PostDeploy");
+        actual.Hooks[DatabaseHook.PreDeploy].Should().Be("_TestPreDeploy");
+        actual.Hooks[DatabaseHook.PostDeploy].Should().Be("_PostDeploy");
     }
 
     /// <summary>
@@ -239,11 +239,11 @@ public class DatabaseCollectionTests
         var actual = collection.GetHooks("test");
 
         //assert
-        actual.PreDeploy.Should().BeEmpty();
+        actual.Hooks[DatabaseHook.PreDeploy].Should().BeEmpty();
         actual.TryGetHookScript(DatabaseHook.PreDeploy, "test", Directory, out _).Should().BeFalse();
 
         //the hooks it said nothing about are untouched
-        actual.PostDeploy.Should().Be("_PostDeploy");
+        actual.Hooks[DatabaseHook.PostDeploy].Should().Be("_PostDeploy");
         ConfiguredHooks(actual).Should().BeEquivalentTo([DatabaseHook.PostDeploy]);
     }
 
@@ -262,7 +262,7 @@ public class DatabaseCollectionTests
         var actual = collection.GetHooks("test");
 
         //assert
-        actual.Should().Be(DatabaseHooks.None);
+        actual.Hooks.Should().BeEquivalentTo(DatabaseHooks.None.Hooks);
         ConfiguredHooks(actual).Should().BeEmpty();
     }
 

@@ -4,7 +4,17 @@ namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
 
 public interface IDatabasesCollection
 {
+    /// <summary>
+    /// List of all databases names
+    /// </summary>
     IReadOnlyCollection<string> Databases { get; }
+    
+    /// <summary>
+    /// Gets an instance of <see cref="IDatabase"/> for the specified database
+    /// </summary>
+    /// <param name="name">Database name</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken);
 
     /// <summary>

@@ -7,10 +7,10 @@ namespace Grillisoft.Tools.DatabaseDeploy.Contracts;
 /// The names of the hook scripts of a database, already merged with the global settings.
 /// An empty name means that the hook is not configured and nothing runs for it.
 /// </summary>
-public sealed record DatabaseHooks(string PreDeploy, string PostDeploy, string PreRollback, string PostRollback)
+public sealed record DatabaseHooks(IDictionary<DatabaseHook, string> Hooks)
 {
     public static readonly DatabaseHooks None =
-        new(string.Empty, string.Empty, string.Empty, string.Empty);
+        new(Enum.GetValues<DatabaseHook>().ToDictionary(hook => hook, _ => string.Empty));
 
     public IEnumerable<HookScript> GetHookScripts(string database, IDirectoryInfo directory)
     {
@@ -23,27 +23,15 @@ public sealed record DatabaseHooks(string PreDeploy, string PostDeploy, string P
 
     public bool TryGetHookScript(DatabaseHook hook, string database, IDirectoryInfo directory, [NotNullWhen(true)] out HookScript? script)
     {
-        if (TryGetHook(hook, out var scriptName))
-        {
-            script = new HookScript(database, hook, scriptName, directory);
-            return true;
-        }
-
         script = null;
-        return false;
-    }
-
-    private bool TryGetHook(DatabaseHook hook, out string scriptName)
-    {
-        scriptName = hook switch
-        {
-            DatabaseHook.PreDeploy => this.PreDeploy,
-            DatabaseHook.PostDeploy => this.PostDeploy,
-            DatabaseHook.PreRollback => this.PreRollback,
-            DatabaseHook.PostRollback => this.PostRollback,
-            _ => throw new ArgumentOutOfRangeException(nameof(hook), hook, "Unknown database hook")
-        };
-
-        return !string.IsNullOrWhiteSpace(scriptName);
+        
+        if (!this.Hooks.TryGetValue(hook, out var scriptName))
+            return false;
+        
+        if(string.IsNullOrWhiteSpace(scriptName))
+            return false;
+        
+        script = new HookScript(database, hook, scriptName, directory);
+        return true;
     }
 }

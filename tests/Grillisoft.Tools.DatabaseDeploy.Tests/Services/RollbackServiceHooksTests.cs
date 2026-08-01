@@ -13,11 +13,11 @@ public class RollbackServiceHooksTests
 {
     private static readonly string TestHash = new('0', Step.HashLength);
 
-    private static readonly DatabaseHooks AllHooks = new(
-        SampleFilesystems.Hooks.PreDeploy,
-        SampleFilesystems.Hooks.PostDeploy,
-        SampleFilesystems.Hooks.PreRollback,
-        SampleFilesystems.Hooks.PostRollback);
+    private static readonly DatabaseHooks AllHooks = TestHooks.Of(
+        (DatabaseHook.PreDeploy, SampleFilesystems.Hooks.PreDeploy),
+        (DatabaseHook.PostDeploy, SampleFilesystems.Hooks.PostDeploy),
+        (DatabaseHook.PreRollback, SampleFilesystems.Hooks.PreRollback),
+        (DatabaseHook.PostRollback, SampleFilesystems.Hooks.PostRollback));
 
     private readonly GlobalSettings _globalSettings = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();

@@ -1,3 +1,5 @@
+using System.IO.Abstractions;
+using System.IO.Abstractions.TestingHelpers;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
@@ -9,6 +11,16 @@ namespace Grillisoft.Tools.DatabaseDeploy.Tests;
 public class DatabaseCollectionTests
 {
     private const string FactoryProviderName = "provider01";
+
+    /// <summary>
+    /// Which hooks came back is read through the scripts they would run, so these tests need a
+    /// folder to hang them off. Nothing is read from it: only the names matter here.
+    /// </summary>
+    private static readonly IDirectoryInfo Directory =
+        new MockFileSystem().DirectoryInfo.New(SampleBranches.RootPath);
+
+    private static IEnumerable<DatabaseHook> ConfiguredHooks(DatabaseHooks hooks) =>
+        hooks.GetHookScripts("test", Directory).Select(script => script.Hook);
 
     private static IConfiguration CreateConfig(Dictionary<string, string?> settings)
     {
@@ -180,7 +192,7 @@ public class DatabaseCollectionTests
         actual.PostRollback.Should().Be("_PostRollback");
         actual.PostDeploy.Should().BeEmpty();
         actual.PreRollback.Should().BeEmpty();
-        actual.Configured.Should().BeEquivalentTo([DatabaseHook.PreDeploy, DatabaseHook.PostRollback]);
+        ConfiguredHooks(actual).Should().BeEquivalentTo([DatabaseHook.PreDeploy, DatabaseHook.PostRollback]);
     }
 
     [Test]
@@ -228,11 +240,11 @@ public class DatabaseCollectionTests
 
         //assert
         actual.PreDeploy.Should().BeEmpty();
-        actual.IsConfigured(DatabaseHook.PreDeploy).Should().BeFalse();
+        actual.TryGetHookScript(DatabaseHook.PreDeploy, "test", Directory, out _).Should().BeFalse();
 
         //the hooks it said nothing about are untouched
         actual.PostDeploy.Should().Be("_PostDeploy");
-        actual.Configured.Should().BeEquivalentTo([DatabaseHook.PostDeploy]);
+        ConfiguredHooks(actual).Should().BeEquivalentTo([DatabaseHook.PostDeploy]);
     }
 
     [Test]
@@ -251,7 +263,7 @@ public class DatabaseCollectionTests
 
         //assert
         actual.Should().Be(DatabaseHooks.None);
-        actual.Configured.Should().BeEmpty();
+        ConfiguredHooks(actual).Should().BeEmpty();
     }
 
     private static Mock<IDatabaseFactory> GetDatabaseFactory()

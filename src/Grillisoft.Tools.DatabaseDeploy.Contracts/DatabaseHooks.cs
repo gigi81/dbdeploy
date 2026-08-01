@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Abstractions;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Contracts;
@@ -11,34 +12,38 @@ public sealed record DatabaseHooks(string PreDeploy, string PostDeploy, string P
     public static readonly DatabaseHooks None =
         new(string.Empty, string.Empty, string.Empty, string.Empty);
 
-    public string this[DatabaseHook hook] => hook switch
+    public bool TryGetHookScript(DatabaseHook hook, string database, IDirectoryInfo directory, [NotNullWhen(true)] out HookScript? script)
     {
-        DatabaseHook.PreDeploy => this.PreDeploy,
-        DatabaseHook.PostDeploy => this.PostDeploy,
-        DatabaseHook.PreRollback => this.PreRollback,
-        DatabaseHook.PostRollback => this.PostRollback,
-        _ => throw new ArgumentOutOfRangeException(nameof(hook), hook, "Unknown database hook")
-    };
+        if (TryGetHook(hook, out var scriptName))
+        {
+            script = new HookScript(database, hook, scriptName, directory);
+            return true;
+        }
 
-    public bool IsConfigured(DatabaseHook hook) => !string.IsNullOrWhiteSpace(this[hook]);
-
-    /// <summary>
-    /// The hooks that have a script name configured.
-    /// </summary>
-    public IEnumerable<DatabaseHook> Configured =>
-        Enum.GetValues<DatabaseHook>().Where(IsConfigured);
-
-    /// <summary>
-    /// The script of one hook, configured or not: this is the only place a configured name becomes
-    /// a <see cref="HookScript"/>.
-    /// </summary>
-    public HookScript GetHookScript(DatabaseHook hook, string database, IDirectoryInfo directory)
-    {
-        return new HookScript(database, hook, this[hook], directory);
+        script = null;
+        return false;
     }
 
     public IEnumerable<HookScript> GetHookScripts(string database, IDirectoryInfo directory)
     {
-        return this.Configured.Select(hook => GetHookScript(hook, database, directory));
+        foreach (var hook in Enum.GetValues<DatabaseHook>())
+        {
+            if (TryGetHookScript(hook, database, directory, out var script))
+                yield return script;
+        }
+    }
+
+    private bool TryGetHook(DatabaseHook hook, out string scriptName)
+    {
+        scriptName = hook switch
+        {
+            DatabaseHook.PreDeploy => this.PreDeploy,
+            DatabaseHook.PostDeploy => this.PostDeploy,
+            DatabaseHook.PreRollback => this.PreRollback,
+            DatabaseHook.PostRollback => this.PostRollback,
+            _ => throw new ArgumentOutOfRangeException(nameof(hook), hook, "Unknown database hook")
+        };
+
+        return !string.IsNullOrWhiteSpace(scriptName);
     }
 }

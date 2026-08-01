@@ -70,7 +70,7 @@ public class FormatService : BaseService
                 continue;
             }
 
-            var formatter = ResolveFormatter(step.Database);
+            var formatter = _databases.GetSqlFormatter(step.Database) ?? GetFactory().SqlFormatter;
 
             // A step that sits in the default branch file has been released, so it has very likely
             // been deployed somewhere. The branch files are the only evidence of that on disk, and
@@ -216,23 +216,15 @@ public class FormatService : BaseService
             if (directory.FullName.Equals(root.FullName, StringComparison.OrdinalIgnoreCase))
                 break;
 
-            var match = this.Databases.FirstOrDefault(
+            var match = _databases.Databases.FirstOrDefault(
                 name => name.Equals(directory.Name, StringComparison.InvariantCultureIgnoreCase));
 
-            if (match is not null && GetSqlFormatter(match) is { } formatter)
+            if (match is not null && _databases.GetSqlFormatter(match) is { } formatter)
                 return formatter;
         }
 
         return GetFactory().SqlFormatter;
     }
-
-    /// <summary>
-    /// The dialect a branch step's scripts are in. It comes from the provider configured for that
-    /// database - configuration only, so no database is built and no connection string is needed -
-    /// and falls back to <c>--provider</c> when the settings say nothing about it.
-    /// </summary>
-    private ISqlFormatter ResolveFormatter(string database) =>
-        GetSqlFormatter(database) ?? GetFactory().SqlFormatter;
 
     private IDatabaseFactory GetFactory()
     {

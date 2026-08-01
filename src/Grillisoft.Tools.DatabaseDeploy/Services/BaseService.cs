@@ -72,20 +72,9 @@ public abstract class BaseService : IExecutable
         );
     }
 
-    protected IReadOnlyCollection<string> Databases => _databases.Databases;
-
     protected async Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken)
     {
         return await _databases.GetDatabase(name, cancellationToken);
-    }
-
-    /// <summary>
-    /// The formatter for a database's dialect, without building the database or needing a
-    /// connection. Null when the configuration does not say which provider the database uses.
-    /// </summary>
-    protected ISqlFormatter? GetSqlFormatter(string name)
-    {
-        return _databases.GetSqlFormatter(name);
     }
 
     private async Task<(string, DatabaseMigration[])> GetMigrations(string name, CancellationToken cancellationToken)

@@ -84,11 +84,9 @@ public class DatabaseHooksRunner
 
     private async Task RunHook(DatabaseHook hook, string database, CancellationToken cancellationToken)
     {
-        var hooks = _databases.GetHooks(database);
-        if (!hooks.IsConfigured(hook))
+        if (!_databases.GetHooks(database).TryGetHookScript(hook, database, _root, out var script))
             return;
 
-        var script = hooks.GetHookScript(hook, database, _root);
         var file = script.File ?? throw new HookScriptNotFoundException(script);
 
         if (_dryRun)

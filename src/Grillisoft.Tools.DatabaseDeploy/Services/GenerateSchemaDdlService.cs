@@ -22,12 +22,14 @@ public class GenerateSchemaDdlService : BaseService
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Starting generating database(s) schema definitions for {Count} databases", this.Databases.Count);
+        _logger.LogInformation("Starting generating database(s) schema definitions for {Count} databases",
+            _databases.Databases.Count);
+
         var stopwatch = Stopwatch.StartNew();
         var rootDirectory = this.GetDirectory(_options.Path);
         var lines = new List<string>();
 
-        foreach (var databaseName in this.Databases)
+        foreach (var databaseName in _databases.Databases)
         {
             if (await GenerateDatabaseDdl(databaseName, rootDirectory, cancellationToken))
                 lines.Add($"{databaseName},{_globalSettings.Value.InitStepName}");

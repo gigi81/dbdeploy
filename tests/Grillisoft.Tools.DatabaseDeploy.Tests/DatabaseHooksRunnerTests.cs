@@ -2,11 +2,9 @@ using System.IO.Abstractions.TestingHelpers;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
-using Grillisoft.Tools.DatabaseDeploy.Services;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Mocks;
-using ExtensionsOptions = Microsoft.Extensions.Options.Options;
 
-namespace Grillisoft.Tools.DatabaseDeploy.Tests.Services;
+namespace Grillisoft.Tools.DatabaseDeploy.Tests;
 
 public class DatabaseHooksRunnerTests
 {
@@ -180,13 +178,12 @@ public class DatabaseHooksRunnerTests
             collection.Hooks.Add(database.Name, hooks);
 
         var databaseLoggers = new DatabaseLoggerFactory(TestLoggerFactory.Instance);
-        var dependencies = new ServiceDependencies(
-            collection,
-            _fileSystem,
-            ExtensionsOptions.Create(new GlobalSettings()),
-            databaseLoggers,
-            new ScriptsRunner(databaseLoggers));
 
-        return new DatabaseHooksRunner(dependencies, _fileSystem.DirectoryInfo.New(RootPath), dryRun);
+        return new DatabaseHooksRunner(
+            collection,
+            _fileSystem.DirectoryInfo.New(RootPath),
+            dryRun,
+            new ScriptsRunner(databaseLoggers),
+            databaseLoggers);
     }
 }

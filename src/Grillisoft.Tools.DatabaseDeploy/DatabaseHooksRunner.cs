@@ -4,7 +4,7 @@ using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Microsoft.Extensions.Logging;
 
-namespace Grillisoft.Tools.DatabaseDeploy.Services;
+namespace Grillisoft.Tools.DatabaseDeploy;
 
 /// <summary>
 /// Runs the scripts configured around a deploy or a rollback. Everything a hook needs is here:
@@ -18,16 +18,23 @@ public class DatabaseHooksRunner
     private readonly IScriptsRunner _scripts;
     private readonly IDatabaseLoggerFactory _dbl;
 
-    /// <param name="dependencies">The same databases, runner and loggers the service was built with</param>
+    /// <param name="databases">Where the hooks of a database and the database itself come from</param>
     /// <param name="root">The folder the scripts are looked up in, the one of the branch files</param>
     /// <param name="dryRun">When set the scripts are only reported, like every other script</param>
-    public DatabaseHooksRunner(ServiceDependencies dependencies, IDirectoryInfo root, bool dryRun)
+    /// <param name="scripts">Runs a hook script the same way a step script is run</param>
+    /// <param name="databaseLoggers">Where the logger of a database comes from</param>
+    public DatabaseHooksRunner(
+        IDatabasesCollection databases,
+        IDirectoryInfo root,
+        bool dryRun,
+        IScriptsRunner scripts,
+        IDatabaseLoggerFactory databaseLoggers)
     {
-        _databases = dependencies.Databases;
+        _databases = databases;
         _root = root;
         _dryRun = dryRun;
-        _scripts = dependencies.Scripts;
-        _dbl = dependencies.DatabaseLoggers;
+        _scripts = scripts;
+        _dbl = databaseLoggers;
     }
 
     /// <summary>

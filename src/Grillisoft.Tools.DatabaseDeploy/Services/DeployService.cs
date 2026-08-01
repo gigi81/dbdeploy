@@ -23,7 +23,12 @@ public class DeployService : BaseService
     {
         _options = options;
         _progress = progress;
-        _hooks = new DatabaseHooksRunner(dependencies, GetDirectory(options.Path), options.DryRun);
+        _hooks = new DatabaseHooksRunner(
+            dependencies.Databases,
+            GetDirectory(options.Path),
+            options.DryRun,
+            dependencies.Scripts,
+            dependencies.DatabaseLoggers);
     }
 
     private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)

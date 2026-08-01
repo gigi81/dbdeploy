@@ -7,7 +7,7 @@ using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
-public class CiService : BaseService
+public class CiService : BranchService
 {
     private const string DeployVerb = "deploy";
     private const string RollbackVerb = "rollback";
@@ -18,16 +18,12 @@ public class CiService : BaseService
         CiOptions options,
         ServiceDependencies dependencies,
         ILogger<CiService> logger
-    ) : base(dependencies, logger)
+    ) : base(options, dependencies, logger)
     {
         _options = options;
     }
 
     private string DefaultBranch => _globalSettings.Value.DefaultBranch;
-
-    private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)
-        ? _options.Branch
-        : this.DefaultBranch;
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {

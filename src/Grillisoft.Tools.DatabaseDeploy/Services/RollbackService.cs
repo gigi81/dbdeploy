@@ -5,32 +5,21 @@ using Microsoft.Extensions.Logging;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
-public class RollbackService : BaseService
+public class RollbackService : BranchService
 {
     private readonly RollbackOptions _options;
     private readonly IProgress<int> _progress;
-    private readonly DatabaseHooksRunner _hooks;
 
     public RollbackService(
         RollbackOptions options,
         ServiceDependencies dependencies,
         IProgress<int> progress,
         ILogger<RollbackService> logger
-     ) : base(dependencies, logger)
+     ) : base(options, dependencies, logger)
     {
         _options = options;
         _progress = progress;
-        _hooks = new DatabaseHooksRunner(
-            dependencies.Databases,
-            GetDirectory(options.Path),
-            options.DryRun,
-            dependencies.Scripts,
-            dependencies.DatabaseLoggers);
     }
-
-    private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)
-        ? _options.Branch
-        : _globalSettings.Value.DefaultBranch;
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
@@ -50,7 +39,7 @@ public class RollbackService : BaseService
         //only the databases that have something to rollback take part in the pre and post scripts
         var rollbackDatabases = rollbackSteps.Select(s => s.Step.Database).Distinct().ToArray();
 
-        await _hooks.Run(DatabaseHook.PreRollback, rollbackDatabases, cancellationToken);
+        await this.Hooks.Run(DatabaseHook.PreRollback, rollbackDatabases, cancellationToken);
 
         _progress.Report(0);
         foreach (var (step, migration) in rollbackSteps)
@@ -60,7 +49,7 @@ public class RollbackService : BaseService
         }
         _progress.Report(100);
 
-        var failed = await _hooks.TryRun(DatabaseHook.PostRollback, rollbackDatabases, cancellationToken);
+        var failed = await this.Hooks.TryRun(DatabaseHook.PostRollback, rollbackDatabases, cancellationToken);
 
         var operation = _options.DryRun ? "Dry run (rollback)" : "Rollback";
         if (failed > 0)

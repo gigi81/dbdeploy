@@ -8,32 +8,21 @@ using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
-public class DeployService : BaseService
+public class DeployService : BranchService
 {
     private readonly DeployOptions _options;
     private readonly IProgress<int> _progress;
-    private readonly DatabaseHooksRunner _hooks;
 
     public DeployService(
         DeployOptions options,
         ServiceDependencies dependencies,
         IProgress<int> progress,
         ILogger<DeployService> logger
-    ) : base(dependencies, logger)
+    ) : base(options, dependencies, logger)
     {
         _options = options;
         _progress = progress;
-        _hooks = new DatabaseHooksRunner(
-            dependencies.Databases,
-            GetDirectory(options.Path),
-            options.DryRun,
-            dependencies.Scripts,
-            dependencies.DatabaseLoggers);
     }
-
-    private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)
-        ? _options.Branch
-        : _globalSettings.Value.DefaultBranch;
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
@@ -59,7 +48,7 @@ public class DeployService : BaseService
         //only the databases that have something to deploy take part in the pre and post scripts
         var deployDatabases = deploySteps.Select(s => s.Database).Distinct().ToArray();
 
-        await _hooks.Run(DatabaseHook.PreDeploy, deployDatabases, cancellationToken);
+        await this.Hooks.Run(DatabaseHook.PreDeploy, deployDatabases, cancellationToken);
 
         _progress.Report(0);
         foreach (var step in deploySteps)
@@ -69,7 +58,7 @@ public class DeployService : BaseService
         }
         _progress.Report(100);
 
-        var failed = await _hooks.TryRun(DatabaseHook.PostDeploy, deployDatabases, cancellationToken);
+        var failed = await this.Hooks.TryRun(DatabaseHook.PostDeploy, deployDatabases, cancellationToken);
 
         var operation = _options.DryRun ? "Dry run (deploy)" : "Deployment";
         if (failed > 0)

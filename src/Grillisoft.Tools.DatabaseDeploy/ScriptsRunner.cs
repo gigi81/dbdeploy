@@ -12,11 +12,11 @@ namespace Grillisoft.Tools.DatabaseDeploy;
 /// </summary>
 public class ScriptsRunner
 {
-    private readonly DatabaseLoggerFactory _dbl;
+    private readonly IDatabaseLoggerFactory _dbl;
 
-    public ScriptsRunner(ILogger logger)
+    public ScriptsRunner(IDatabaseLoggerFactory databaseLoggers)
     {
-        _dbl = new DatabaseLoggerFactory(logger);
+        _dbl = databaseLoggers;
     }
 
     public async Task Run(IEnumerable<IFileInfo> scriptFiles, IDatabase database, CancellationToken cancellationToken)

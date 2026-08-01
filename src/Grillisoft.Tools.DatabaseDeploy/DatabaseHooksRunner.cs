@@ -16,19 +16,23 @@ public class DatabaseHooksRunner
     private readonly IDirectoryInfo _root;
     private readonly bool _dryRun;
     private readonly ScriptsRunner _scripts;
-    private readonly DatabaseLoggerFactory _dbl;
+    private readonly IDatabaseLoggerFactory _dbl;
 
     /// <param name="databases">Where the hooks of a database and the database itself come from</param>
     /// <param name="root">The folder the scripts are looked up in, the one of the branch files</param>
     /// <param name="dryRun">When set the scripts are only reported, like every other script</param>
-    /// <param name="logger">The logger of the service the run belongs to</param>
-    public DatabaseHooksRunner(IDatabasesCollection databases, IDirectoryInfo root, bool dryRun, ILogger logger)
+    /// <param name="databaseLoggers">Where the logger of a database comes from</param>
+    public DatabaseHooksRunner(
+        IDatabasesCollection databases,
+        IDirectoryInfo root,
+        bool dryRun,
+        IDatabaseLoggerFactory databaseLoggers)
     {
         _databases = databases;
         _root = root;
         _dryRun = dryRun;
-        _scripts = new ScriptsRunner(logger);
-        _dbl = new DatabaseLoggerFactory(logger);
+        _scripts = new ScriptsRunner(databaseLoggers);
+        _dbl = databaseLoggers;
     }
 
     /// <summary>

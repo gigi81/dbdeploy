@@ -23,12 +23,13 @@ public class DeployService : BaseService
         IFileSystem fileSystem,
         IOptions<GlobalSettings> globalOptions,
         IProgress<int> progress,
+        IDatabaseLoggerFactory databaseLoggers,
         ILogger<DeployService> logger
-    ) : base(databases, fileSystem, globalOptions, logger)
+    ) : base(databases, fileSystem, globalOptions, databaseLoggers, logger)
     {
         _options = options;
         _progress = progress;
-        _hooks = new DatabaseHooksRunner(databases, GetDirectory(options.Path), options.DryRun, logger);
+        _hooks = new DatabaseHooksRunner(databases, GetDirectory(options.Path), options.DryRun, databaseLoggers);
     }
 
     private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)

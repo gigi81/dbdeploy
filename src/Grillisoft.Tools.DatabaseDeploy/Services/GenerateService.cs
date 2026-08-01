@@ -19,8 +19,9 @@ public class GenerateService : BaseService
         IDatabasesCollection databases,
         IFileSystem fileSystem,
         IOptions<GlobalSettings> globalSettings,
+        IDatabaseLoggerFactory databaseLoggers,
         ILogger<GenerateService> logger)
-        : base(databases, fileSystem, globalSettings, logger)
+        : base(databases, fileSystem, globalSettings, databaseLoggers, logger)
     {
         _generator = generator;
         _directory = fileSystem.DirectoryInfo.New(options.Path);

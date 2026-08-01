@@ -1,7 +1,7 @@
 ﻿using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
-using Microsoft.Extensions.Logging;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests;
 
@@ -12,12 +12,12 @@ public class StrategyTests
 
     private static readonly GlobalSettings GlobalSettings = new();
     private readonly IDirectoryInfo _directory;
-    private readonly ILogger<Strategy> _logger;
+    private readonly IDatabaseLoggerFactory _databaseLoggers;
 
     public StrategyTests()
     {
         _directory = CreateDatabaseDirectory(Database01);
-        _logger = TestLogger<Strategy>.Instance;
+        _databaseLoggers = new DatabaseLoggerFactory(TestLoggerFactory.Instance);
     }
 
     [Test]
@@ -25,7 +25,7 @@ public class StrategyTests
     {
         //arrange
         var steps = GetSteps(_directory);
-        var sut = new Strategy(steps, GetMigrations(steps.Length), _logger);
+        var sut = new Strategy(steps, GetMigrations(steps.Length), _databaseLoggers);
 
         //act
         var deploySteps = await sut.GetDeploySteps(MainBranch).ToArrayAsync();
@@ -39,7 +39,7 @@ public class StrategyTests
     {
         //arrange
         var steps = GetSteps(_directory);
-        var sut = new Strategy(steps, GetMigrations(1), _logger);
+        var sut = new Strategy(steps, GetMigrations(1), _databaseLoggers);
 
         //act
         var deploySteps = await sut.GetDeploySteps(MainBranch).ToArrayAsync();
@@ -58,7 +58,7 @@ public class StrategyTests
             new Step(Database01, "TKT-001.SampleDescription", releaseBranch, false, _directory)
         };
         var steps = GetSteps(_directory).Concat(releaseSteps).ToArray();
-        var sut = new Strategy(steps, GetMigrations(2), _logger);
+        var sut = new Strategy(steps, GetMigrations(2), _databaseLoggers);
 
         //act
         var deploySteps = await sut.GetDeploySteps(releaseBranch).ToArrayAsync();

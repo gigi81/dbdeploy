@@ -22,8 +22,9 @@ public class CiService : BaseService
         IDatabasesCollection databases,
         IFileSystem fileSystem,
         IOptions<GlobalSettings> globalOptions,
+        IDatabaseLoggerFactory databaseLoggers,
         ILogger<CiService> logger
-    ) : base(databases, fileSystem, globalOptions, logger)
+    ) : base(databases, fileSystem, globalOptions, databaseLoggers, logger)
     {
         _options = options;
     }

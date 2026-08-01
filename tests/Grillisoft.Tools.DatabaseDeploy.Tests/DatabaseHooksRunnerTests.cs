@@ -181,6 +181,6 @@ public class DatabaseHooksRunnerTests
             collection,
             _fileSystem.DirectoryInfo.New(RootPath),
             dryRun,
-            TestLogger<DatabaseHooksRunner>.Instance);
+            new DatabaseLoggerFactory(TestLoggerFactory.Instance));
     }
 }

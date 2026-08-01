@@ -18,8 +18,9 @@ public class ValidateService : BaseService
         IDatabasesCollection databases,
         IFileSystem fileSystem,
         IOptions<GlobalSettings> globalSettings,
+        IDatabaseLoggerFactory databaseLoggers,
         ILogger<ValidateService> logger)
-        : base(databases, fileSystem, globalSettings, logger)
+        : base(databases, fileSystem, globalSettings, databaseLoggers, logger)
     {
         _options = options;
     }

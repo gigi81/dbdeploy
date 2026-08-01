@@ -18,20 +18,21 @@ public abstract class BaseService : IExecutable
     private readonly ScriptsRunner _scripts;
     protected readonly IOptions<GlobalSettings> _globalSettings;
     protected readonly ILogger _logger;
-    protected readonly DatabaseLoggerFactory _dbl;
+    protected readonly IDatabaseLoggerFactory _dbl;
 
     protected BaseService(
         IDatabasesCollection databases,
         IFileSystem fileSystem,
         IOptions<GlobalSettings> globalSettings,
+        IDatabaseLoggerFactory databaseLoggers,
         ILogger logger)
     {
         _databases = databases;
         _fileSystem = fileSystem;
         _globalSettings = globalSettings;
         _logger = logger;
-        _dbl = new DatabaseLoggerFactory(logger);
-        _scripts = new ScriptsRunner(logger);
+        _dbl = databaseLoggers;
+        _scripts = new ScriptsRunner(databaseLoggers);
     }
 
     public abstract Task<int> Execute(CancellationToken cancellationToken);
@@ -70,7 +71,7 @@ public abstract class BaseService : IExecutable
 
     protected async Task<Strategy> GetStrategy(Step[] steps, CancellationToken cancellationToken)
     {
-        return new Strategy(steps, await GetAllMigrations(steps, cancellationToken), _logger);
+        return new Strategy(steps, await GetAllMigrations(steps, cancellationToken), _dbl);
     }
 
     private async Task<Dictionary<string, DatabaseMigration[]>> GetAllMigrations(Step[] steps, CancellationToken cancellationToken)

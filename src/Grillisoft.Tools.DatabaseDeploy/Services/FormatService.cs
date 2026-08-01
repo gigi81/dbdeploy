@@ -34,8 +34,9 @@ public class FormatService : BaseService
         IEnumerable<IDatabaseFactory> factories,
         IFileSystem fileSystem,
         IOptions<GlobalSettings> globalSettings,
+        IDatabaseLoggerFactory databaseLoggers,
         ILogger<FormatService> logger)
-        : base(databases, fileSystem, globalSettings, logger)
+        : base(databases, fileSystem, globalSettings, databaseLoggers, logger)
     {
         _options = options;
         _fileSystem = fileSystem;

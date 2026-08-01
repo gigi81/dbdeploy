@@ -91,6 +91,15 @@ reproducing a layout bug. `CorpusFiles` skips anything over 2 MB, which drops th
 `_Init.Data*.sql` dumps only: they are never formatted by the product, and they cost four minutes of
 CI time. Keep a new fixture under that size or it will be silently ignored.
 
+## Logging about a database
+
+Anything written about a database goes through `IDatabaseLoggerFactory` (`_dbl[name]`), which is
+registered once and injected - do not `new` a `DatabaseLoggerFactory` in a class that needs one, or
+the loggers stop being shared. It wraps the logger of the database's own category with the
+`Database {Database}: ` prefix, so a message about a database reads the same wherever it is written
+from. A test that asserts on those messages has to build the factory over its own `ILoggerFactory`
+(`RecordingLoggerFactory`), not over the logger of the service.
+
 ## Pre and post scripts
 
 `preDeploy`, `postDeploy`, `preRollback` and `postRollback` name an optional script per database,

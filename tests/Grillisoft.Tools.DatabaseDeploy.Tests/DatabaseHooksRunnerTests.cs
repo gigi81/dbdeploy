@@ -1,5 +1,5 @@
-using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Mocks;
@@ -31,7 +31,7 @@ public class DatabaseHooksRunnerTests
         var sut = CreateRunner(database);
 
         //act
-        await sut.Run(DatabaseHook.PreDeploy, ["Database01"], Root, false, _cancellationToken);
+        await sut.Run(DatabaseHook.PreDeploy, ["Database01"], _cancellationToken);
 
         //assert
         database.Scripts.Should().BeEquivalentTo([DatabaseScript]);
@@ -46,7 +46,7 @@ public class DatabaseHooksRunnerTests
         var sut = CreateRunner(database);
 
         //act
-        await sut.Run(DatabaseHook.PreDeploy, ["Database01"], Root, false, _cancellationToken);
+        await sut.Run(DatabaseHook.PreDeploy, ["Database01"], _cancellationToken);
 
         //assert
         database.Scripts.Should().BeEquivalentTo([RootScript]);
@@ -61,7 +61,7 @@ public class DatabaseHooksRunnerTests
         var sut = CreateRunner(DatabaseHooks.None, database);
 
         //act
-        await sut.Run(DatabaseHook.PreDeploy, ["Database01"], Root, false, _cancellationToken);
+        await sut.Run(DatabaseHook.PreDeploy, ["Database01"], _cancellationToken);
 
         //assert
         database.Scripts.Should().BeEmpty();
@@ -73,10 +73,10 @@ public class DatabaseHooksRunnerTests
         //arrange
         AddScript($"{HookName}.sql", RootScript);
         var database = new DatabaseMock("Database01");
-        var sut = CreateRunner(database);
+        var sut = CreateRunner(dryRun: true, database);
 
         //act
-        await sut.Run(DatabaseHook.PreDeploy, ["Database01"], Root, true, _cancellationToken);
+        await sut.Run(DatabaseHook.PreDeploy, ["Database01"], _cancellationToken);
 
         //assert
         database.Scripts.Should().BeEmpty();
@@ -90,7 +90,7 @@ public class DatabaseHooksRunnerTests
         var sut = CreateRunner(database);
 
         //act
-        var act = async () => await sut.Run(DatabaseHook.PreDeploy, ["Database01"], Root, false, _cancellationToken);
+        var act = async () => await sut.Run(DatabaseHook.PreDeploy, ["Database01"], _cancellationToken);
 
         //assert
         await act.Should().ThrowExactlyAsync<HookScriptNotFoundException>();
@@ -107,7 +107,7 @@ public class DatabaseHooksRunnerTests
         var sut = CreateRunner(database01, database02);
 
         //act
-        var act = async () => await sut.Run(DatabaseHook.PreDeploy, ["Database01", "Database02"], Root, false, _cancellationToken);
+        var act = async () => await sut.Run(DatabaseHook.PreDeploy, ["Database01", "Database02"], _cancellationToken);
 
         //assert
         await act.Should().ThrowAsync<InvalidOperationException>();
@@ -125,7 +125,7 @@ public class DatabaseHooksRunnerTests
         var sut = CreateRunner(database01, database02);
 
         //act
-        var failed = await sut.TryRun(DatabaseHook.PreDeploy, ["Database01", "Database02"], Root, false, _cancellationToken);
+        var failed = await sut.TryRun(DatabaseHook.PreDeploy, ["Database01", "Database02"], _cancellationToken);
 
         //assert
         failed.Should().Be(1);
@@ -140,7 +140,7 @@ public class DatabaseHooksRunnerTests
         var sut = CreateRunner(new DatabaseMock("Database01"), new DatabaseMock("Database02"));
 
         //act
-        var failed = await sut.TryRun(DatabaseHook.PreDeploy, ["Database01", "Database02"], Root, false, _cancellationToken);
+        var failed = await sut.TryRun(DatabaseHook.PreDeploy, ["Database01", "Database02"], _cancellationToken);
 
         //assert
         failed.Should().Be(0);
@@ -148,7 +148,8 @@ public class DatabaseHooksRunnerTests
 
     private static string RootPath => OperatingSystem.IsWindows() ? "c:\\demo\\" : "/opt/demo/";
 
-    private IDirectoryInfo Root => _fileSystem.DirectoryInfo.New(RootPath);
+    private static readonly DatabaseHooks PreDeployOnly =
+        new(HookName, string.Empty, string.Empty, string.Empty);
 
     private void AddScript(string relativePath, string content)
     {
@@ -157,15 +158,29 @@ public class DatabaseHooksRunnerTests
 
     private DatabaseHooksRunner CreateRunner(params DatabaseMock[] databases)
     {
-        return CreateRunner(new DatabaseHooks(HookName, string.Empty, string.Empty, string.Empty), databases);
+        return CreateRunner(PreDeployOnly, false, databases);
     }
 
-    private static DatabaseHooksRunner CreateRunner(DatabaseHooks hooks, params DatabaseMock[] databases)
+    private DatabaseHooksRunner CreateRunner(bool dryRun, params DatabaseMock[] databases)
     {
-        var collection = new DatabasesCollectionMock(databases.Cast<Abstractions.IDatabase>().ToArray());
+        return CreateRunner(PreDeployOnly, dryRun, databases);
+    }
+
+    private DatabaseHooksRunner CreateRunner(DatabaseHooks hooks, params DatabaseMock[] databases)
+    {
+        return CreateRunner(hooks, false, databases);
+    }
+
+    private DatabaseHooksRunner CreateRunner(DatabaseHooks hooks, bool dryRun, DatabaseMock[] databases)
+    {
+        var collection = new DatabasesCollectionMock(databases.Cast<IDatabase>().ToArray());
         foreach (var database in databases)
             collection.Hooks.Add(database.Name, hooks);
 
-        return new DatabaseHooksRunner(collection, TestLogger<DatabaseHooksRunner>.Instance);
+        return new DatabaseHooksRunner(
+            collection,
+            _fileSystem.DirectoryInfo.New(RootPath),
+            dryRun,
+            TestLogger<DatabaseHooksRunner>.Instance);
     }
 }

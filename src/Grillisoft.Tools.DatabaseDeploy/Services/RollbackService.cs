@@ -20,13 +20,12 @@ public class RollbackService : BaseService
         IFileSystem fileSystem,
         IOptions<GlobalSettings> globalOptions,
         IProgress<int> progress,
-        DatabaseHooksRunner hooks,
         ILogger<RollbackService> logger
      ) : base(databases, fileSystem, globalOptions, logger)
     {
         _options = options;
         _progress = progress;
-        _hooks = hooks;
+        _hooks = new DatabaseHooksRunner(databases, GetDirectory(options.Path), options.DryRun, logger);
     }
 
     private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)
@@ -51,7 +50,7 @@ public class RollbackService : BaseService
         //only the databases that have something to rollback take part in the pre and post scripts
         var rollbackDatabases = rollbackSteps.Select(s => s.Step.Database).Distinct().ToArray();
 
-        await _hooks.Run(DatabaseHook.PreRollback, rollbackDatabases, branches.Directory, _options.DryRun, cancellationToken);
+        await _hooks.Run(DatabaseHook.PreRollback, rollbackDatabases, cancellationToken);
 
         _progress.Report(0);
         foreach (var (step, migration) in rollbackSteps)
@@ -61,7 +60,7 @@ public class RollbackService : BaseService
         }
         _progress.Report(100);
 
-        var failed = await _hooks.TryRun(DatabaseHook.PostRollback, rollbackDatabases, branches.Directory, _options.DryRun, cancellationToken);
+        var failed = await _hooks.TryRun(DatabaseHook.PostRollback, rollbackDatabases, cancellationToken);
 
         var operation = _options.DryRun ? "Dry run (rollback)" : "Rollback";
         if (failed > 0)

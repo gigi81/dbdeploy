@@ -87,15 +87,12 @@ public class RollbackServiceTests
 
     private RollbackService CreateService(RollbackOptions deployOptions, params IDatabase[] databases)
     {
-        var collection = new DatabasesCollectionMock(databases);
-
         var provider = new TestServiceCollection<RollbackService>()
             .AddSingleton(deployOptions)
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
             .AddSingleton<IProgress<int>>(new Progress<int>())
             .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(databases))
-            .AddSingleton<IDatabasesCollection>(collection)
-            .AddSingleton(new DatabaseHooksRunner(collection, TestLogger<DatabaseHooksRunner>.Instance))
+            .AddSingleton<IDatabasesCollection>(new DatabasesCollectionMock(databases))
             .Configure<GlobalSettings>(options => { })
             .BuildServiceProvider();
 

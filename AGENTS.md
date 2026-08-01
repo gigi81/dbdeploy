@@ -102,8 +102,9 @@ configuring a hook turns its own file into an `Untracked file detected` error an
 `CheckHookFiles` then makes a configured but missing script an error for `deploy`, `rollback` and
 `validate` alike. Running them is `DatabaseHooksRunner`'s job and only its job: `Run` stops at the
 first failure (the pre scripts) and `TryRun` carries on and returns how many failed (the post
-scripts). `DeployService` and `RollbackService` take it as a dependency, call it for the databases
-that have steps in the plan, and return the post failure count as their exit code. Both it and
+scripts). It is bound to the run it belongs to - root folder and dry run come from its constructor,
+so a call is only the hook and the databases - and `DeployService`/`RollbackService` build one each
+and return the post failure count as their exit code. Both it and
 `BaseService` execute a file through `ScriptsRunner`, which is the one place that parses a script
 into batches, runs them and logs them.
 

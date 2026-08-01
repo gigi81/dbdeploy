@@ -14,7 +14,7 @@ public class LayoutValidatorEncodingTests
     [Test]
     public async Task Validate_WhenEveryFileIsUtf8WithoutBOM_ReportsNoError()
     {
-        var errors = await Validate(new UTF8Encoding(false).GetBytes("SELECT 'café'"));
+        var (errors, _) = await Validate(new UTF8Encoding(false).GetBytes("SELECT 'café'"));
 
         errors.Should().BeEmpty();
     }
@@ -23,12 +23,16 @@ public class LayoutValidatorEncodingTests
     [Test]
     public async Task Validate_WhenAScriptIsNotUtf8_ReportsAnError()
     {
-        var errors = await Validate(Encoding.Latin1.GetBytes("SELECT 'café'"));
+        var (errors, path) = await Validate(Encoding.Latin1.GetBytes("SELECT 'café'"));
 
-        errors.Should().ContainSingle().Which.Should().Contain("is not UTF8").And.Contain(ScriptPath);
+        errors.Should().ContainSingle().Which.Should().Contain("is not UTF8").And.Contain(path);
     }
 
-    private static async Task<List<string>> Validate(byte[] content)
+    /// <returns>
+    /// The errors, along with the path the script ended up at: the file system decides that, and
+    /// spells it the windows way when the tests run on windows.
+    /// </returns>
+    private static async Task<(List<string> Errors, string Path)> Validate(byte[] content)
     {
         var fileSystem = SampleBranches.CreateFileSystem();
         fileSystem.File.WriteAllBytes(ScriptPath, content);
@@ -39,6 +43,6 @@ public class LayoutValidatorEncodingTests
 
         await reader.Load();
 
-        return await SampleBranches.Validate(reader);
+        return (await SampleBranches.Validate(reader), fileSystem.FileInfo.New(ScriptPath).FullName);
     }
 }

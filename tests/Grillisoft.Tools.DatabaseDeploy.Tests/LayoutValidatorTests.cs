@@ -116,7 +116,9 @@ public class LayoutValidatorTests
 
         var errors = await Validate(fileSystem);
 
-        errors.Should().ContainSingle().Which.Should().StartWith("Untracked file detected").And.Contain(path);
+        //the path as the file system spells it, which on windows is the windows way
+        errors.Should().ContainSingle().Which.Should().StartWith("Untracked file detected")
+            .And.Contain(fileSystem.FileInfo.New(path).FullName);
     }
 
     /// <summary>Test scripts are optional, so one being there says nothing is wrong.</summary>

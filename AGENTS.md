@@ -96,8 +96,8 @@ CI time. Keep a new fixture under that size or it will be silently ignored.
 `preDeploy`, `postDeploy`, `preRollback` and `postRollback` name an optional script per database,
 set globally and overridable per database (`IDatabasesCollection.GetHooks`). Like
 `GetSqlFormatter`, they resolve **from configuration alone**: no `IDatabase` is built to read them.
-They do not use `OverrideWith` for the merge: an empty name on a database is how it opts out of a
-global hook, so only a key that is absent falls back to the global name.
+The merge is `OverrideWithAllowEmpty`, not `OverrideWith`: an empty name on a database is how it
+opts out of a global hook, so only a key that is absent falls back to the global name.
 The file is `<root>/<database>/<name>.sql` and falls back to `<root>/<name>.sql`; both candidate
 paths must keep being added to the tracked set in `BranchesValidator.CheckFiles`, otherwise
 configuring a hook turns its own file into an `Untracked file detected` error and every run fails.

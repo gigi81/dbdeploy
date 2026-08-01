@@ -1,4 +1,6 @@
-﻿namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
+﻿using Grillisoft.Tools.DatabaseDeploy.Contracts;
+
+namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
 
 public interface IDatabasesCollection
 {
@@ -12,4 +14,12 @@ public interface IDatabasesCollection
     /// the configuration says which provider the database uses.
     /// </summary>
     ISqlFormatter? GetSqlFormatter(string name);
+
+    /// <summary>
+    /// The names of the hook scripts of a database, worked out from configuration alone in the
+    /// same way as <see cref="GetSqlFormatter"/>: the per database settings override the global
+    /// ones, no <see cref="IDatabase"/> is built and no connection is needed. Hooks that are not
+    /// configured come back with an empty name.
+    /// </summary>
+    DatabaseHooks GetHooks(string name);
 }

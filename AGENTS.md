@@ -91,6 +91,20 @@ reproducing a layout bug. `CorpusFiles` skips anything over 2 MB, which drops th
 `_Init.Data*.sql` dumps only: they are never formatted by the product, and they cost four minutes of
 CI time. Keep a new fixture under that size or it will be silently ignored.
 
+## Pre and post scripts
+
+`preDeploy`, `postDeploy`, `preRollback` and `postRollback` name an optional script per database,
+set globally and overridable per database (`IDatabasesCollection.GetHooks`). Like
+`GetSqlFormatter`, they resolve **from configuration alone**: no `IDatabase` is built to read them.
+The file is `<root>/<database>/<name>.sql` and falls back to `<root>/<name>.sql`; both candidate
+paths must keep being added to the tracked set in `BranchesValidator.CheckFiles`, otherwise
+configuring a hook turns its own file into an `Untracked file detected` error and every run fails.
+`CheckHookFiles` then makes a configured but missing script an error for `deploy`, `rollback` and
+`validate` alike. At run time `BaseService.RunHooks` (stops at the first failure, for the pre
+scripts) and `BaseService.TryRunHooks` (carries on and counts failures, for the post scripts) run
+them for the databases that have steps in the plan, and the post failure count is the exit code of
+`DeployService`/`RollbackService`.
+
 ## Unit Test and Integration Test Strategy
 
 The solution has a comprehensive test suite. The unit tests are located in the `tests` folder. The integration tests are located in the `.github/workflows/integration-tests.yml` file.

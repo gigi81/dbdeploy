@@ -450,5 +450,7 @@ public class FormatServiceTests
 
         public ISqlFormatter? GetSqlFormatter(string name) =>
             name.Equals(_name, StringComparison.InvariantCultureIgnoreCase) ? _formatter : null;
+
+        public DatabaseHooks GetHooks(string name) => DatabaseHooks.None;
     }
 }

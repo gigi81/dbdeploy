@@ -43,7 +43,7 @@ public class Strategy
         }
     }
 
-    public IEnumerable<(Step, DatabaseMigration)> GetRollbackSteps(string branch)
+    public IEnumerable<(Step Step, DatabaseMigration Migration)> GetRollbackSteps(string branch)
     {
         foreach (var (step, migration) in GetRollbackStepsInternal().Reverse())
         {

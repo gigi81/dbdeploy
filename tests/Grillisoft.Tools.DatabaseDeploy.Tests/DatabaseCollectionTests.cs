@@ -1,4 +1,5 @@
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Microsoft.Extensions.Configuration;
 using Moq;
@@ -156,6 +157,71 @@ public class DatabaseCollectionTests
 
         //assert
         act.Should().ThrowExactly<DatabaseProviderNotFoundException>();
+    }
+
+    [Test]
+    public async Task GetHooks_WhenSetGlobally_ReturnsTheGlobalNames()
+    {
+        //arrange
+        var configuration = CreateConfig(new Dictionary<string, string?>()
+        {
+            { "global:preDeploy", "_PreDeploy" },
+            { "global:postRollback", "_PostRollback" },
+            { "databases:test:provider", FactoryProviderName }
+        });
+
+        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration);
+
+        //act
+        var actual = collection.GetHooks("test");
+
+        //assert
+        actual.PreDeploy.Should().Be("_PreDeploy");
+        actual.PostRollback.Should().Be("_PostRollback");
+        actual.PostDeploy.Should().BeEmpty();
+        actual.PreRollback.Should().BeEmpty();
+        actual.Configured.Should().BeEquivalentTo([DatabaseHook.PreDeploy, DatabaseHook.PostRollback]);
+    }
+
+    [Test]
+    public async Task GetHooks_WhenSetOnTheDatabase_OverridesTheGlobalNames()
+    {
+        //arrange
+        var configuration = CreateConfig(new Dictionary<string, string?>()
+        {
+            { "global:preDeploy", "_PreDeploy" },
+            { "global:postDeploy", "_PostDeploy" },
+            { "databases:test:preDeploy", "_TestPreDeploy" },
+            { "databases:test:provider", FactoryProviderName }
+        });
+
+        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration);
+
+        //act
+        var actual = collection.GetHooks("test");
+
+        //assert
+        actual.PreDeploy.Should().Be("_TestPreDeploy");
+        actual.PostDeploy.Should().Be("_PostDeploy");
+    }
+
+    [Test]
+    public async Task GetHooks_WhenNotConfigured_ReturnsNoHook()
+    {
+        //arrange
+        var configuration = CreateConfig(new Dictionary<string, string?>()
+        {
+            { "databases:test:provider", FactoryProviderName }
+        });
+
+        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration);
+
+        //act
+        var actual = collection.GetHooks("test");
+
+        //assert
+        actual.Should().Be(DatabaseHooks.None);
+        actual.Configured.Should().BeEmpty();
     }
 
     private static Mock<IDatabaseFactory> GetDatabaseFactory()

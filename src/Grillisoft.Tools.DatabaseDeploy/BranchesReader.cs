@@ -13,14 +13,20 @@ public class BranchesReader
 {
     private readonly IDirectoryInfo _directory;
     private readonly GlobalSettings _globalSettings;
+    private readonly Func<string, DatabaseHooks>? _hooks;
     private readonly Dictionary<string, Branch> _branches = new(StringComparer.InvariantCultureIgnoreCase);
     private readonly Dictionary<string, IFileInfo[]> _branchFiles = new(StringComparer.InvariantCultureIgnoreCase);
     private Branch? _mainBranch;
 
-    public BranchesReader(IDirectoryInfo directory, GlobalSettings globalSettings)
+    /// <param name="hooks">
+    /// Resolves the hook scripts configured for a database. When null no hook is validated, which
+    /// is what the callers that only care about the branch layout want.
+    /// </param>
+    public BranchesReader(IDirectoryInfo directory, GlobalSettings globalSettings, Func<string, DatabaseHooks>? hooks = null)
     {
         _directory = directory;
         _globalSettings = globalSettings;
+        _hooks = hooks;
     }
 
     public IReadOnlyDictionary<string, Branch> Branches => _branches;
@@ -71,7 +77,7 @@ public class BranchesReader
             _branches.Add(branch.Name, branch);
         }
 
-        return await BranchesValidator.Validate(_branches.Values, _globalSettings, _directory);
+        return await BranchesValidator.Validate(_branches.Values, _globalSettings, _directory, _hooks);
     }
 
     private IFileInfo MainBranchFile => BranchFiles.GetFile(_globalSettings.DefaultBranch, _directory);

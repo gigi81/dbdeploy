@@ -1,7 +1,11 @@
 ﻿{
   "global": {
     "defaultProvider": "sqlServer",
-    "scriptTimeout": 600
+    "scriptTimeout": 600,
+    "preDeploy": "_PreDeploy",
+    "postDeploy": "_PostDeploy",
+    "preRollback": "_PreRollback",
+    "postRollback": "_PostRollback"
   },
   "databases":{
     "Northwind": {

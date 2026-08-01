@@ -53,6 +53,12 @@ public class DeployService : BaseService
         var deploySteps = await strategy.GetDeploySteps(this.Branch).ToArrayAsync(cancellationToken);
 
         _logger.LogInformation("Detected {Count} steps to deploy", deploySteps.Length);
+
+        //only the databases that have something to deploy take part in the pre and post scripts
+        var deployDatabases = deploySteps.Select(s => s.Database).Distinct().ToArray();
+
+        await RunHooks(DatabaseHook.PreDeploy, deployDatabases, branches.Directory, _options.DryRun, cancellationToken);
+
         _progress.Report(0);
         foreach (var step in deploySteps)
         {
@@ -60,22 +66,30 @@ public class DeployService : BaseService
             _progress.Report(++count * 100 / steps.Length);
         }
         _progress.Report(100);
-        var operation = _options.DryRun ? "Dry run (deploy)" : "Deployment";
-        _logger.LogInformation("{Operation} completed successfully in {ElapsedTime}", operation, stopwatch.Elapsed);
 
+        var failed = await TryRunHooks(DatabaseHook.PostDeploy, deployDatabases, branches.Directory, _options.DryRun, cancellationToken);
+
+        var operation = _options.DryRun ? "Dry run (deploy)" : "Deployment";
+        if (failed > 0)
+            _logger.LogError("{Operation} completed in {ElapsedTime} but {Count} post deploy scripts failed", operation, stopwatch.Elapsed, failed);
+        else
+            _logger.LogInformation("{Operation} completed successfully in {ElapsedTime}", operation, stopwatch.Elapsed);
+
+        //a post deploy script that failed does not undo the deployment: whatever is left to do is
+        //still done, and the failure is reported through the exit code
         if (_options is { Update: true, DryRun: false })
             await UpdateBranches(branches, branch, cancellationToken);
 
-        return 0;
+        return failed;
     }
 
     private async Task UpdateBranches(BranchesReader branches, Branch branch, CancellationToken cancellationToken)
     {
         if (_options.DryRun)
             return;
-        
+
         var defaultBranch = _globalSettings.Value.DefaultBranch;
-        
+
         if (branch.Name.EqualsIgnoreCase(defaultBranch))
         {
             _logger.LogInformation("Branch {Branch} is the default branch, nothing to update", branch.Name);

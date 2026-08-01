@@ -34,12 +34,6 @@ public abstract class BaseService : IExecutable
 
     public abstract Task<int> Execute(CancellationToken cancellationToken);
 
-    protected async Task<Step[]> GetBranchSteps(string path, string branchName, CancellationToken cancellationToken)
-    {
-        var branches = await LoadBranches(path, cancellationToken);
-        return branches.GetSteps(branches.GetBranch(branchName)).ToArray();
-    }
-
     protected IDirectoryInfo GetDirectory(string path)
     {
         return _fileSystem.DirectoryInfo.New(path);
@@ -48,7 +42,7 @@ public abstract class BaseService : IExecutable
     protected async Task<BranchesReader> LoadBranches(string path, CancellationToken cancellationToken)
     {
         var directory = this.GetDirectory(path);
-        var branches = new BranchesReader(directory, _globalSettings.Value);
+        var branches = new BranchesReader(directory, _globalSettings.Value, _databases.GetHooks);
 
         _logger.LogInformation("Loading branches from {Directory}", directory.FullName);
         var errors = await branches.Load();
@@ -87,6 +81,80 @@ public abstract class BaseService : IExecutable
             }
         }
         _dbl[database.Name].LogInformation("Script {ScriptPath} executed in {ExecutionTime}", scriptFile.FullName, stopwatch.Elapsed);
+    }
+
+    /// <summary>
+    /// Runs a hook script on every database, stopping at the first failure: this is what the
+    /// scripts that run before a deploy or a rollback need, so that nothing starts after one of
+    /// them failed.
+    /// </summary>
+    protected async Task RunHooks(
+        DatabaseHook hook,
+        IEnumerable<string> databases,
+        IDirectoryInfo root,
+        bool dryRun,
+        CancellationToken cancellationToken)
+    {
+        foreach (var database in databases)
+        {
+            await RunHook(hook, database, root, dryRun, cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Runs a hook script on every database, carrying on after a failure: this is what the scripts
+    /// that run after a deploy or a rollback need, as the work they follow is already done.
+    /// </summary>
+    /// <returns>The number of databases whose hook script failed</returns>
+    protected async Task<int> TryRunHooks(
+        DatabaseHook hook,
+        IEnumerable<string> databases,
+        IDirectoryInfo root,
+        bool dryRun,
+        CancellationToken cancellationToken)
+    {
+        var failed = 0;
+
+        foreach (var database in databases)
+        {
+            try
+            {
+                await RunHook(hook, database, root, dryRun, cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                //a cancellation is not a script failure and stops the run like anywhere else
+                _dbl[database].LogError(ex, "Failed to run {Hook} script", hook);
+                failed++;
+            }
+        }
+
+        return failed;
+    }
+
+    private async Task RunHook(
+        DatabaseHook hook,
+        string database,
+        IDirectoryInfo root,
+        bool dryRun,
+        CancellationToken cancellationToken)
+    {
+        var hooks = _databases.GetHooks(database);
+        if (!hooks.IsConfigured(hook))
+            return;
+
+        var script = new HookScript(database, hook, hooks[hook], root);
+        var file = script.File ?? throw new HookScriptNotFoundException(script);
+
+        if (dryRun)
+        {
+            _dbl[database].LogInformation("Dry run: {Hook} script {ScriptPath} would be run", hook, file.FullName);
+            return;
+        }
+
+        _dbl[database].LogInformation("Running {Hook} script", hook);
+        var db = await GetDatabase(database, cancellationToken);
+        await RunScript(file, db, cancellationToken);
     }
 
     protected async Task<Strategy> GetStrategy(Step[] steps, CancellationToken cancellationToken)

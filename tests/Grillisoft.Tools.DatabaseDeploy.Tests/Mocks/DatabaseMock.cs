@@ -53,8 +53,18 @@ public class DatabaseMock : IDatabase
 
     public IList<string> Scripts => _scripts;
 
+    /// <summary>
+    /// Scripts whose content is in here throw instead of running, which is how a failing script is
+    /// simulated. The mock parser yields the content of a file as one script, so the content of a
+    /// file identifies it.
+    /// </summary>
+    public ISet<string> FailingScripts { get; } = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+
     public Task RunScript(string script, CancellationToken cancellationToken)
     {
+        if (this.FailingScripts.Contains(script.Trim()))
+            throw new InvalidOperationException($"Script failed: {script}");
+
         _scripts.Add(script);
         return Task.CompletedTask;
     }

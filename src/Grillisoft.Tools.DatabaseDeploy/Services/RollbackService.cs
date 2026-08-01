@@ -38,11 +38,18 @@ public class RollbackService : BaseService
         if (_options.DryRun)
             _logger.LogInformation("Dry run enabled: no script will be run and nothing will be written");
 
-        var steps = await GetBranchSteps(_options.Path, this.Branch, cancellationToken);
+        var branches = await LoadBranches(_options.Path, cancellationToken);
+        var steps = branches.GetSteps(branches.GetBranch(this.Branch)).ToArray();
         var strategy = await GetStrategy(steps, cancellationToken);
         var rollbackSteps = strategy.GetRollbackSteps(this.Branch).ToArray();
 
         _logger.LogInformation("Detected {Count} steps to rollback", rollbackSteps.Length);
+
+        //only the databases that have something to rollback take part in the pre and post scripts
+        var rollbackDatabases = rollbackSteps.Select(s => s.Step.Database).Distinct().ToArray();
+
+        await RunHooks(DatabaseHook.PreRollback, rollbackDatabases, branches.Directory, _options.DryRun, cancellationToken);
+
         _progress.Report(0);
         foreach (var (step, migration) in rollbackSteps)
         {
@@ -50,9 +57,16 @@ public class RollbackService : BaseService
             _progress.Report(++count * 100 / steps.Length);
         }
         _progress.Report(100);
+
+        var failed = await TryRunHooks(DatabaseHook.PostRollback, rollbackDatabases, branches.Directory, _options.DryRun, cancellationToken);
+
         var operation = _options.DryRun ? "Dry run (rollback)" : "Rollback";
-        _logger.LogInformation("{Operation} completed successfully in {ElapsedTime}", operation, stopwatch.Elapsed);
-        return 0;
+        if (failed > 0)
+            _logger.LogError("{Operation} completed in {ElapsedTime} but {Count} post rollback scripts failed", operation, stopwatch.Elapsed, failed);
+        else
+            _logger.LogInformation("{Operation} completed successfully in {ElapsedTime}", operation, stopwatch.Elapsed);
+
+        return failed;
     }
 
     private async Task RollbackStep(Step step, DatabaseMigration migration, CancellationToken cancellationToken)

@@ -46,6 +46,17 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
         return factory.SqlFormatter;
     }
 
+    public DatabaseHooks GetHooks(string name)
+    {
+        var section = _configurationSection.GetSection(name);
+
+        return new DatabaseHooks(
+            _global.PreDeploy.OverrideWith(section["preDeploy"]),
+            _global.PostDeploy.OverrideWith(section["postDeploy"]),
+            _global.PreRollback.OverrideWith(section["preRollback"]),
+            _global.PostRollback.OverrideWith(section["postRollback"]));
+    }
+
     private async Task<IDatabase> CreateDatabase(string name, CancellationToken cancellationToken)
     {
         var section = _configurationSection.GetSection(name);

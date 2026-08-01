@@ -17,7 +17,11 @@ public sealed record SqlFormatterOptions
     /// <summary>From <c>end_of_line</c>; defaults to the ending the file already uses.</summary>
     public string NewLine { get; init; } = "\n";
 
-    /// <summary>From <c>charset</c>.</summary>
+    /// <summary>
+    /// From <c>charset</c>. Only a run selecting its files with globs applies it: the scripts of a
+    /// deployment folder are always written as UTF-8 without BOM, which is the only encoding
+    /// validation accepts.
+    /// </summary>
     public Encoding Encoding { get; init; } = new UTF8Encoding(false);
 
     /// <summary>

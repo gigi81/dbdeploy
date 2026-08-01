@@ -22,11 +22,11 @@ public class DatabaseCollectionTests
     private static IEnumerable<DatabaseHook> ConfiguredHooks(DatabaseHooks hooks) =>
         hooks.GetHookScripts("test", Directory).Select(script => script.Hook);
 
-    private static IConfiguration CreateConfig(Dictionary<string, string?> settings)
+    private static DatabasesConfiguration CreateConfig(Dictionary<string, string?> settings)
     {
         var configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.AddInMemoryCollection(settings);
-        return configurationBuilder.Build();
+        return new DatabasesConfiguration(configurationBuilder.Build());
     }
 
     [Test]

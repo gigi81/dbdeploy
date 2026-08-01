@@ -51,10 +51,20 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
         var section = _configurationSection.GetSection(name);
 
         return new DatabaseHooks(
-            _global.PreDeploy.OverrideWith(section["preDeploy"]),
-            _global.PostDeploy.OverrideWith(section["postDeploy"]),
-            _global.PreRollback.OverrideWith(section["preRollback"]),
-            _global.PostRollback.OverrideWith(section["postRollback"]));
+            GetHook(section, "preDeploy", _global.PreDeploy),
+            GetHook(section, "postDeploy", _global.PostDeploy),
+            GetHook(section, "preRollback", _global.PreRollback),
+            GetHook(section, "postRollback", _global.PostRollback));
+    }
+
+    /// <summary>
+    /// The name of one hook script of a database. Unlike the other settings an empty value is not
+    /// "nothing was said" here: it is how a database opts out of a hook the global settings turned
+    /// on, so only a value that is not there at all falls back to the global name.
+    /// </summary>
+    private static string GetHook(IConfigurationSection section, string key, string globalName)
+    {
+        return section[key] ?? globalName;
     }
 
     private async Task<IDatabase> CreateDatabase(string name, CancellationToken cancellationToken)

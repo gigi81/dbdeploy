@@ -116,6 +116,22 @@ of them and all are optional, off unless you name them:
 The setting holds the name of the script, without the `.sql` extension, exactly like
 `global:initStepName`. A name set on a database overrides the global one for that database.
 
+A database that does not want a hook the global settings turned on sets it to an empty name:
+
+```json
+{
+  "global": { "preDeploy": "_PreDeploy" },
+  "databases":{
+    "Database02": {
+      "connectionString": "...",
+      "preDeploy": ""
+    }
+  }
+}
+```
+
+`Database02` then runs no pre deploy script, while every other database still runs `_PreDeploy.sql`.
+
 The file is looked up in the **database folder first and in the root folder after**, so one script
 can be shared by every database and still be overridden by one of them:
 

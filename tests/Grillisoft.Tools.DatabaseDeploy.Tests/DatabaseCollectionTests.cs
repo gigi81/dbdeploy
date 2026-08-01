@@ -205,6 +205,36 @@ public class DatabaseCollectionTests
         actual.PostDeploy.Should().Be("_PostDeploy");
     }
 
+    /// <summary>
+    /// A database that does not want a hook the global settings turned on says so with an empty
+    /// name. Falling back to the global name here would run a script the database opted out of.
+    /// </summary>
+    [Test]
+    public async Task GetHooks_WhenTheDatabaseSetsAnEmptyName_TurnsTheGlobalHookOff()
+    {
+        //arrange
+        var configuration = CreateConfig(new Dictionary<string, string?>()
+        {
+            { "global:preDeploy", "_PreDeploy" },
+            { "global:postDeploy", "_PostDeploy" },
+            { "databases:test:preDeploy", "" },
+            { "databases:test:provider", FactoryProviderName }
+        });
+
+        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration);
+
+        //act
+        var actual = collection.GetHooks("test");
+
+        //assert
+        actual.PreDeploy.Should().BeEmpty();
+        actual.IsConfigured(DatabaseHook.PreDeploy).Should().BeFalse();
+
+        //the hooks it said nothing about are untouched
+        actual.PostDeploy.Should().Be("_PostDeploy");
+        actual.Configured.Should().BeEquivalentTo([DatabaseHook.PostDeploy]);
+    }
+
     [Test]
     public async Task GetHooks_WhenNotConfigured_ReturnsNoHook()
     {

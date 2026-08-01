@@ -20,12 +20,7 @@ public class RollbackService : BaseService
     {
         _options = options;
         _progress = progress;
-        _hooks = new DatabaseHooksRunner(
-            dependencies.Databases,
-            GetDirectory(options.Path),
-            options.DryRun,
-            dependencies.Scripts,
-            dependencies.DatabaseLoggers);
+        _hooks = new DatabaseHooksRunner(dependencies, GetDirectory(options.Path), options.DryRun);
     }
 
     private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)

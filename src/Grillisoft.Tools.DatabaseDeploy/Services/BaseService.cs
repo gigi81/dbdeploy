@@ -15,6 +15,7 @@ public abstract class BaseService : IExecutable
 {
     private readonly IDatabasesCollection _databases;
     private readonly IFileSystem _fileSystem;
+    private readonly ScriptsRunner _scripts;
     protected readonly IOptions<GlobalSettings> _globalSettings;
     protected readonly ILogger _logger;
     protected readonly DatabaseLoggerFactory _dbl;
@@ -30,6 +31,7 @@ public abstract class BaseService : IExecutable
         _globalSettings = globalSettings;
         _logger = logger;
         _dbl = new DatabaseLoggerFactory(logger);
+        _scripts = new ScriptsRunner(logger);
     }
 
     public abstract Task<int> Execute(CancellationToken cancellationToken);
@@ -56,105 +58,14 @@ public abstract class BaseService : IExecutable
         return branches;
     }
 
-    protected async Task RunScripts(IEnumerable<IFileInfo> scriptFiles, IDatabase database, CancellationToken cancellationToken)
+    protected Task RunScripts(IEnumerable<IFileInfo> scriptFiles, IDatabase database, CancellationToken cancellationToken)
     {
-        foreach (var scriptFile in scriptFiles)
-        {
-            await RunScript(scriptFile, database, cancellationToken);
-        }
+        return _scripts.Run(scriptFiles, database, cancellationToken);
     }
 
-    protected async Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken cancellationToken)
+    protected Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken cancellationToken)
     {
-        _dbl[database.Name].LogInformation("Running script {ScriptPath}", scriptFile.FullName);
-        var stopwatch = Stopwatch.StartNew();
-        await foreach (var script in database.ScriptParser.Parse(scriptFile, cancellationToken))
-        {
-            try
-            {
-                await database.RunScript(script, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _dbl[database.Name].LogError(ex, "Failed to run script {ScriptContent}", script.Truncate(20_000));
-                throw;
-            }
-        }
-        _dbl[database.Name].LogInformation("Script {ScriptPath} executed in {ExecutionTime}", scriptFile.FullName, stopwatch.Elapsed);
-    }
-
-    /// <summary>
-    /// Runs a hook script on every database, stopping at the first failure: this is what the
-    /// scripts that run before a deploy or a rollback need, so that nothing starts after one of
-    /// them failed.
-    /// </summary>
-    protected async Task RunHooks(
-        DatabaseHook hook,
-        IEnumerable<string> databases,
-        IDirectoryInfo root,
-        bool dryRun,
-        CancellationToken cancellationToken)
-    {
-        foreach (var database in databases)
-        {
-            await RunHook(hook, database, root, dryRun, cancellationToken);
-        }
-    }
-
-    /// <summary>
-    /// Runs a hook script on every database, carrying on after a failure: this is what the scripts
-    /// that run after a deploy or a rollback need, as the work they follow is already done.
-    /// </summary>
-    /// <returns>The number of databases whose hook script failed</returns>
-    protected async Task<int> TryRunHooks(
-        DatabaseHook hook,
-        IEnumerable<string> databases,
-        IDirectoryInfo root,
-        bool dryRun,
-        CancellationToken cancellationToken)
-    {
-        var failed = 0;
-
-        foreach (var database in databases)
-        {
-            try
-            {
-                await RunHook(hook, database, root, dryRun, cancellationToken);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                //a cancellation is not a script failure and stops the run like anywhere else
-                _dbl[database].LogError(ex, "Failed to run {Hook} script", hook);
-                failed++;
-            }
-        }
-
-        return failed;
-    }
-
-    private async Task RunHook(
-        DatabaseHook hook,
-        string database,
-        IDirectoryInfo root,
-        bool dryRun,
-        CancellationToken cancellationToken)
-    {
-        var hooks = _databases.GetHooks(database);
-        if (!hooks.IsConfigured(hook))
-            return;
-
-        var script = new HookScript(database, hook, hooks[hook], root);
-        var file = script.File ?? throw new HookScriptNotFoundException(script);
-
-        if (dryRun)
-        {
-            _dbl[database].LogInformation("Dry run: {Hook} script {ScriptPath} would be run", hook, file.FullName);
-            return;
-        }
-
-        _dbl[database].LogInformation("Running {Hook} script", hook);
-        var db = await GetDatabase(database, cancellationToken);
-        await RunScript(file, db, cancellationToken);
+        return _scripts.Run(scriptFile, database, cancellationToken);
     }
 
     protected async Task<Strategy> GetStrategy(Step[] steps, CancellationToken cancellationToken)

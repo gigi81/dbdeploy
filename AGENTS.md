@@ -100,10 +100,12 @@ The file is `<root>/<database>/<name>.sql` and falls back to `<root>/<name>.sql`
 paths must keep being added to the tracked set in `BranchesValidator.CheckFiles`, otherwise
 configuring a hook turns its own file into an `Untracked file detected` error and every run fails.
 `CheckHookFiles` then makes a configured but missing script an error for `deploy`, `rollback` and
-`validate` alike. At run time `BaseService.RunHooks` (stops at the first failure, for the pre
-scripts) and `BaseService.TryRunHooks` (carries on and counts failures, for the post scripts) run
-them for the databases that have steps in the plan, and the post failure count is the exit code of
-`DeployService`/`RollbackService`.
+`validate` alike. Running them is `DatabaseHooksRunner`'s job and only its job: `Run` stops at the
+first failure (the pre scripts) and `TryRun` carries on and returns how many failed (the post
+scripts). `DeployService` and `RollbackService` take it as a dependency, call it for the databases
+that have steps in the plan, and return the post failure count as their exit code. Both it and
+`BaseService` execute a file through `ScriptsRunner`, which is the one place that parses a script
+into batches, runs them and logs them.
 
 ## Unit Test and Integration Test Strategy
 

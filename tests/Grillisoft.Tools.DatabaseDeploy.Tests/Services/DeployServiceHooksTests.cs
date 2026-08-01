@@ -197,6 +197,7 @@ public class DeployServiceHooksTests
             .AddSingleton<IProgress<int>>(new Progress<int>())
             .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(databases))
             .AddSingleton<IDatabasesCollection>(collection)
+            .AddSingleton(new DatabaseHooksRunner(collection, TestLogger<DatabaseHooksRunner>.Instance))
             .Configure<GlobalSettings>(options => { })
             .BuildServiceProvider();
 

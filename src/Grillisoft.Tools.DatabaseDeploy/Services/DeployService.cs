@@ -15,6 +15,7 @@ public class DeployService : BaseService
 {
     private readonly DeployOptions _options;
     private readonly IProgress<int> _progress;
+    private readonly DatabaseHooksRunner _hooks;
 
     public DeployService(
         DeployOptions options,
@@ -22,11 +23,13 @@ public class DeployService : BaseService
         IFileSystem fileSystem,
         IOptions<GlobalSettings> globalOptions,
         IProgress<int> progress,
+        DatabaseHooksRunner hooks,
         ILogger<DeployService> logger
     ) : base(databases, fileSystem, globalOptions, logger)
     {
         _options = options;
         _progress = progress;
+        _hooks = hooks;
     }
 
     private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)
@@ -57,7 +60,7 @@ public class DeployService : BaseService
         //only the databases that have something to deploy take part in the pre and post scripts
         var deployDatabases = deploySteps.Select(s => s.Database).Distinct().ToArray();
 
-        await RunHooks(DatabaseHook.PreDeploy, deployDatabases, branches.Directory, _options.DryRun, cancellationToken);
+        await _hooks.Run(DatabaseHook.PreDeploy, deployDatabases, branches.Directory, _options.DryRun, cancellationToken);
 
         _progress.Report(0);
         foreach (var step in deploySteps)
@@ -67,7 +70,7 @@ public class DeployService : BaseService
         }
         _progress.Report(100);
 
-        var failed = await TryRunHooks(DatabaseHook.PostDeploy, deployDatabases, branches.Directory, _options.DryRun, cancellationToken);
+        var failed = await _hooks.TryRun(DatabaseHook.PostDeploy, deployDatabases, branches.Directory, _options.DryRun, cancellationToken);
 
         var operation = _options.DryRun ? "Dry run (deploy)" : "Deployment";
         if (failed > 0)

@@ -14,7 +14,7 @@ public class ScriptEncodingTests
     [Test]
     public async Task Validate_WhenTheFileIsUtf8WithoutBOM_ReportsNothing()
     {
-        var error = await Validate(new UTF8Encoding(false).GetBytes(Script));
+        var (error, _) = await Validate(new UTF8Encoding(false).GetBytes(Script));
 
         error.Should().BeNull();
     }
@@ -22,9 +22,9 @@ public class ScriptEncodingTests
     [Test]
     public async Task Validate_WhenTheFileHasABOM_ReportsIt()
     {
-        var error = await Validate(new UTF8Encoding(true).GetPreamble().Concat(Encoding.UTF8.GetBytes(Script)));
+        var (error, path) = await Validate(new UTF8Encoding(true).GetPreamble().Concat(Encoding.UTF8.GetBytes(Script)));
 
-        error.Should().StartWith("BOM detected").And.Contain(ScriptPath);
+        error.Should().StartWith("BOM detected").And.Contain(path);
     }
 
     /// <summary>
@@ -34,9 +34,9 @@ public class ScriptEncodingTests
     [Test]
     public async Task Validate_WhenTheFileIsLatin1_ReportsIt()
     {
-        var error = await Validate(Encoding.Latin1.GetBytes(Script));
+        var (error, path) = await Validate(Encoding.Latin1.GetBytes(Script));
 
-        error.Should().Contain("is not UTF8").And.Contain("invalid byte sequence").And.Contain(ScriptPath);
+        error.Should().Contain("is not UTF8").And.Contain("invalid byte sequence").And.Contain(path);
     }
 
     /// <summary>
@@ -46,18 +46,18 @@ public class ScriptEncodingTests
     [Test]
     public async Task Validate_WhenTheFileIsUtf16WithoutBOM_ReportsIt()
     {
-        var error = await Validate(new UnicodeEncoding(false, false).GetBytes("SELECT 1"));
+        var (error, path) = await Validate(new UnicodeEncoding(false, false).GetBytes("SELECT 1"));
 
-        error.Should().Contain("is not UTF8").And.Contain("NUL").And.Contain(ScriptPath);
+        error.Should().Contain("is not UTF8").And.Contain("NUL").And.Contain(path);
     }
 
     [Test]
     public async Task Validate_WhenTheFileEndsMidCharacter_ReportsIt()
     {
         //the last byte of the two the é is encoded as
-        var error = await Validate(Encoding.UTF8.GetBytes("-- café").SkipLast(1));
+        var (error, path) = await Validate(Encoding.UTF8.GetBytes("-- café").SkipLast(1));
 
-        error.Should().Contain("is not UTF8").And.Contain(ScriptPath);
+        error.Should().Contain("is not UTF8").And.Contain(path);
     }
 
     /// <summary>
@@ -67,7 +67,7 @@ public class ScriptEncodingTests
     [Test]
     public async Task Validate_WhenTheFileIsLargerThanOneChunk_ReportsNothing()
     {
-        var error = await Validate(Encoding.UTF8.GetBytes(string.Concat(Enumerable.Repeat("-- café\n", 4096))));
+        var (error, _) = await Validate(Encoding.UTF8.GetBytes(string.Concat(Enumerable.Repeat("-- café\n", 4096))));
 
         error.Should().BeNull();
     }
@@ -75,7 +75,7 @@ public class ScriptEncodingTests
     [Test]
     public async Task Validate_WhenTheFileIsEmpty_ReportsNothing()
     {
-        var error = await Validate([]);
+        var (error, _) = await Validate([]);
 
         error.Should().BeNull();
     }
@@ -89,11 +89,17 @@ public class ScriptEncodingTests
         Encoding.Unicode.IsUtf8NoBom().Should().BeFalse();
     }
 
-    private static async Task<string?> Validate(IEnumerable<byte> content)
+    /// <param name="content">The bytes the file is made of.</param>
+    /// <returns>
+    /// What the file was reported for, along with the path it ended up at: the file system decides
+    /// that, and turns the one below into a windows path when the tests run on windows.
+    /// </returns>
+    private static async Task<(string? Error, string Path)> Validate(IEnumerable<byte> content)
     {
         var fileSystem = new MockFileSystem();
         fileSystem.AddFile(ScriptPath, new MockFileData(content.ToArray()));
+        var file = fileSystem.FileInfo.New(ScriptPath);
 
-        return await ScriptEncoding.Validate(fileSystem.FileInfo.New(ScriptPath));
+        return (await ScriptEncoding.Validate(file), file.FullName);
     }
 }

@@ -71,6 +71,9 @@ public class DeployService : BaseService
 
     private async Task UpdateBranches(BranchesReader branches, Branch branch, CancellationToken cancellationToken)
     {
+        if (_options.DryRun)
+            return;
+        
         var defaultBranch = _globalSettings.Value.DefaultBranch;
         
         if (branch.Name.EqualsIgnoreCase(defaultBranch))

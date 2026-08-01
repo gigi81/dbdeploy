@@ -9,6 +9,8 @@ namespace Grillisoft.Tools.DatabaseDeploy.MySql.Formatting;
 /// </summary>
 internal sealed class MySqlDialect : SqlDialect
 {
+    public override string Name => MySqlDatabaseFactory.ProviderName;
+
     private static readonly string[] ExtraStatement = ["DELIMITER", "REPLACE INTO", "LOCK", "UNLOCK", "FLUSH"];
 
     private static readonly string[] ExtraContinuation = ["STRAIGHT_JOIN"];

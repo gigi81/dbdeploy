@@ -9,6 +9,8 @@ namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Formatting;
 /// </summary>
 internal sealed class OracleDialect : SqlDialect
 {
+    public override string Name => OracleDatabaseFactory.ProviderName;
+
     /// <summary>
     /// SQL*Plus directives, which are not SQL and have to reach the server untouched.
     /// <c>SET</c> is deliberately absent - it needs the extra checks in

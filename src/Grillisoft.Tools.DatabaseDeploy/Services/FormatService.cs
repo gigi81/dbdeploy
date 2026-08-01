@@ -8,13 +8,18 @@ using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
 /// <summary>
 /// Rewrites SQL scripts in place. By default it walks the branch layout and formats the deploy and
-/// rollback script of every step; given <c>--include</c> globs it formats whatever they match,
-/// without reading the branch structure or contacting a database.
+/// rollback script of every step that has not been released yet - a released deploy script is left
+/// alone unless <c>--force</c> is given, because its MD5 is the migration hash the databases that
+/// ran it recorded; given <c>--include</c> globs it formats whatever they match,
+/// without reading the branch structure. Either way this is a pure file operation: the scripts, the
+/// branch files, <c>.editorconfig</c> and the settings file are all it reads, and no database is
+/// ever built or contacted.
 /// </summary>
 public class FormatService : BaseService
 {
@@ -53,8 +58,9 @@ public class FormatService : BaseService
             .DistinctBy(step => (step.Database, step.Name))
             .ToArray();
 
-        var deployed = await GetDeployedSteps(steps, cancellationToken);
+        var defaultBranch = _globalSettings.Value.DefaultBranch;
         var formatted = 0;
+        var released = 0;
         var failures = 0;
 
         foreach (var step in steps)
@@ -67,22 +73,49 @@ public class FormatService : BaseService
                 continue;
             }
 
-            var database = await GetDatabase(step.Database, cancellationToken);
+            var formatter = ResolveFormatter(step.Database);
 
-            if (deployed.Contains(DeployedKey(step.Database, step.Name)) && step.DeployScript.Exists)
-            {
-                _dbl[step.Database].LogWarning(
-                    "Step {StepName} is already deployed; formatting {Path} changes its migration hash",
-                    step.Name,
-                    step.DeployScript.FullName);
-            }
+            // A step that sits in the default branch file has been released, so it has very likely
+            // been deployed somewhere. The branch files are the only evidence of that on disk, and
+            // formatting never asks a database.
+            var isReleased = step.Branch.EqualsIgnoreCase(defaultBranch);
 
-            foreach (var file in new[] { step.DeployScript, step.RollbackScript })
+            foreach (var (file, isDeployScript) in new[] { (step.DeployScript, true), (step.RollbackScript, false) })
             {
-                switch (await FormatFile(file, database.SqlFormatter, cancellationToken))
+                // The migration hash is the MD5 of the deploy script, so rewriting one that is
+                // already out there stops it matching what the databases that ran it recorded. Only
+                // the deploy script is hashed, so the rollback script of a released step is still
+                // formatted. The warning does not depend on the file needing any change: what
+                // matters is that it was left alone, and why.
+                if (isDeployScript && isReleased && !_options.Force)
+                {
+                    if (file.Exists)
+                    {
+                        released++;
+                        _dbl[step.Database].LogWarning(
+                            "Step {StepName} is released in {Branch}: not formatting {Path}, it would change its migration hash. Pass --force to format it anyway",
+                            step.Name,
+                            defaultBranch,
+                            file.FullName);
+                    }
+
+                    continue;
+                }
+
+                switch (await FormatFile(file, formatter, cancellationToken))
                 {
                     case FormatOutcome.Rewritten:
                         formatted++;
+
+                        if (isDeployScript && isReleased)
+                        {
+                            _dbl[step.Database].LogWarning(
+                                "Step {StepName} is released in {Branch} and may already be deployed: formatting {Path} changed its migration hash",
+                                step.Name,
+                                defaultBranch,
+                                file.FullName);
+                        }
+
                         break;
 
                     case FormatOutcome.Failed:
@@ -98,17 +131,18 @@ public class FormatService : BaseService
         }
 
         _logger.LogInformation(
-            "Formatted {Count} script(s) in {Elapsed} with {Failures} failure(s)",
+            "Formatted {Count} script(s) in {Elapsed} with {Failures} failure(s), leaving {Released} released script(s) alone",
             formatted,
             stopwatch.Elapsed,
-            failures);
+            failures,
+            released);
 
         return failures;
     }
 
     /// <summary>
     /// Formats whatever the <c>--include</c> globs match. There is no branch structure to consult
-    /// here, so nothing is filtered out and no database is contacted.
+    /// here, so nothing is filtered out.
     /// </summary>
     private async Task<int> FormatMatchingFiles(CancellationToken cancellationToken)
     {
@@ -146,9 +180,7 @@ public class FormatService : BaseService
 
         foreach (var file in matches)
         {
-            var formatter = await ResolveFormatter(root, file, cancellationToken);
-
-            switch (await FormatFile(file, formatter, cancellationToken))
+            switch (await FormatFile(file, ResolveFormatter(root, file), cancellationToken))
             {
                 case FormatOutcome.Rewritten:
                     formatted++;
@@ -180,10 +212,7 @@ public class FormatService : BaseService
     /// database wins, so a normal layout still gets the right dialect per database; otherwise the
     /// provider given on the command line, and failing that the configured default.
     /// </summary>
-    private async Task<ISqlFormatter> ResolveFormatter(
-        IDirectoryInfo root,
-        IFileInfo file,
-        CancellationToken cancellationToken)
+    private ISqlFormatter ResolveFormatter(IDirectoryInfo root, IFileInfo file)
     {
         for (var directory = file.Directory; directory is not null; directory = directory.Parent)
         {
@@ -193,15 +222,20 @@ public class FormatService : BaseService
             var match = this.Databases.FirstOrDefault(
                 name => name.Equals(directory.Name, StringComparison.InvariantCultureIgnoreCase));
 
-            if (match is not null)
-            {
-                var database = await GetDatabase(match, cancellationToken);
-                return database.SqlFormatter;
-            }
+            if (match is not null && GetSqlFormatter(match) is { } formatter)
+                return formatter;
         }
 
         return GetFactory().SqlFormatter;
     }
+
+    /// <summary>
+    /// The dialect a branch step's scripts are in. It comes from the provider configured for that
+    /// database - configuration only, so no database is built and no connection string is needed -
+    /// and falls back to <c>--provider</c> when the settings say nothing about it.
+    /// </summary>
+    private ISqlFormatter ResolveFormatter(string database) =>
+        GetSqlFormatter(database) ?? GetFactory().SqlFormatter;
 
     private IDatabaseFactory GetFactory()
     {
@@ -241,6 +275,8 @@ public class FormatService : BaseService
             return FormatOutcome.Skipped;
         }
 
+        _logger.LogDebug("Formatting {Path} as {Dialect}", file.FullName, formatter.Dialect);
+
         var result = formatter.Format(sql, options);
 
         if (!result.Verified)
@@ -262,7 +298,7 @@ public class FormatService : BaseService
         }
 
         await _fileSystem.File.WriteAllTextAsync(file.FullName, result.Sql, options.Encoding, cancellationToken);
-        _logger.LogInformation("Formatted {Path}", file.FullName);
+        _logger.LogInformation("Formatted {Path} as {Dialect}", file.FullName, formatter.Dialect);
 
         return FormatOutcome.Rewritten;
     }
@@ -280,41 +316,4 @@ public class FormatService : BaseService
 
         return index > 0 && sql[index - 1] == '\r' ? "\r\n" : "\n";
     }
-
-    /// <summary>
-    /// Reads the recorded migrations so that formatting a script that has already been deployed can
-    /// be called out. Formatting must still work with no database in reach, so a failure here only
-    /// costs the warning.
-    /// </summary>
-    private async Task<HashSet<string>> GetDeployedSteps(
-        IEnumerable<Step> steps,
-        CancellationToken cancellationToken)
-    {
-        var deployed = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
-
-        foreach (var name in steps.Select(step => step.Database).DistinctIgnoreCase())
-        {
-            try
-            {
-                var database = await GetDatabase(name, cancellationToken);
-
-                foreach (var migration in await database.GetMigrations(cancellationToken))
-                    deployed.Add(DeployedKey(name, migration.Name));
-            }
-            catch (Exception ex)
-            {
-                // Formatting must work with no database in reach, so the warning carries only the
-                // message; the stack trace would drown the output of an otherwise successful run.
-                _dbl[name].LogWarning(
-                    "Could not read the deployed migrations ({Reason}), so already-deployed scripts will not be called out",
-                    ex.Message);
-
-                _dbl[name].LogDebug(ex, "Reading the deployed migrations failed");
-            }
-        }
-
-        return deployed;
-    }
-
-    private static string DeployedKey(string database, string step) => database + ' ' + step;
 }

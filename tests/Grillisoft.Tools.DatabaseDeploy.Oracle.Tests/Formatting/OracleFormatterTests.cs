@@ -55,6 +55,31 @@ public class OracleFormatterTests
     }
 
     /// <summary>
+    /// The blank lines of a hand-laid-out SQL*Plus header separate its sections, so they survive.
+    /// Their trailing whitespace does not, the same as everywhere else in the output.
+    /// </summary>
+    [Test]
+    public void Format_ShouldKeepTheBlankLinesOfASqlPlusHeader()
+    {
+        var result = Format("rem header line   \nrem\nSET ECHO OFF\n\nREM section title\n\nselect 1 from dual;");
+
+        result.Should().Be(Lf(
+            """
+            rem header line
+            rem
+            SET ECHO OFF
+
+            REM section title
+
+            SELECT
+                1
+            FROM
+                dual;
+
+            """));
+    }
+
+    /// <summary>
     /// A SET that assigns is the SET clause of an UPDATE, not a SQL*Plus directive.
     /// </summary>
     [Test]

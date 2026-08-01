@@ -33,10 +33,23 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
         return ret;
     }
 
+    public ISqlFormatter? GetSqlFormatter(string name)
+    {
+        var provider = GetProvider(name);
+
+        if (string.IsNullOrWhiteSpace(provider))
+            return null;
+
+        if (!_databaseFactories.TryGetValue(provider, out var factory))
+            throw new DatabaseProviderNotFoundException(provider, name);
+
+        return factory.SqlFormatter;
+    }
+
     private async Task<IDatabase> CreateDatabase(string name, CancellationToken cancellationToken)
     {
         var section = _configurationSection.GetSection(name);
-        var provider = _global.DefaultProvider.OverrideWith(section["provider"]);
+        var provider = GetProvider(name);
 
         if (string.IsNullOrWhiteSpace(provider) || !_databaseFactories.TryGetValue(provider, out var factory))
             throw new DatabaseProviderNotFoundException(provider, name);
@@ -47,6 +60,9 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
 
         return database;
     }
+
+    private string GetProvider(string name) =>
+        _global.DefaultProvider.OverrideWith(_configurationSection.GetSection(name)["provider"]);
 
     public async ValueTask DisposeAsync()
     {

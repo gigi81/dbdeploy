@@ -9,6 +9,8 @@ namespace Grillisoft.Tools.DatabaseDeploy.PostgreSql.Formatting;
 /// </summary>
 internal sealed class PostgreSqlDialect : SqlDialect
 {
+    public override string Name => PostgreSqlDatabaseFactory.ProviderName;
+
     private static readonly string[] ExtraStatement = ["DO", "COMMENT ON", "RAISE", "PERFORM", "REFRESH"];
 
     private static readonly string[] ExtraClause = ["ON CONFLICT"];

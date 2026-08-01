@@ -116,6 +116,31 @@ public class SqlServerFormatterTests
         result.Should().Contain("-- keep me").And.Contain("/* and me */");
     }
 
+    /// <summary>
+    /// A blank line the author left in front of a comment or a statement separates them, so one is
+    /// kept. Longer runs collapse to <c>blank_lines_between_statements</c>, and a blank line in the
+    /// middle of a statement goes: that layout is rebuilt from the tokens.
+    /// </summary>
+    [Test]
+    public void Format_ShouldKeepOneBlankLineBeforeCommentsAndStatements()
+    {
+        var result = Format("-- section a\n\n-- section b\n\n\nselect 1\n\n, 2 from T");
+
+        result.Should().Be(Lf(
+            """
+            -- section a
+
+            -- section b
+
+            SELECT
+                1,
+                2
+            FROM
+                T
+
+            """));
+    }
+
     [Test]
     public void Format_ShouldBeIdempotent()
     {

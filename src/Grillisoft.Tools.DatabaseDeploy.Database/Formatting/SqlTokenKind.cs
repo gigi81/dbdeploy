@@ -40,8 +40,9 @@ public enum SqlTokenKind
     Placeholder,
 
     /// <summary>
-    /// A whole line the formatter must reproduce byte for byte: a SQL*Plus directive, a MySQL
-    /// <c>DELIMITER</c> statement.
+    /// A whole line the formatter reproduces as it stands, trailing whitespace aside: a SQL*Plus
+    /// directive, a MySQL <c>DELIMITER</c> statement. Nothing inside the line is re-cased, re-laid
+    /// out or re-indented.
     /// </summary>
     Passthrough,
 

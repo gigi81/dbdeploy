@@ -7,6 +7,7 @@ using Grillisoft.Tools.DatabaseDeploy.Options;
 using Grillisoft.Tools.DatabaseDeploy.Services;
 using Grillisoft.Tools.DatabaseDeploy.Tests.Mocks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ExtensionsOptions = Microsoft.Extensions.Options.Options;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests.Services;
@@ -21,7 +22,22 @@ public class FormatServiceTests
     private const string RollbackPath = "/path/MyDb/TKT001.Change.Rollback.sql";
     private const string InitPath = "/path/MyDb/_Init.sql";
 
+    /// <summary>The step is still in a release branch file, so it has not been released yet.</summary>
     private static MockFileSystem CreateFileSystem() =>
+        new(new Dictionary<string, MockFileData>
+        {
+            ["/path/main.csv"] = new("MyDb,_Init"),
+            ["/path/release_1.1.csv"] = new("MyDb,TKT001.Change"),
+            [InitPath] = new("select 1"),
+            [DeployPath] = new("select 2"),
+            [RollbackPath] = new("select 3")
+        });
+
+    /// <summary>
+    /// The same layout after the release: the step has been moved into the default branch file, so
+    /// its deploy script is out there and its migration hash has to stay put.
+    /// </summary>
+    private static MockFileSystem CreateReleasedFileSystem() =>
         new(new Dictionary<string, MockFileData>
         {
             ["/path/main.csv"] = new("MyDb,_Init\nMyDb,TKT001.Change"),
@@ -102,44 +118,133 @@ public class FormatServiceTests
     }
 
     /// <summary>
-    /// The deploy script's MD5 is the migration hash, so reformatting one that has already been
-    /// deployed has to be called out.
+    /// Formatting is a file operation: the dialect comes out of the configuration, so nothing ever
+    /// builds a database, let alone opens a connection.
     /// </summary>
     [Test]
-    public async Task Execute_WhenTheStepIsAlreadyDeployed_ShouldWarn()
+    public async Task Execute_ShouldNeverBuildADatabase()
     {
         var fileSystem = CreateFileSystem();
-        var service = CreateService(fileSystem, out var database);
-        await database.AddMigration(
-            new DatabaseMigration("TKT001.Change", "user", new string('0', 32)),
-            CancellationToken.None);
+        var formatter = new SqlFormatterMock();
 
-        await service.Execute(CancellationToken.None);
+        var service = CreateService(
+            fileSystem,
+            out _,
+            databases: new OfflineDatabasesCollectionMock("MyDb", formatter));
 
-        // The warning is the point; the file is still formatted.
+        var result = await service.Execute(CancellationToken.None);
+
+        result.Should().Be(0);
+        formatter.Formatted.Should().HaveCount(2, "the deploy and the rollback script");
         fileSystem.File.ReadAllText(DeployPath).Should().Be("SELECT 2");
     }
 
     /// <summary>
-    /// Formatting has to work with no database in reach, so an unreachable one only costs the
-    /// already-deployed warning.
+    /// A step in the default branch file has been released, so its deploy script is out there and
+    /// its MD5 is the migration hash the databases that ran it recorded. Rewriting it would break
+    /// that, so it is left alone - and said so, since the file looking fine is not the point.
     /// </summary>
     [Test]
-    public async Task Execute_WhenTheDatabaseCannotBeRead_ShouldStillFormat()
+    public async Task Execute_WhenTheStepIsReleased_ShouldNotFormatTheDeployScript()
     {
-        var fileSystem = CreateFileSystem();
+        var fileSystem = CreateReleasedFileSystem();
+        var logger = new RecordingLogger<FormatService>();
 
-        var provider = new TestServiceCollection<FormatService>()
-            .AddSingleton(new FormatOptions { Path = "/path" })
-            .AddSingleton<IFileSystem>(fileSystem)
-            .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock())
-            .AddSingleton<IDatabasesCollection>(new DatabasesCollectionMock(new UnreadableDatabaseMock("MyDb")))
-            .AddSingleton(ExtensionsOptions.Create(new GlobalSettings { InitStepName = "_Init" }))
-            .BuildServiceProvider();
-
-        var result = await provider.GetRequiredService<FormatService>().Execute(CancellationToken.None);
+        var result = await CreateService(fileSystem, out _, logger: logger).Execute(CancellationToken.None);
 
         result.Should().Be(0);
+        fileSystem.File.ReadAllText(DeployPath).Should().Be("select 2", "it is released");
+        fileSystem.File.ReadAllText(RollbackPath).Should().Be("SELECT 3", "only the deploy script is hashed");
+
+        logger.Warnings.Should().ContainSingle()
+            .Which.Should().Contain("TKT001.Change").And.Contain("main").And.Contain("--force");
+    }
+
+    /// <summary>
+    /// The warning is about the file having been left alone, so it does not depend on whether
+    /// formatting would have changed anything.
+    /// </summary>
+    [Test]
+    public async Task Execute_WhenAReleasedScriptNeedsNoChange_ShouldStillWarnItWasSkipped()
+    {
+        var fileSystem = CreateReleasedFileSystem();
+        fileSystem.File.WriteAllText(DeployPath, "SELECT 2");
+        var logger = new RecordingLogger<FormatService>();
+
+        await CreateService(fileSystem, out _, logger: logger).Execute(CancellationToken.None);
+
+        logger.Warnings.Should().ContainSingle().Which.Should().Contain("TKT001.Change");
+    }
+
+    /// <summary>--force is the way to reformat released scripts anyway, hash mismatch and all.</summary>
+    [Test]
+    public async Task Execute_WhenForced_ShouldFormatTheReleasedDeployScriptAndWarn()
+    {
+        var fileSystem = CreateReleasedFileSystem();
+        var logger = new RecordingLogger<FormatService>();
+
+        var options = new FormatOptions { Path = "/path", Force = true };
+        var service = CreateService(fileSystem, out _, options: options, logger: logger);
+
+        await service.Execute(CancellationToken.None);
+
+        fileSystem.File.ReadAllText(DeployPath).Should().Be("SELECT 2");
+        logger.Warnings.Should().ContainSingle().Which.Should().Contain("changed its migration hash");
+    }
+
+    /// <summary>
+    /// A step that is still in a release branch file has not been released yet, so formatting it is
+    /// exactly what you are supposed to do.
+    /// </summary>
+    [Test]
+    public async Task Execute_WhenTheStepIsNotReleasedYet_ShouldFormatWithoutWarning()
+    {
+        var fileSystem = CreateFileSystem();
+        var logger = new RecordingLogger<FormatService>();
+
+        await CreateService(fileSystem, out _, logger: logger).Execute(CancellationToken.None);
+
+        logger.Warnings.Should().BeEmpty();
+        fileSystem.File.ReadAllText(DeployPath).Should().Be("SELECT 2");
+    }
+
+    /// <summary>
+    /// Which dialect a script was laid out with is worked out from the folder layout, so the run
+    /// has to say which one it used.
+    /// </summary>
+    [Test]
+    public async Task Execute_ShouldLogTheDialectItFormattedWith()
+    {
+        var fileSystem = CreateFileSystem();
+        var logger = new RecordingLogger<FormatService>();
+
+        await CreateService(fileSystem, out _, logger: logger).Execute(CancellationToken.None);
+
+        logger.Entries.Select(entry => entry.Message)
+            .Should().Contain(message => message.Contains(DeployPath) && message.Contains("mock"));
+    }
+
+    /// <summary>
+    /// A database that is configured but has no provider - or is not configured at all - still
+    /// formats, falling back to the provider named on the command line.
+    /// </summary>
+    [Test]
+    public async Task Execute_WhenTheDatabaseHasNoConfiguredDialect_ShouldUseTheNamedProvider()
+    {
+        var fileSystem = CreateFileSystem();
+        var fallback = new SqlFormatterMock();
+
+        var service = CreateService(
+            fileSystem,
+            out _,
+            options: new FormatOptions { Path = "/path", Provider = "mock" },
+            factory: new DatabaseFactoryMock { SqlFormatter = fallback },
+            databases: new OfflineDatabasesCollectionMock("MyDb", formatter: null));
+
+        var result = await service.Execute(CancellationToken.None);
+
+        result.Should().Be(0);
+        fallback.Formatted.Should().HaveCount(2);
         fileSystem.File.ReadAllText(DeployPath).Should().Be("SELECT 2");
     }
 
@@ -258,22 +363,24 @@ public class FormatServiceTests
             .WithMessage("*--provider*mock*");
     }
 
-    /// <summary>Directory mode is a pure file operation and must never reach for a database.</summary>
+    /// <summary>Directory mode must never reach for a database either.</summary>
     [Test]
-    public async Task Execute_WhenGlobsAreGiven_ShouldNotReadTheMigrations()
+    public async Task Execute_WhenGlobsAreGiven_ShouldNeverBuildADatabase()
     {
         var fileSystem = CreateFileSystem();
+        var formatter = new SqlFormatterMock();
 
         var options = new FormatOptions { Path = "/path", Include = ["**/*.sql"] };
         var service = CreateService(
             fileSystem,
             out _,
             options: options,
-            databases: new DatabasesCollectionMock(new UnreadableDatabaseMock("MyDb")));
+            databases: new OfflineDatabasesCollectionMock("MyDb", formatter));
 
         var result = await service.Execute(CancellationToken.None);
 
-        result.Should().Be(0, "the unreadable database was never asked for its migrations");
+        result.Should().Be(0);
+        formatter.Formatted.Should().HaveCount(3, "every script sits under the MyDb folder");
     }
 
     /// <summary>Globs are relative to the path, and a branch layout is not needed at all.</summary>
@@ -299,29 +406,45 @@ public class FormatServiceTests
         GlobalSettings? settings = null,
         FormatOptions? options = null,
         IDatabaseFactory? factory = null,
-        IDatabasesCollection? databases = null)
+        IDatabasesCollection? databases = null,
+        RecordingLogger<FormatService>? logger = null)
     {
         database = new DatabaseMock("MyDb", new ScriptParserMock(), formatter ?? new SqlFormatterMock());
 
-        var provider = new TestServiceCollection<FormatService>()
+        var services = new TestServiceCollection<FormatService>()
             .AddSingleton(options ?? new FormatOptions { Path = "/path" })
             .AddSingleton(fileSystem)
             .AddSingleton(factory ?? new DatabaseFactoryMock())
             .AddSingleton(databases ?? new DatabasesCollectionMock(database))
-            .AddSingleton(ExtensionsOptions.Create(settings ?? new GlobalSettings { InitStepName = "_Init" }))
-            .BuildServiceProvider();
+            .AddSingleton(ExtensionsOptions.Create(settings ?? new GlobalSettings { InitStepName = "_Init" }));
 
-        return provider.GetRequiredService<FormatService>();
+        if (logger is not null)
+            services.AddSingleton<ILogger<FormatService>>(logger);
+
+        return services.BuildServiceProvider().GetRequiredService<FormatService>();
     }
 
-    private sealed class UnreadableDatabaseMock : DatabaseMock
+    /// <summary>
+    /// Knows the dialect of its databases but refuses to build one, which is what formatting has to
+    /// get by on.
+    /// </summary>
+    private sealed class OfflineDatabasesCollectionMock : IDatabasesCollection
     {
-        public UnreadableDatabaseMock(string name)
-            : base(name, new ScriptParserMock(), new SqlFormatterMock())
+        private readonly string _name;
+        private readonly ISqlFormatter? _formatter;
+
+        public OfflineDatabasesCollectionMock(string name, ISqlFormatter? formatter)
         {
+            _name = name;
+            _formatter = formatter;
         }
 
-        public override Task<ICollection<DatabaseMigration>> GetMigrations(CancellationToken cancellationToken) =>
+        public IReadOnlyCollection<string> Databases => [_name];
+
+        public Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken) =>
             throw new InvalidOperationException("no route to host");
+
+        public ISqlFormatter? GetSqlFormatter(string name) =>
+            name.Equals(_name, StringComparison.InvariantCultureIgnoreCase) ? _formatter : null;
     }
 }

@@ -21,6 +21,8 @@ internal sealed class TestDialect : SqlDialect
         BatchSeparator = batchSeparator;
     }
 
+    public override string Name => "test";
+
     public override FrozenSet<string> StatementKeywords { get; } = SqlKeywords.Set(SqlKeywords.Statement);
 
     public override FrozenSet<string> ClauseKeywords { get; } = SqlKeywords.Set(SqlKeywords.Clause);

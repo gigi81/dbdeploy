@@ -16,6 +16,8 @@ public class SqlReflowFormatter : ISqlFormatter
         _dialect = dialect;
     }
 
+    public string Dialect => _dialect.Name;
+
     public SqlFormatResult Format(string sql, SqlFormatterOptions options)
     {
         if (!options.Enabled || string.IsNullOrWhiteSpace(sql))

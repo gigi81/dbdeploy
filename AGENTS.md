@@ -51,11 +51,21 @@ the files being changed; the pre-existing ones are S1075, S4790 and S6444.
 
 `dbdeploy format` has two modes. By default it walks the branch layout and re-lays-out the
 `.Deploy.sql` and `.Rollback.sql` script of every step, skipping init steps. Given `--include`
-globs it formats whatever they match instead, reading no branch files and contacting no database;
-the dialect then comes from the nearest folder named after a configured database, else
-`--provider`, else `global:defaultProvider`. `ISqlFormatter` is exposed on `IDatabaseFactory` as
-well as `IDatabase` precisely so that this second mode needs no connection string, and
-`dbsettings.json` is optional for it (see `Program.cs`). Matching is
+globs it formats whatever they match instead, reading no branch files; the dialect then comes from
+the nearest folder named after a configured database, else `--provider`, else
+`global:defaultProvider`.
+
+**Neither mode ever contacts a database, and neither may start doing so.** Everything comes off
+disk. The dialect is resolved through `IDatabasesCollection.GetSqlFormatter`, which maps a database
+name to its provider's `IDatabaseFactory.SqlFormatter` from configuration alone - no `IDatabase` is
+built, so no connection string has to be valid or even present, and `dbsettings.json` is optional
+for the verb (see `Program.cs`). Whether a step is already deployed therefore comes from the branch
+files: a step whose `Step.Branch` is `global:defaultBranch` has been released, which is the closest
+thing to "already deployed" that exists on disk. Its **deploy script is not formatted** unless
+`--force` is passed, because that file's MD5 is the migration hash, and the skip is warned about
+whether or not formatting would have changed anything; its rollback script is formatted normally.
+`ISqlFormatter.Dialect` carries the provider name so every formatted file can be logged with the
+dialect it was laid out with. Matching is
 `Microsoft.Extensions.FileSystemGlobbing`, which supports only `*`, `**` and `?` - a character class
 such as `[Ii]` silently matches nothing.
 

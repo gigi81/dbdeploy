@@ -21,6 +21,12 @@ public sealed class FormatOptions : OptionsBase
                    "Same syntax as --include, so write \"_Init*\" \"_init*\" rather than \"_[Ii]nit*\".")]
     public IEnumerable<string> Exclude { get; set; } = [];
 
+    [Option(shortName: 'f', longName: "force", Default = false,
+        HelpText = "Format the deploy script of released steps too. They are left alone by default " +
+                   "because the migration hash is the MD5 of that file, so rewriting one stops it " +
+                   "matching what the databases that ran it recorded.")]
+    public bool Force { get; set; }
+
     [Option(longName: "provider",
         HelpText = "Dialect to format with when it cannot be told from the folder layout, " +
                    "for example sqlServer, oracle, mySql or postgreSql.")]

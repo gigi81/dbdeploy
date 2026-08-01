@@ -15,6 +15,8 @@ public class SqlFormatterMock : ISqlFormatter
         _verificationError = verificationError;
     }
 
+    public string Dialect => "mock";
+
     public IList<string> Formatted { get; } = new List<string>();
 
     public SqlFormatResult Format(string sql, SqlFormatterOptions options)

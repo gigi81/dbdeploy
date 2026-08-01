@@ -8,6 +8,8 @@ namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Formatting;
 /// </summary>
 internal sealed class SqlServerDialect : SqlDialect
 {
+    public override string Name => SqlServerDatabaseFactory.ProviderName;
+
     private static readonly string[] ExtraStatement =
     [
         "BACKUP", "RESTORE", "PRINT", "RAISERROR", "THROW", "WAITFOR", "GOTO", "BREAK", "CONTINUE",

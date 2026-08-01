@@ -79,6 +79,9 @@ internal sealed class SqlEmitter
         {
             var token = tokens[i];
 
+            if (KeepsBlankLineBefore(token) && HasBlankLineBefore(i))
+                BlankLines(_options.BlankLinesBetweenStatements);
+
             switch (token.Kind)
             {
                 case SqlTokenKind.Whitespace:
@@ -542,6 +545,61 @@ internal sealed class SqlEmitter
         ForceNewLine();
         Write(Apply(token.Text, _options.BatchSeparatorCase));
         BlankLines(_options.BlankLinesBetweenStatements);
+    }
+
+    /// <summary>
+    /// Whether a blank line the author left in front of this token is worth keeping. It is in front
+    /// of the things a blank line separates - a comment, a SQL*Plus line, the start of a statement -
+    /// and nowhere else: inside a statement the layout is rebuilt from the tokens, and a blank line
+    /// in the middle of a reflowed select list is not something to reproduce. A batch separator is
+    /// written directly under the batch it closes, so a blank line in front of one is dropped either
+    /// way.
+    /// </summary>
+    private bool KeepsBlankLineBefore(SqlToken token)
+    {
+        if (_options.BlankLinesBetweenStatements <= 0)
+            return false;
+
+        return token.Kind switch
+        {
+            SqlTokenKind.Passthrough => true,
+            SqlTokenKind.LineComment or SqlTokenKind.BlockComment => token.StartsLine,
+            SqlTokenKind.BatchSeparator or SqlTokenKind.Terminator or SqlTokenKind.Comma => false,
+            SqlTokenKind.Whitespace or SqlTokenKind.Newline => false,
+            _ => token.StartsLine && AtStatementStart()
+        };
+    }
+
+    private bool AtStatementStart() =>
+        _statementKeyword is null && _frames.Count == 0 && _inlineDepth == 0;
+
+    /// <summary>
+    /// Whether the author left a blank line in front of the token at <paramref name="index"/>: two
+    /// line breaks with nothing but spaces between them, after something that was already written.
+    /// The trivia is thrown away when the layout is rebuilt, so this is all that is left of it.
+    /// </summary>
+    private bool HasBlankLineBefore(int index)
+    {
+        var newlines = 0;
+
+        for (var i = index - 1; i >= 0; i--)
+        {
+            switch (_tokens[i].Kind)
+            {
+                case SqlTokenKind.Newline:
+                    newlines++;
+                    break;
+
+                case SqlTokenKind.Whitespace:
+                    break;
+
+                // Leading blank lines have nothing above them to be separated from.
+                default:
+                    return newlines >= 2;
+            }
+        }
+
+        return false;
     }
 
     private void EmitPassthrough(SqlToken token)

@@ -9,6 +9,12 @@ namespace Grillisoft.Tools.DatabaseDeploy.Database.Formatting;
 public abstract class SqlDialect
 {
     /// <summary>
+    /// The provider name this dialect belongs to, so a formatted file can say which dialect it was
+    /// laid out with.
+    /// </summary>
+    public abstract string Name { get; }
+
+    /// <summary>
     /// Words that start a statement and keep what follows on the same line, so that
     /// <c>CREATE TABLE dbo.Customers</c> stays whole.
     /// </summary>
@@ -88,8 +94,9 @@ public abstract class SqlDialect
         trimmedLine.Equals(BatchSeparator, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// A line that has to survive byte for byte because it is not SQL: a SQL*Plus directive, a
-    /// MySQL <c>DELIMITER</c> statement.
+    /// A line that has to survive as it stands because it is not SQL: a SQL*Plus directive, a
+    /// MySQL <c>DELIMITER</c> statement. Only its trailing whitespace is dropped, the same as
+    /// everywhere else in the output.
     /// </summary>
     public virtual bool IsPassthroughLine(string trimmedLine) => false;
 

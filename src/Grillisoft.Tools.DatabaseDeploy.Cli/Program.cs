@@ -36,11 +36,12 @@ static IHost CreateHostBuilder(OptionsBase options, string[] args)
     var environmentName = builder.Environment.EnvironmentName;
     var configRoot = Path.GetFullPath(options.Path);
 
-    // Formatting a loose folder of scripts has no databases to configure, so the settings file is
-    // only mandatory for the verbs that talk to one.
+    // Formatting never connects to a database and reads the settings file only to tell which
+    // dialect each script is in, so the file is optional there and mandatory for every verb that
+    // talks to a database.
     builder.Configuration.AddJsonFile(
         Path.Combine(configRoot, "dbsettings.json"),
-        optional: options is FormatOptions { IsDirectoryMode: true });
+        optional: options is FormatOptions);
     builder.Configuration.AddJsonFile(Path.Combine(configRoot, $"dbsettings.{environmentName}.json"), optional: true);
 
     builder.Services.AddSerilog(config =>

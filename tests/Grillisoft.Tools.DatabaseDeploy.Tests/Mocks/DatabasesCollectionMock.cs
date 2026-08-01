@@ -20,4 +20,11 @@ public class DatabasesCollectionMock : IDatabasesCollection
 
         throw new Exception($"Mock database {name} not found");
     }
+
+    public ISqlFormatter? GetSqlFormatter(string name)
+    {
+        return !string.IsNullOrWhiteSpace(name) && _databases.TryGetValue(name, out var ret)
+            ? ret.SqlFormatter
+            : null;
+    }
 }

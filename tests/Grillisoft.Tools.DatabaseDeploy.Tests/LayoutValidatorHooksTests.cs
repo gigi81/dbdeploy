@@ -3,7 +3,7 @@ using Grillisoft.Tools.DatabaseDeploy.Contracts;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests;
 
-public class BranchesValidatorHooksTests
+public class LayoutValidatorHooksTests
 {
     private const string PreDeployName = "_PreDeploy";
 
@@ -72,7 +72,7 @@ public class BranchesValidatorHooksTests
     private static string RootFile() => $"{SampleBranches.RootPath}{PreDeployName}.sql";
 
     /// <summary>
-    /// Loads the sample branches with a pre deploy script configured for the given databases.
+    /// Validates the sample branches with a pre deploy script configured for the given databases.
     /// </summary>
     private static async Task<List<string>> Load(MockFileSystem fileSystem, params string[] databases)
     {
@@ -80,11 +80,14 @@ public class BranchesValidatorHooksTests
 
         var reader = new BranchesReader(
             fileSystem.DirectoryInfo.New(SampleBranches.RootPath),
-            SampleBranches.GlobalSettings,
+            SampleBranches.GlobalSettings);
+
+        await reader.Load();
+
+        return await SampleBranches.Validate(
+            reader,
             database => databases.Contains(database, StringComparer.InvariantCultureIgnoreCase)
                 ? hooks
                 : DatabaseHooks.None);
-
-        return await reader.Load();
     }
 }

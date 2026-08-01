@@ -9,9 +9,27 @@ using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
 
-public static class BranchesValidator
+/// <summary>
+/// Checks the layout of a deployment folder against what its branch files declare: the scripts
+/// that have to be there, the ones that are there and should not be, how the steps are named, and
+/// the hook scripts the databases have configured.
+/// </summary>
+public static class LayoutValidator
 {
+    /// <summary>
+    /// Everything that can be wrong with what <see cref="BranchesReader"/> read: missing or
+    /// untracked files, duplicate or badly named steps, BOMs, and the hook scripts the databases
+    /// have configured.
+    /// </summary>
     public static async Task<List<string>> Validate(
+        BranchesReader branches,
+        GlobalSettings settings,
+        Func<string, DatabaseHooks> hooks)
+    {
+        return await Validate(branches.Branches.Values.ToArray(), settings, branches.Directory, hooks);
+    }
+
+    private static async Task<List<string>> Validate(
         ICollection<Branch> branches,
         GlobalSettings settings,
         IDirectoryInfo directory,

@@ -115,7 +115,7 @@ set globally and overridable per database (`IDatabasesCollection.GetHooks`). Lik
 The merge is `OverrideWithAllowEmpty`, not `OverrideWith`: an empty name on a database is how it
 opts out of a global hook, so only a key that is absent falls back to the global name.
 The file is `<root>/<database>/<name>.sql` and falls back to `<root>/<name>.sql`; both candidate
-paths must keep being added to the tracked set in `BranchesValidator.CheckFiles`, otherwise
+paths must keep being added to the tracked set in `LayoutValidator.CheckFiles`, otherwise
 configuring a hook turns its own file into an `Untracked file detected` error and every run fails.
 `CheckHookFiles` then makes a configured but missing script an error for `deploy`, `rollback` and
 `validate` alike. Running them is `DatabaseHooksRunner`'s job and only its job: `Run` stops at the

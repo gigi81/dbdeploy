@@ -32,7 +32,7 @@ public sealed record DatabaseHooks(string PreDeploy, string PostDeploy, string P
         script = null;
         return false;
     }
-    
+
     private bool TryGetHook(DatabaseHook hook, out string scriptName)
     {
         scriptName = hook switch

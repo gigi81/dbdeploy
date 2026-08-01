@@ -7,22 +7,21 @@ namespace Grillisoft.Tools.DatabaseDeploy;
 
 /// <summary>
 /// Reads the csv branch files of a directory and exposes the branches they describe.
-/// Nothing here writes: changing the files is <see cref="BranchesWriter"/>'s job.
+/// Nothing here writes: changing the files is <see cref="BranchesWriter"/>'s job, and saying
+/// whether what was read is valid is <see cref="LayoutValidator"/>'s.
 /// </summary>
 public class BranchesReader
 {
     private readonly IDirectoryInfo _directory;
     private readonly GlobalSettings _globalSettings;
-    private readonly Func<string, DatabaseHooks> _hooks;
     private readonly Dictionary<string, Branch> _branches = new(StringComparer.InvariantCultureIgnoreCase);
     private readonly Dictionary<string, IFileInfo[]> _branchFiles = new(StringComparer.InvariantCultureIgnoreCase);
     private Branch? _mainBranch;
 
-    public BranchesReader(IDirectoryInfo directory, GlobalSettings globalSettings, Func<string, DatabaseHooks> hooks)
+    public BranchesReader(IDirectoryInfo directory, GlobalSettings globalSettings)
     {
         _directory = directory;
         _globalSettings = globalSettings;
-        _hooks = hooks;
     }
 
     public IReadOnlyDictionary<string, Branch> Branches => _branches;
@@ -56,7 +55,7 @@ public class BranchesReader
         return files;
     }
 
-    public async Task<List<string>> Load()
+    public async Task Load()
     {
         _directory.ThrowIfNotFound();
 
@@ -72,8 +71,6 @@ public class BranchesReader
             var branch = await Load(file);
             _branches.Add(branch.Name, branch);
         }
-
-        return await BranchesValidator.Validate(_branches.Values, _globalSettings, _directory, _hooks);
     }
 
     private IFileInfo MainBranchFile => BranchFiles.GetFile(_globalSettings.DefaultBranch, _directory);

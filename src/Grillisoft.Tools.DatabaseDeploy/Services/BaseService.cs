@@ -38,10 +38,12 @@ public abstract class BaseService : IExecutable
     protected async Task<BranchesReader> LoadBranches(string path, CancellationToken cancellationToken)
     {
         var directory = this.GetDirectory(path);
-        var branches = new BranchesReader(directory, _globalSettings.Value, _databases.GetHooks);
+        var branches = new BranchesReader(directory, _globalSettings.Value);
 
         _logger.LogInformation("Loading branches from {Directory}", directory.FullName);
-        var errors = await branches.Load();
+        await branches.Load();
+
+        var errors = await LayoutValidator.Validate(branches, _globalSettings.Value, _databases.GetHooks);
 
         foreach (var error in errors)
             _logger.LogError(error);

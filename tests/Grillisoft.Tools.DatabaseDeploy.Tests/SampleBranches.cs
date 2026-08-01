@@ -18,10 +18,18 @@ public static class SampleBranches
 
     public static async Task<BranchesReader> Read(MockFileSystem filesystem)
     {
-        var reader = new BranchesReader(filesystem.DirectoryInfo.New(RootPath), GlobalSettings, NoHooks);
-        var errors = await reader.Load();
-        errors.Should().BeEmpty();
+        var reader = new BranchesReader(filesystem.DirectoryInfo.New(RootPath), GlobalSettings);
+        await reader.Load();
+        (await Validate(reader)).Should().BeEmpty();
         return reader;
+    }
+
+    /// <summary>
+    /// The errors of what a reader read, with no hook configured unless the test says otherwise.
+    /// </summary>
+    public static Task<List<string>> Validate(BranchesReader reader, Func<string, DatabaseHooks>? hooks = null)
+    {
+        return LayoutValidator.Validate(reader, GlobalSettings, hooks ?? NoHooks);
     }
 
     public static BranchesWriter CreateWriter(MockFileSystem filesystem)

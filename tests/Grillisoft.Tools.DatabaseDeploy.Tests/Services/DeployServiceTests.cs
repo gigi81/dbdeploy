@@ -206,10 +206,12 @@ public class DeployServiceTests
             ["Database02,TKT-002.SampleDescription"], options => options.WithStrictOrdering());
 
         //the layout that is left is still valid
-        var errors = await new BranchesReader(
+        var reader = new BranchesReader(
             _fileSystem.DirectoryInfo.New(SampleFilesystems.Sample01RootPath),
-            _globalSettings,
-            SampleBranches.NoHooks).Load();
+            _globalSettings);
+        await reader.Load();
+
+        var errors = await LayoutValidator.Validate(reader, _globalSettings, SampleBranches.NoHooks);
         errors.Should().BeEmpty();
     }
 

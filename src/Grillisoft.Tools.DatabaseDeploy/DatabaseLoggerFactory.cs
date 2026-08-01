@@ -1,18 +1,19 @@
 using System.Collections.Concurrent;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
 
-public class DatabaseLoggerFactory
+public class DatabaseLoggerFactory : IDatabaseLoggerFactory
 {
-    private readonly ILogger _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly ConcurrentDictionary<string, DatabaseLogger> _loggers = new();
 
-    public DatabaseLoggerFactory(ILogger logger)
+    public DatabaseLoggerFactory(ILoggerFactory loggerFactory)
     {
-        _logger = logger;
+        _loggerFactory = loggerFactory;
     }
 
     public ILogger this[string databaseName] =>
-        _loggers.GetOrAdd(databaseName.ToLowerInvariant(), n => new DatabaseLogger(n, _logger));
+        _loggers.GetOrAdd(databaseName.ToLowerInvariant(), n => new DatabaseLogger(n, _loggerFactory.CreateLogger(n)));
 }

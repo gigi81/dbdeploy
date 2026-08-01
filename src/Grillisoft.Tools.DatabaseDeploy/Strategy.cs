@@ -1,4 +1,5 @@
-﻿using Grillisoft.Tools.DatabaseDeploy.Contracts;
+﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Microsoft.Extensions.Logging;
 using Soenneker.Extensions.String;
@@ -9,16 +10,16 @@ public class Strategy
 {
     private readonly Step[] _steps;
     private readonly IDictionary<string, DatabaseMigration[]> _migrations;
-    private readonly DatabaseLoggerFactory _dbl;
+    private readonly IDatabaseLoggerFactory _dbl;
 
     public Strategy(
         Step[] steps,
         IDictionary<string, DatabaseMigration[]> migrations,
-        ILogger logger)
+        IDatabaseLoggerFactory databaseLoggers)
     {
         _steps = steps;
         _migrations = migrations;
-        _dbl = new DatabaseLoggerFactory(logger);
+        _dbl = databaseLoggers;
     }
 
     public async IAsyncEnumerable<Step> GetDeploySteps(string branch)
@@ -43,7 +44,7 @@ public class Strategy
         }
     }
 
-    public IEnumerable<(Step, DatabaseMigration)> GetRollbackSteps(string branch)
+    public IEnumerable<(Step Step, DatabaseMigration Migration)> GetRollbackSteps(string branch)
     {
         foreach (var (step, migration) in GetRollbackStepsInternal().Reverse())
         {

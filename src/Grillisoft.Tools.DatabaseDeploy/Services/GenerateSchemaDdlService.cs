@@ -1,11 +1,8 @@
 using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Text;
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
@@ -15,24 +12,24 @@ public class GenerateSchemaDdlService : BaseService
 
     public GenerateSchemaDdlService(
         GenerateSchemaDdlOptions options,
-        IDatabasesCollection databases,
-        IFileSystem fileSystem,
-        IOptions<GlobalSettings> globalOptions,
+        ServiceDependencies dependencies,
         IProgress<int> progress,
         ILogger<GenerateSchemaDdlService> logger
-    ) : base(databases, fileSystem, globalOptions, logger)
+    ) : base(dependencies, logger)
     {
         _options = options;
     }
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Starting generating database(s) schema definitions for {Count} databases", this.Databases.Count);
+        _logger.LogInformation("Starting generating database(s) schema definitions for {Count} databases",
+            _databases.Databases.Count);
+
         var stopwatch = Stopwatch.StartNew();
         var rootDirectory = this.GetDirectory(_options.Path);
         var lines = new List<string>();
 
-        foreach (var databaseName in this.Databases)
+        foreach (var databaseName in _databases.Databases)
         {
             if (await GenerateDatabaseDdl(databaseName, rootDirectory, cancellationToken))
                 lines.Add($"{databaseName},{_globalSettings.Value.InitStepName}");

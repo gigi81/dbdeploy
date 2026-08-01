@@ -1,16 +1,13 @@
-using System.IO.Abstractions;
 using System.Reflection;
 using CliWrap;
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
-public class CiService : BaseService
+public class CiService : BranchService
 {
     private const string DeployVerb = "deploy";
     private const string RollbackVerb = "rollback";
@@ -19,20 +16,14 @@ public class CiService : BaseService
 
     public CiService(
         CiOptions options,
-        IDatabasesCollection databases,
-        IFileSystem fileSystem,
-        IOptions<GlobalSettings> globalOptions,
+        ServiceDependencies dependencies,
         ILogger<CiService> logger
-    ) : base(databases, fileSystem, globalOptions, logger)
+    ) : base(options, dependencies, logger)
     {
         _options = options;
     }
 
     private string DefaultBranch => _globalSettings.Value.DefaultBranch;
-
-    private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)
-        ? _options.Branch
-        : this.DefaultBranch;
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {

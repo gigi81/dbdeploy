@@ -1,27 +1,26 @@
-﻿using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
-using Microsoft.Extensions.Configuration;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
 
+/// <summary>
+/// Builds the databases the settings describe and keeps them for the run. What the settings say is
+/// <see cref="DatabasesConfiguration"/>'s job: this one turns it into <see cref="IDatabase"/>.
+/// </summary>
 public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
 {
     private readonly Dictionary<string, IDatabaseFactory> _databaseFactories;
     private readonly Dictionary<string, IDatabase> _databases = new(StringComparer.InvariantCultureIgnoreCase);
-    private readonly IConfigurationSection _configurationSection;
-    private readonly GlobalSettings _global;
-    private readonly Lazy<List<string>> _keys;
+    private readonly DatabasesConfiguration _configuration;
 
-    public DatabasesCollection(IEnumerable<IDatabaseFactory> databaseFactories, IConfiguration configuration)
+    public DatabasesCollection(IEnumerable<IDatabaseFactory> databaseFactories, DatabasesConfiguration configuration)
     {
         _databaseFactories = databaseFactories.ToDictionary(f => f.Name, f => f, StringComparer.InvariantCultureIgnoreCase);
-        _configurationSection = configuration.GetSection("databases");
-        _global = configuration.GetSection(GlobalSettings.SectionName)?.Get<GlobalSettings>() ?? new GlobalSettings();
-        _keys = new Lazy<List<string>>(() => _configurationSection.GetChildren().Select(c => c.Key).ToList());
+        _configuration = configuration;
     }
 
-    public IReadOnlyCollection<string> Databases => _keys.Value;
+    public IReadOnlyCollection<string> Databases => _configuration.Names;
 
     public async Task<IDatabase> GetDatabase(string name, CancellationToken cancellationToken)
     {
@@ -35,34 +34,37 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
 
     public ISqlFormatter? GetSqlFormatter(string name)
     {
-        var provider = GetProvider(name);
-
+        var provider = _configuration.GetProvider(name);
         if (string.IsNullOrWhiteSpace(provider))
             return null;
 
-        if (!_databaseFactories.TryGetValue(provider, out var factory))
-            throw new DatabaseProviderNotFoundException(provider, name);
-
-        return factory.SqlFormatter;
+        return GetFactory(provider, name).SqlFormatter;
     }
+
+    public DatabaseHooks GetHooks(string name) => _configuration.GetHooks(name);
 
     private async Task<IDatabase> CreateDatabase(string name, CancellationToken cancellationToken)
     {
-        var section = _configurationSection.GetSection(name);
-        var provider = GetProvider(name);
+        var provider = _configuration.GetProvider(name);
 
-        if (string.IsNullOrWhiteSpace(provider) || !_databaseFactories.TryGetValue(provider, out var factory))
+        if (string.IsNullOrWhiteSpace(provider))
             throw new DatabaseProviderNotFoundException(provider, name);
 
-        var database = await factory.GetDatabase(name, section, cancellationToken);
+        var factory = GetFactory(provider, name);
+        var database = await factory.GetDatabase(name, _configuration.GetSection(name), cancellationToken);
         if (database == null)
             throw new DatabaseConfigNotFoundException(name);
 
         return database;
     }
 
-    private string GetProvider(string name) =>
-        _global.DefaultProvider.OverrideWith(_configurationSection.GetSection(name)["provider"]);
+    private IDatabaseFactory GetFactory(string provider, string name)
+    {
+        if (!_databaseFactories.TryGetValue(provider, out var factory))
+            throw new DatabaseProviderNotFoundException(provider, name);
+
+        return factory;
+    }
 
     public async ValueTask DisposeAsync()
     {

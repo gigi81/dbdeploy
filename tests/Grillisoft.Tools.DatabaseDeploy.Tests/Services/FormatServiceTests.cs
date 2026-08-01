@@ -423,7 +423,11 @@ public class FormatServiceTests
             .AddSingleton(ExtensionsOptions.Create(settings ?? new GlobalSettings { InitStepName = "_Init" }));
 
         if (logger is not null)
+        {
             services.AddSingleton<ILogger<FormatService>>(logger);
+            //the warnings about a step are written through the logger of its database
+            services.AddSingleton<IDatabaseLoggerFactory>(new DatabaseLoggerFactory(new RecordingLoggerFactory(logger)));
+        }
 
         return services.BuildServiceProvider().GetRequiredService<FormatService>();
     }
@@ -450,5 +454,7 @@ public class FormatServiceTests
 
         public ISqlFormatter? GetSqlFormatter(string name) =>
             name.Equals(_name, StringComparison.InvariantCultureIgnoreCase) ? _formatter : null;
+
+        public DatabaseHooks GetHooks(string name) => DatabaseHooks.None;
     }
 }

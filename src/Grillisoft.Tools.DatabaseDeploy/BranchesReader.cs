@@ -7,7 +7,8 @@ namespace Grillisoft.Tools.DatabaseDeploy;
 
 /// <summary>
 /// Reads the csv branch files of a directory and exposes the branches they describe.
-/// Nothing here writes: changing the files is <see cref="BranchesWriter"/>'s job.
+/// Nothing here writes: changing the files is <see cref="BranchesWriter"/>'s job, and saying
+/// whether what was read is valid is <see cref="LayoutValidator"/>'s.
 /// </summary>
 public class BranchesReader
 {
@@ -54,7 +55,7 @@ public class BranchesReader
         return files;
     }
 
-    public async Task<List<string>> Load()
+    public async Task Load()
     {
         _directory.ThrowIfNotFound();
 
@@ -70,8 +71,6 @@ public class BranchesReader
             var branch = await Load(file);
             _branches.Add(branch.Name, branch);
         }
-
-        return await BranchesValidator.Validate(_branches.Values, _globalSettings, _directory);
     }
 
     private IFileInfo MainBranchFile => BranchFiles.GetFile(_globalSettings.DefaultBranch, _directory);

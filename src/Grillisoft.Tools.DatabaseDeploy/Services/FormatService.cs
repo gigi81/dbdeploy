@@ -7,7 +7,6 @@ using Grillisoft.Tools.DatabaseDeploy.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
@@ -30,16 +29,14 @@ public class FormatService : BaseService
 
     public FormatService(
         FormatOptions options,
-        IDatabasesCollection databases,
         IEnumerable<IDatabaseFactory> factories,
-        IFileSystem fileSystem,
-        IOptions<GlobalSettings> globalSettings,
+        ServiceDependencies dependencies,
         ILogger<FormatService> logger)
-        : base(databases, fileSystem, globalSettings, logger)
+        : base(dependencies, logger)
     {
         _options = options;
-        _fileSystem = fileSystem;
-        _editorConfig = new EditorConfigSqlOptions(fileSystem, logger);
+        _fileSystem = dependencies.FileSystem;
+        _editorConfig = new EditorConfigSqlOptions(_fileSystem, logger);
         _factories = factories.ToDictionary(f => f.Name, f => f, StringComparer.InvariantCultureIgnoreCase);
     }
 
@@ -73,7 +70,7 @@ public class FormatService : BaseService
                 continue;
             }
 
-            var formatter = ResolveFormatter(step.Database);
+            var formatter = _databases.GetSqlFormatter(step.Database) ?? GetFactory().SqlFormatter;
 
             // A step that sits in the default branch file has been released, so it has very likely
             // been deployed somewhere. The branch files are the only evidence of that on disk, and
@@ -219,23 +216,15 @@ public class FormatService : BaseService
             if (directory.FullName.Equals(root.FullName, StringComparison.OrdinalIgnoreCase))
                 break;
 
-            var match = this.Databases.FirstOrDefault(
+            var match = _databases.Databases.FirstOrDefault(
                 name => name.Equals(directory.Name, StringComparison.InvariantCultureIgnoreCase));
 
-            if (match is not null && GetSqlFormatter(match) is { } formatter)
+            if (match is not null && _databases.GetSqlFormatter(match) is { } formatter)
                 return formatter;
         }
 
         return GetFactory().SqlFormatter;
     }
-
-    /// <summary>
-    /// The dialect a branch step's scripts are in. It comes from the provider configured for that
-    /// database - configuration only, so no database is built and no connection string is needed -
-    /// and falls back to <c>--provider</c> when the settings say nothing about it.
-    /// </summary>
-    private ISqlFormatter ResolveFormatter(string database) =>
-        GetSqlFormatter(database) ?? GetFactory().SqlFormatter;
 
     private IDatabaseFactory GetFactory()
     {

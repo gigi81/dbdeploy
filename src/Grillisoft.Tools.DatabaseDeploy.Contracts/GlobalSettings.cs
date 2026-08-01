@@ -18,4 +18,24 @@ public class GlobalSettings
     public string InitStepName { get; set; } = "_Init";
 
     public bool RollbackRequired { get; set; } = true;
+
+    /// <summary>
+    /// Name of the script to run before a deploy starts. Empty means no script.
+    /// </summary>
+    public string PreDeploy { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Name of the script to run after a deploy completed. Empty means no script.
+    /// </summary>
+    public string PostDeploy { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Name of the script to run before a rollback starts. Empty means no script.
+    /// </summary>
+    public string PreRollback { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Name of the script to run after a rollback completed. Empty means no script.
+    /// </summary>
+    public string PostRollback { get; set; } = string.Empty;
 }

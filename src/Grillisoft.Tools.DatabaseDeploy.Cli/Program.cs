@@ -5,6 +5,7 @@ using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Cli;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
+using Grillisoft.Tools.DatabaseDeploy.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -62,8 +63,12 @@ static IHost CreateHostBuilder(OptionsBase options, string[] args)
         builder.Configuration.GetSection(GlobalSettings.SectionName));
 
     builder.Services.AddSingleton<IFileSystem, FileSystem>()
+        .AddSingleton<DatabasesConfiguration>()
         .AddSingleton<IDatabasesCollection, DatabasesCollection>()
         .AddSingleton<IProgress<int>, ConsoleProgress>()
+        .AddSingleton<IDatabaseLoggerFactory, DatabaseLoggerFactory>()
+        .AddSingleton<IScriptsRunner, ScriptsRunner>()
+        .AddSingleton<ServiceDependencies>()
         .AddAIGenerator()
         .AddSqlServer()
         .AddMySql()

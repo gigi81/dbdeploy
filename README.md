@@ -90,7 +90,6 @@ This command will create databases (if they don't already exits) and deploy both
 dbdeploy deploy --path examples/examples01 --branch release/1.1 --create --test
 ```
 
-
 ## Files structure
 The files structure and content is designed to play nice with source control systems like git.
 
@@ -184,6 +183,70 @@ It is recommended for this file name to match your release branch name (if any) 
 @include release_1.1
 Database02,TKT-002.SampleDescription
 ```
+
+## Pre and post scripts
+
+A database can have a script that runs **around** a deploy or a rollback, rather than as part of
+it: taking a backup, disabling constraints or jobs, refreshing statistics, and so on. There are four
+of them and all are optional, off unless you name them:
+
+```json
+{
+  "global": {
+    "preDeploy": "_PreDeploy",
+    "postDeploy": "_PostDeploy",
+    "preRollback": "_PreRollback",
+    "postRollback": "_PostRollback"
+  },
+  "databases":{
+    "Database01": {
+      "connectionString": "...",
+      "preDeploy": "_Database01PreDeploy"
+    }
+  }
+}
+```
+
+The setting holds the name of the script, without the `.sql` extension, exactly like
+`global:initStepName`. A name set on a database overrides the global one for that database.
+
+A database that does not want a hook the global settings turned on sets it to an empty name:
+
+```json
+{
+  "global": { "preDeploy": "_PreDeploy" },
+  "databases":{
+    "Database02": {
+      "connectionString": "...",
+      "preDeploy": ""
+    }
+  }
+}
+```
+
+`Database02` then runs no pre deploy script, while every other database still runs `_PreDeploy.sql`.
+
+The file is looked up in the **database folder first and in the root folder after**, so one script
+can be shared by every database and still be overridden by one of them:
+
+```shell
+/Database01/_PreDeploy.sql    <- used for Database01
+/_PreDeploy.sql               <- used for every other database
+```
+
+The rules around them:
+
+- A configured script that exists in neither place is an error, and `deploy`, `rollback` and
+  `validate` all fail on it before touching any database.
+- They run only for the databases that have something to deploy or to rollback. A database whose
+  steps are all deployed already runs neither its pre nor its post script.
+- If a **pre** script fails, nothing is deployed or rolled back.
+- If a **post** script fails, it is logged as an error and the run carries on with whatever is left
+  to do, including `--update`; the command then exits with the number of post scripts that failed.
+- They are not migrations: nothing is recorded for them and they run again on every deploy or
+  rollback that has work for their database.
+- With `--dryrun` they are only reported, like every other script.
+
 
 ## Format
 

@@ -91,6 +91,39 @@ reproducing a layout bug. `CorpusFiles` skips anything over 2 MB, which drops th
 `_Init.Data*.sql` dumps only: they are never formatted by the product, and they cost four minutes of
 CI time. Keep a new fixture under that size or it will be silently ignored.
 
+## Running a script
+
+Every script that reaches a database - deploy, data, test, rollback, hooks - goes through the
+injected `IScriptsRunner`, the one place that parses a file into the batches of its dialect, runs
+them and logs them. `BaseService` exposes it to the services as `_scripts` and
+`DatabaseHooksRunner` takes it as a dependency, so a hook script runs exactly like a step script.
+
+## Logging about a database
+
+Anything written about a database goes through `IDatabaseLoggerFactory` (`_dbl[name]`), which is
+registered once and injected - do not `new` a `DatabaseLoggerFactory` in a class that needs one, or
+the loggers stop being shared. It wraps the logger of the database's own category with the
+`Database {Database}: ` prefix, so a message about a database reads the same wherever it is written
+from. A test that asserts on those messages has to build the factory over its own `ILoggerFactory`
+(`RecordingLoggerFactory`), not over the logger of the service.
+
+## Pre and post scripts
+
+`preDeploy`, `postDeploy`, `preRollback` and `postRollback` name an optional script per database,
+set globally and overridable per database (`IDatabasesCollection.GetHooks`). Like
+`GetSqlFormatter`, they resolve **from configuration alone**: no `IDatabase` is built to read them.
+The merge is `OverrideWithAllowEmpty`, not `OverrideWith`: an empty name on a database is how it
+opts out of a global hook, so only a key that is absent falls back to the global name.
+The file is `<root>/<database>/<name>.sql` and falls back to `<root>/<name>.sql`; both candidate
+paths must keep being added to the tracked set in `LayoutValidator.CheckFiles`, otherwise
+configuring a hook turns its own file into an `Untracked file detected` error and every run fails.
+`CheckHookFiles` then makes a configured but missing script an error for `deploy`, `rollback` and
+`validate` alike. Running them is `DatabaseHooksRunner`'s job and only its job: `Run` stops at the
+first failure (the pre scripts) and `TryRun` carries on and returns how many failed (the post
+scripts). It is bound to the run it belongs to - root folder and dry run come from its constructor,
+so a call is only the hook and the databases - and `DeployService`/`RollbackService` build one each
+and return the post failure count as their exit code.
+
 ## Unit Test and Integration Test Strategy
 
 The solution has a comprehensive test suite. The unit tests are located in the `tests` folder. The integration tests are located in the `.github/workflows/integration-tests.yml` file.

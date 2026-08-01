@@ -29,3 +29,27 @@ public sealed class RecordingLogger<T> : ILogger<T>
         TestLogger.Instance.Log(logLevel, eventId, state, exception, formatter);
     }
 }
+
+/// <summary>
+/// Hands the same logger to every category, so that a <see cref="DatabaseLoggerFactory"/> built on
+/// it records what is written about a database too, and not only what the service writes directly.
+/// </summary>
+public sealed class RecordingLoggerFactory : ILoggerFactory
+{
+    private readonly ILogger _logger;
+
+    public RecordingLoggerFactory(ILogger logger)
+    {
+        _logger = logger;
+    }
+
+    public ILogger CreateLogger(string categoryName) => _logger;
+
+    public void AddProvider(ILoggerProvider provider)
+    {
+    }
+
+    public void Dispose()
+    {
+    }
+}

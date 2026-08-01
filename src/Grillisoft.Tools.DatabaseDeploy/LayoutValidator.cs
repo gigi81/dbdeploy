@@ -9,14 +9,38 @@ using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
 
-public static class BranchesValidator
+/// <summary>
+/// Checks the layout of a deployment folder against what its branch files declare: the scripts
+/// that have to be there, the ones that are there and should not be, how the steps are named, and
+/// the hook scripts the databases have configured.
+/// </summary>
+public static class LayoutValidator
 {
-    public static async Task<List<string>> Validate(ICollection<Branch> branches, GlobalSettings settings, IDirectoryInfo directory)
+    /// <summary>
+    /// Everything that can be wrong with what <see cref="BranchesReader"/> read: missing or
+    /// untracked files, duplicate or badly named steps, BOMs, and the hook scripts the databases
+    /// have configured.
+    /// </summary>
+    public static async Task<List<string>> Validate(
+        BranchesReader branches,
+        GlobalSettings settings,
+        Func<string, DatabaseHooks> hooks)
+    {
+        return await Validate(branches.Branches.Values.ToArray(), settings, branches.Directory, hooks);
+    }
+
+    private static async Task<List<string>> Validate(
+        ICollection<Branch> branches,
+        GlobalSettings settings,
+        IDirectoryInfo directory,
+        Func<string, DatabaseHooks> hooks)
     {
         var steps = branches.SelectMany(b => b.Steps).Distinct().ToArray();
+        var hookScripts = GetHookScripts(steps, directory, hooks);
 
         var errors = Array.Empty<string>()
-            .Concat(CheckFiles(settings, directory, steps))
+            .Concat(CheckFiles(settings, directory, steps, hookScripts))
+            .Concat(CheckHookFiles(hookScripts))
             .Concat(CheckForDuplicateSteps(branches))
             .Concat(CheckForInvalidStepNames(settings, steps))
             .Concat(await CheckForBOMs(directory).ToArrayAsync())
@@ -25,7 +49,25 @@ public static class BranchesValidator
         return errors;
     }
 
-    private static IEnumerable<string> CheckFiles(GlobalSettings settings, IDirectoryInfo directory, Step[] steps)
+    /// <summary>
+    /// The hook scripts of every database taking part in the branches. A database with no hook
+    /// configured contributes none.
+    /// </summary>
+    private static HookScript[] GetHookScripts(Step[] steps, IDirectoryInfo directory, Func<string, DatabaseHooks> hooks)
+    {
+        return steps.Select(s => s.Database)
+            .Distinct(StringComparer.InvariantCultureIgnoreCase)
+            .SelectMany(database => hooks(database).GetHookScripts(database, directory))
+            .ToArray();
+    }
+
+    private static IEnumerable<string> CheckHookFiles(HookScript[] hookScripts)
+    {
+        foreach (var script in hookScripts.Where(s => s.File == null))
+            yield return script.NotFoundMessage;
+    }
+
+    private static IEnumerable<string> CheckFiles(GlobalSettings settings, IDirectoryInfo directory, Step[] steps, HookScript[] hookScripts)
     {
         var deploy = steps.Select(s => s.DeployScript.FullName);
         var data = steps.SelectMany(s => s.DataScripts).Select(s => s.FullName);
@@ -35,8 +77,13 @@ public static class BranchesValidator
         var mandatoryFiles = (settings.RollbackRequired ? deploy.Concat(rollback) : deploy)
             .ToHashSetIgnoreCase();
 
+        //a hook script is tracked wherever it is allowed to live, so that configuring one does not
+        //turn its file into an untracked file
+        var hookFiles = hookScripts.SelectMany(s => s.Candidates).Select(f => f.FullName);
+
         var extraFiles = (settings.RollbackRequired ? test : test.Concat(rollback))
             .Concat(data)
+            .Concat(hookFiles)
             .ToHashSetIgnoreCase();
 
         var found = directory.EnumerateFiles("*.sql", SearchOption.AllDirectories)

@@ -1,37 +1,28 @@
 ﻿using System.Diagnostics;
-using System.IO.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Soenneker.Extensions.Enumerable;
 using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
-public class DeployService : BaseService
+public class DeployService : BranchService
 {
     private readonly DeployOptions _options;
     private readonly IProgress<int> _progress;
 
     public DeployService(
         DeployOptions options,
-        IDatabasesCollection databases,
-        IFileSystem fileSystem,
-        IOptions<GlobalSettings> globalOptions,
+        ServiceDependencies dependencies,
         IProgress<int> progress,
         ILogger<DeployService> logger
-    ) : base(databases, fileSystem, globalOptions, logger)
+    ) : base(options, dependencies, logger)
     {
         _options = options;
         _progress = progress;
     }
-
-    private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)
-        ? _options.Branch
-        : _globalSettings.Value.DefaultBranch;
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
@@ -51,8 +42,15 @@ public class DeployService : BaseService
 
         var strategy = await GetStrategy(steps, cancellationToken);
         var deploySteps = await strategy.GetDeploySteps(this.Branch).ToArrayAsync(cancellationToken);
-
         _logger.LogInformation("Detected {Count} steps to deploy", deploySteps.Length);
+        if (deploySteps.Length <= 0)
+            return 0;
+
+        //only the databases that have something to deploy take part in the pre and post scripts
+        var deployDatabases = deploySteps.Select(s => s.Database).Distinct().ToArray();
+
+        await this.Hooks.Run(DatabaseHook.PreDeploy, deployDatabases, cancellationToken);
+
         _progress.Report(0);
         foreach (var step in deploySteps)
         {
@@ -60,22 +58,30 @@ public class DeployService : BaseService
             _progress.Report(++count * 100 / steps.Length);
         }
         _progress.Report(100);
-        var operation = _options.DryRun ? "Dry run (deploy)" : "Deployment";
-        _logger.LogInformation("{Operation} completed successfully in {ElapsedTime}", operation, stopwatch.Elapsed);
 
+        var failed = await this.Hooks.TryRun(DatabaseHook.PostDeploy, deployDatabases, cancellationToken);
+
+        var operation = _options.DryRun ? "Dry run (deploy)" : "Deployment";
+        if (failed > 0)
+            _logger.LogError("{Operation} completed in {ElapsedTime} but {Count} post deploy scripts failed", operation, stopwatch.Elapsed, failed);
+        else
+            _logger.LogInformation("{Operation} completed successfully in {ElapsedTime}", operation, stopwatch.Elapsed);
+
+        //a post deploy script that failed does not undo the deployment: whatever is left to do is
+        //still done, and the failure is reported through the exit code
         if (_options is { Update: true, DryRun: false })
             await UpdateBranches(branches, branch, cancellationToken);
 
-        return 0;
+        return failed;
     }
 
     private async Task UpdateBranches(BranchesReader branches, Branch branch, CancellationToken cancellationToken)
     {
         if (_options.DryRun)
             return;
-        
+
         var defaultBranch = _globalSettings.Value.DefaultBranch;
-        
+
         if (branch.Name.EqualsIgnoreCase(defaultBranch))
         {
             _logger.LogInformation("Branch {Branch} is the default branch, nothing to update", branch.Name);
@@ -128,10 +134,10 @@ public class DeployService : BaseService
         _dbl[step.Database].LogInformation("Deploying {StepName}", step.Name);
         var database = await GetDatabase(step.Database, stoppingToken);
         var hash = await step.GetStepHash();
-        await RunScript(step.DeployScript, database, stoppingToken);
-        await RunScripts(step.DataScripts, database, stoppingToken);
+        await _scripts.Run(step.DeployScript, database, stoppingToken);
+        await _scripts.Run(step.DataScripts, database, stoppingToken);
         if (_options.Test)
-            await RunScript(step.TestScript, database, stoppingToken);
+            await _scripts.Run(step.TestScript, database, stoppingToken);
 
         _dbl[step.Database].LogInformation("Adding migration {StepName}", step.Name);
         var migration = new DatabaseMigration(

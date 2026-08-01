@@ -1,4 +1,7 @@
+using System.IO.Abstractions;
+using System.IO.Abstractions.TestingHelpers;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Microsoft.Extensions.Configuration;
 using Moq;
@@ -9,11 +12,21 @@ public class DatabaseCollectionTests
 {
     private const string FactoryProviderName = "provider01";
 
-    private static IConfiguration CreateConfig(Dictionary<string, string?> settings)
+    /// <summary>
+    /// Which hooks came back is read through the scripts they would run, so these tests need a
+    /// folder to hang them off. Nothing is read from it: only the names matter here.
+    /// </summary>
+    private static readonly IDirectoryInfo Directory =
+        new MockFileSystem().DirectoryInfo.New(SampleBranches.RootPath);
+
+    private static IEnumerable<DatabaseHook> ConfiguredHooks(DatabaseHooks hooks) =>
+        hooks.GetHookScripts("test", Directory).Select(script => script.Hook);
+
+    private static DatabasesConfiguration CreateConfig(Dictionary<string, string?> settings)
     {
         var configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.AddInMemoryCollection(settings);
-        return configurationBuilder.Build();
+        return new DatabasesConfiguration(configurationBuilder.Build());
     }
 
     [Test]
@@ -156,6 +169,101 @@ public class DatabaseCollectionTests
 
         //assert
         act.Should().ThrowExactly<DatabaseProviderNotFoundException>();
+    }
+
+    [Test]
+    public async Task GetHooks_WhenSetGlobally_ReturnsTheGlobalNames()
+    {
+        //arrange
+        var configuration = CreateConfig(new Dictionary<string, string?>()
+        {
+            { "global:preDeploy", "_PreDeploy" },
+            { "global:postRollback", "_PostRollback" },
+            { "databases:test:provider", FactoryProviderName }
+        });
+
+        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration);
+
+        //act
+        var actual = collection.GetHooks("test");
+
+        //assert
+        actual.PreDeploy.Should().Be("_PreDeploy");
+        actual.PostRollback.Should().Be("_PostRollback");
+        actual.PostDeploy.Should().BeEmpty();
+        actual.PreRollback.Should().BeEmpty();
+        ConfiguredHooks(actual).Should().BeEquivalentTo([DatabaseHook.PreDeploy, DatabaseHook.PostRollback]);
+    }
+
+    [Test]
+    public async Task GetHooks_WhenSetOnTheDatabase_OverridesTheGlobalNames()
+    {
+        //arrange
+        var configuration = CreateConfig(new Dictionary<string, string?>()
+        {
+            { "global:preDeploy", "_PreDeploy" },
+            { "global:postDeploy", "_PostDeploy" },
+            { "databases:test:preDeploy", "_TestPreDeploy" },
+            { "databases:test:provider", FactoryProviderName }
+        });
+
+        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration);
+
+        //act
+        var actual = collection.GetHooks("test");
+
+        //assert
+        actual.PreDeploy.Should().Be("_TestPreDeploy");
+        actual.PostDeploy.Should().Be("_PostDeploy");
+    }
+
+    /// <summary>
+    /// A database that does not want a hook the global settings turned on says so with an empty
+    /// name. Falling back to the global name here would run a script the database opted out of.
+    /// </summary>
+    [Test]
+    public async Task GetHooks_WhenTheDatabaseSetsAnEmptyName_TurnsTheGlobalHookOff()
+    {
+        //arrange
+        var configuration = CreateConfig(new Dictionary<string, string?>()
+        {
+            { "global:preDeploy", "_PreDeploy" },
+            { "global:postDeploy", "_PostDeploy" },
+            { "databases:test:preDeploy", "" },
+            { "databases:test:provider", FactoryProviderName }
+        });
+
+        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration);
+
+        //act
+        var actual = collection.GetHooks("test");
+
+        //assert
+        actual.PreDeploy.Should().BeEmpty();
+        actual.TryGetHookScript(DatabaseHook.PreDeploy, "test", Directory, out _).Should().BeFalse();
+
+        //the hooks it said nothing about are untouched
+        actual.PostDeploy.Should().Be("_PostDeploy");
+        ConfiguredHooks(actual).Should().BeEquivalentTo([DatabaseHook.PostDeploy]);
+    }
+
+    [Test]
+    public async Task GetHooks_WhenNotConfigured_ReturnsNoHook()
+    {
+        //arrange
+        var configuration = CreateConfig(new Dictionary<string, string?>()
+        {
+            { "databases:test:provider", FactoryProviderName }
+        });
+
+        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration);
+
+        //act
+        var actual = collection.GetHooks("test");
+
+        //assert
+        actual.Should().Be(DatabaseHooks.None);
+        ConfiguredHooks(actual).Should().BeEmpty();
     }
 
     private static Mock<IDatabaseFactory> GetDatabaseFactory()

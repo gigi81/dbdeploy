@@ -252,6 +252,28 @@ public class FormatServiceTests
         fileSystem.File.ReadAllText(DeployPath).Should().Be("SELECT 2");
     }
 
+    /// <summary>
+    /// Validation only accepts UTF-8 without BOM, so a charset over a deployment folder would rewrite
+    /// its scripts into something the next validate run fails on. It is ignored, and said so, since
+    /// the setting silently doing nothing is not obvious from the file.
+    /// </summary>
+    [Test]
+    public async Task Execute_WhenTheEditorConfigAsksForAnotherCharset_ShouldStillWriteUtf8WithoutBom()
+    {
+        var fileSystem = CreateFileSystem();
+        fileSystem.AddFile("/path/.editorconfig", new MockFileData("root = true\n\n[*.sql]\ncharset = utf-8-bom\n"));
+        var logger = new RecordingLogger<FormatService>();
+
+        var result = await CreateService(fileSystem, out _, logger: logger).Execute(CancellationToken.None);
+
+        result.Should().Be(0);
+        fileSystem.File.ReadAllBytes(DeployPath).Should().StartWith("SELECT 2"u8.ToArray());
+        fileSystem.File.ReadAllBytes(RollbackPath).Should().StartWith("SELECT 3"u8.ToArray());
+
+        logger.Warnings.Should().ContainSingle("one charset, one warning, however many scripts share it")
+            .Which.Should().Contain("utf-8").And.Contain("--include");
+    }
+
     // ------------------------------------------------------- directory mode
 
     /// <summary>
@@ -401,6 +423,29 @@ public class FormatServiceTests
 
         result.Should().Be(0);
         fileSystem.File.ReadAllText("/loose/one.sql").Should().Be("SELECT 1");
+    }
+
+    /// <summary>
+    /// Globs are how you format scripts that are not a deployment folder, so there the charset is
+    /// honoured as it is written.
+    /// </summary>
+    [Test]
+    public async Task Execute_WhenGlobsAreGiven_ShouldHonourTheCharset()
+    {
+        var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
+        {
+            ["/loose/.editorconfig"] = new("root = true\n\n[*.sql]\ncharset = utf-8-bom\n"),
+            ["/loose/one.sql"] = new("select 1")
+        });
+
+        var options = new FormatOptions { Path = "/loose", Include = ["**/*.sql"], Provider = "mock" };
+        var logger = new RecordingLogger<FormatService>();
+        var result = await CreateService(fileSystem, out _, options: options, logger: logger)
+            .Execute(CancellationToken.None);
+
+        result.Should().Be(0);
+        fileSystem.File.ReadAllBytes("/loose/one.sql").Should().StartWith(new byte[] { 0xef, 0xbb, 0xbf });
+        logger.Warnings.Should().BeEmpty();
     }
 
     private static FormatService CreateService(

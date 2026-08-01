@@ -102,6 +102,10 @@ The tools support both **deploy** and **rollback** scripts along with (optional)
 data during development or for your integration tests and also (optional) **data** scripts that can be used to load data
 for example to prime a database table. 
 
+Every `.sql` script and `.csv` branch file has to be UTF-8 without BOM. `dbdeploy validate` reports
+anything else, whether it announces itself with a BOM or not: a script saved as Latin1 or as UTF-16
+stripped of its BOM is reported too, since it would otherwise only turn into mojibake once deployed.
+
 
 ## Sample structure of files
 
@@ -340,6 +344,10 @@ max_line_length = 120
 setting, each file keeps the endings it already has), `charset` the encoding, and `max_line_length`
 the width above which a parenthesised group is broken over several lines instead of being kept
 inline.
+
+`charset` only applies to directory mode (`--include`). The scripts of a deployment folder are
+always written as UTF-8 without BOM, because that is the only encoding `dbdeploy validate` accepts;
+a `charset` set over them is reported and ignored.
 
 `trim_trailing_whitespace` needs no work in the laid-out code, which never ends a line with
 whitespace; it controls whether the continuation lines of a block comment are trimmed as they are

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO.Abstractions;
+using System.Text;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
@@ -26,6 +27,9 @@ public class FormatService : BaseService
     private readonly IFileSystem _fileSystem;
     private readonly EditorConfigSqlOptions _editorConfig;
     private readonly IReadOnlyDictionary<string, IDatabaseFactory> _factories;
+
+    /// <summary>The charsets already reported as ignored, so one is not repeated per script.</summary>
+    private readonly HashSet<string> _ignoredCharsets = new(StringComparer.OrdinalIgnoreCase);
 
     public FormatService(
         FormatOptions options,
@@ -286,10 +290,35 @@ public class FormatService : BaseService
             return FormatOutcome.Unchanged;
         }
 
-        await _fileSystem.File.WriteAllTextAsync(file.FullName, result.Sql, options.Encoding, cancellationToken);
+        await _fileSystem.File.WriteAllTextAsync(file.FullName, result.Sql, ResolveEncoding(file, options), cancellationToken);
         _logger.LogInformation("Formatted {Path} as {Dialect}", file.FullName, formatter.Dialect);
 
         return FormatOutcome.Rewritten;
+    }
+
+    /// <summary>
+    /// The encoding to rewrite a script with. Directory mode formats whatever the globs match, which
+    /// is not necessarily a deployment folder, so there <c>charset</c> is honoured as it is written.
+    /// A branch script is a different matter: <see cref="ScriptEncoding"/> rejects anything but
+    /// UTF-8 without BOM, so honouring a <c>charset</c> there would only rewrite the script into
+    /// something the next <c>dbdeploy validate</c> fails on.
+    /// </summary>
+    private Encoding ResolveEncoding(IFileInfo file, SqlFormatterOptions options)
+    {
+        if (_options.IsDirectoryMode)
+            return options.Encoding;
+
+        if (!options.Encoding.IsUtf8NoBom() && _ignoredCharsets.Add(options.Encoding.WebName))
+        {
+            _logger.LogWarning(
+                "Ignoring charset {Charset} for {Path} and the scripts sharing its .editorconfig: " +
+                "the scripts of a deployment folder have to stay UTF-8 without BOM. " +
+                "Use --include to format them with that charset",
+                options.Encoding.WebName,
+                file.FullName);
+        }
+
+        return ScriptEncoding.Utf8NoBom;
     }
 
     /// <summary>

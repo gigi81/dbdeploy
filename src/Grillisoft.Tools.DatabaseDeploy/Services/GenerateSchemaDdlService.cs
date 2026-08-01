@@ -20,8 +20,9 @@ public class GenerateSchemaDdlService : BaseService
         IOptions<GlobalSettings> globalOptions,
         IProgress<int> progress,
         IDatabaseLoggerFactory databaseLoggers,
+        IScriptsRunner scripts,
         ILogger<GenerateSchemaDdlService> logger
-    ) : base(databases, fileSystem, globalOptions, databaseLoggers, logger)
+    ) : base(databases, fileSystem, globalOptions, databaseLoggers, scripts, logger)
     {
         _options = options;
     }

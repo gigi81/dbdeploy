@@ -15,16 +15,17 @@ public abstract class BaseService : IExecutable
 {
     private readonly IDatabasesCollection _databases;
     private readonly IFileSystem _fileSystem;
-    private readonly ScriptsRunner _scripts;
     protected readonly IOptions<GlobalSettings> _globalSettings;
     protected readonly ILogger _logger;
     protected readonly IDatabaseLoggerFactory _dbl;
+    protected readonly IScriptsRunner _scripts;
 
     protected BaseService(
         IDatabasesCollection databases,
         IFileSystem fileSystem,
         IOptions<GlobalSettings> globalSettings,
         IDatabaseLoggerFactory databaseLoggers,
+        IScriptsRunner scripts,
         ILogger logger)
     {
         _databases = databases;
@@ -32,7 +33,7 @@ public abstract class BaseService : IExecutable
         _globalSettings = globalSettings;
         _logger = logger;
         _dbl = databaseLoggers;
-        _scripts = new ScriptsRunner(databaseLoggers);
+        _scripts = scripts;
     }
 
     public abstract Task<int> Execute(CancellationToken cancellationToken);
@@ -57,16 +58,6 @@ public abstract class BaseService : IExecutable
             throw new InvalidBranchesConfigurationException(errors);
 
         return branches;
-    }
-
-    protected Task RunScripts(IEnumerable<IFileInfo> scriptFiles, IDatabase database, CancellationToken cancellationToken)
-    {
-        return _scripts.Run(scriptFiles, database, cancellationToken);
-    }
-
-    protected Task RunScript(IFileInfo scriptFile, IDatabase database, CancellationToken cancellationToken)
-    {
-        return _scripts.Run(scriptFile, database, cancellationToken);
     }
 
     protected async Task<Strategy> GetStrategy(Step[] steps, CancellationToken cancellationToken)

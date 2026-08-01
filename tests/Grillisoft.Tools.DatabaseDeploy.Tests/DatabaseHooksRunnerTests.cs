@@ -177,10 +177,13 @@ public class DatabaseHooksRunnerTests
         foreach (var database in databases)
             collection.Hooks.Add(database.Name, hooks);
 
+        var databaseLoggers = new DatabaseLoggerFactory(TestLoggerFactory.Instance);
+
         return new DatabaseHooksRunner(
             collection,
             _fileSystem.DirectoryInfo.New(RootPath),
             dryRun,
-            new DatabaseLoggerFactory(TestLoggerFactory.Instance));
+            new ScriptsRunner(databaseLoggers),
+            databaseLoggers);
     }
 }

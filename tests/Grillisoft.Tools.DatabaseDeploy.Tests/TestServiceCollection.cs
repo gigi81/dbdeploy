@@ -12,6 +12,7 @@ public class TestServiceCollection<TSystemUnderTest> : ServiceCollection where T
         this.AddSingleton<ILogger>(TestLogger.Instance);
         this.AddSingleton<ILoggerFactory>(TestLoggerFactory.Instance);
         this.AddSingleton<IDatabaseLoggerFactory, DatabaseLoggerFactory>();
+        this.AddSingleton<IScriptsRunner, ScriptsRunner>();
         this.AddSingleton<TSystemUnderTest>();
     }
 }

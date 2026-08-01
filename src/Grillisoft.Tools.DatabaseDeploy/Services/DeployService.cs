@@ -24,12 +24,13 @@ public class DeployService : BaseService
         IOptions<GlobalSettings> globalOptions,
         IProgress<int> progress,
         IDatabaseLoggerFactory databaseLoggers,
+        IScriptsRunner scripts,
         ILogger<DeployService> logger
-    ) : base(databases, fileSystem, globalOptions, databaseLoggers, logger)
+    ) : base(databases, fileSystem, globalOptions, databaseLoggers, scripts, logger)
     {
         _options = options;
         _progress = progress;
-        _hooks = new DatabaseHooksRunner(databases, GetDirectory(options.Path), options.DryRun, databaseLoggers);
+        _hooks = new DatabaseHooksRunner(databases, GetDirectory(options.Path), options.DryRun, scripts, databaseLoggers);
     }
 
     private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)
@@ -145,10 +146,10 @@ public class DeployService : BaseService
         _dbl[step.Database].LogInformation("Deploying {StepName}", step.Name);
         var database = await GetDatabase(step.Database, stoppingToken);
         var hash = await step.GetStepHash();
-        await RunScript(step.DeployScript, database, stoppingToken);
-        await RunScripts(step.DataScripts, database, stoppingToken);
+        await _scripts.Run(step.DeployScript, database, stoppingToken);
+        await _scripts.Run(step.DataScripts, database, stoppingToken);
         if (_options.Test)
-            await RunScript(step.TestScript, database, stoppingToken);
+            await _scripts.Run(step.TestScript, database, stoppingToken);
 
         _dbl[step.Database].LogInformation("Adding migration {StepName}", step.Name);
         var migration = new DatabaseMigration(

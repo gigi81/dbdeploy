@@ -91,6 +91,13 @@ reproducing a layout bug. `CorpusFiles` skips anything over 2 MB, which drops th
 `_Init.Data*.sql` dumps only: they are never formatted by the product, and they cost four minutes of
 CI time. Keep a new fixture under that size or it will be silently ignored.
 
+## Running a script
+
+Every script that reaches a database - deploy, data, test, rollback, hooks - goes through the
+injected `IScriptsRunner`, the one place that parses a file into the batches of its dialect, runs
+them and logs them. `BaseService` exposes it to the services as `_scripts` and
+`DatabaseHooksRunner` takes it as a dependency, so a hook script runs exactly like a step script.
+
 ## Logging about a database
 
 Anything written about a database goes through `IDatabaseLoggerFactory` (`_dbl[name]`), which is
@@ -115,9 +122,7 @@ configuring a hook turns its own file into an `Untracked file detected` error an
 first failure (the pre scripts) and `TryRun` carries on and returns how many failed (the post
 scripts). It is bound to the run it belongs to - root folder and dry run come from its constructor,
 so a call is only the hook and the databases - and `DeployService`/`RollbackService` build one each
-and return the post failure count as their exit code. Both it and
-`BaseService` execute a file through `ScriptsRunner`, which is the one place that parses a script
-into batches, runs them and logs them.
+and return the post failure count as their exit code.
 
 ## Unit Test and Integration Test Strategy
 

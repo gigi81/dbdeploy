@@ -21,12 +21,13 @@ public class RollbackService : BaseService
         IOptions<GlobalSettings> globalOptions,
         IProgress<int> progress,
         IDatabaseLoggerFactory databaseLoggers,
+        IScriptsRunner scripts,
         ILogger<RollbackService> logger
-     ) : base(databases, fileSystem, globalOptions, databaseLoggers, logger)
+     ) : base(databases, fileSystem, globalOptions, databaseLoggers, scripts, logger)
     {
         _options = options;
         _progress = progress;
-        _hooks = new DatabaseHooksRunner(databases, GetDirectory(options.Path), options.DryRun, databaseLoggers);
+        _hooks = new DatabaseHooksRunner(databases, GetDirectory(options.Path), options.DryRun, scripts, databaseLoggers);
     }
 
     private string Branch => !string.IsNullOrWhiteSpace(_options.Branch)
@@ -81,7 +82,7 @@ public class RollbackService : BaseService
         }
 
         var database = await GetDatabase(step.Database, cancellationToken);
-        await RunScript(step.RollbackScript, database, cancellationToken);
+        await _scripts.Run(step.RollbackScript, database, cancellationToken);
         _dbl[step.Database].LogInformation("Removing migration {StepName}", step.Name);
         await database.RemoveMigration(migration, cancellationToken);
     }

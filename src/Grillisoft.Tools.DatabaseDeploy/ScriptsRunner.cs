@@ -6,11 +6,8 @@ using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
 
-/// <summary>
-/// Runs a script file against a database: parses it into the batches of its dialect, runs them in
-/// order and logs what ran and for how long. It knows nothing about steps, branches or hooks.
-/// </summary>
-public class ScriptsRunner
+/// <inheritdoc cref="IScriptsRunner"/>
+public class ScriptsRunner : IScriptsRunner
 {
     private readonly IDatabaseLoggerFactory _dbl;
 

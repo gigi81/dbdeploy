@@ -19,6 +19,18 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   
+  <PropertyGroup>
+    <!--
+      Nerdbank.GitVersioning publishes GitBuildVersion and friends to the cloud build it detects,
+      which on github actions means every project appending them to the $GITHUB_ENV file. A solution
+      wide build does that from as many processes as it builds projects at once, and two appends
+      landing together tear a line in half: the runner then fails the step that had just passed with
+      "Unable to process file command 'env' successfully. Error: Invalid format '2.0'", half of a
+      torn GitBuildVersion. Nothing reads those variables, so they are not published at all.
+    -->
+    <NBGV_SetCloudBuildVersionVars>false</NBGV_SetCloudBuildVersionVars>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>

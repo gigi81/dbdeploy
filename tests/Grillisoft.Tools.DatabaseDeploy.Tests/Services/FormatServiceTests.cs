@@ -220,8 +220,12 @@ public class FormatServiceTests
 
         await CreateService(fileSystem, out _, logger: logger).Execute(CancellationToken.None);
 
+        // The service logs the path the file system hands it, which on windows is C:\path\MyDb\...
+        // rather than the /path/MyDb/... this fixture is written with.
+        var deployPath = fileSystem.FileInfo.New(DeployPath).FullName;
+
         logger.Entries.Select(entry => entry.Message)
-            .Should().Contain(message => message.Contains(DeployPath) && message.Contains("mock"));
+            .Should().Contain(message => message.Contains(deployPath) && message.Contains("mock"));
     }
 
     /// <summary>

@@ -7,8 +7,6 @@ using MySqlConnector;
 
 namespace Grillisoft.Tools.DatabaseDeploy.MySql.Tests.Ddl;
 
-[InheritsTests]
-
 /// <summary>
 /// End to end check of the schema DDL generation: build a schema that uses the features a real
 /// application database uses, script it, wipe the database and replay the script through the very
@@ -19,6 +17,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.MySql.Tests.Ddl;
 /// <see cref="MariaDbSchemaDdlTests"/> - because the provider makes no distinction between the two
 /// and the places where they differ are exactly the places this is guarding.
 /// </remarks>
+[InheritsTests]
 public abstract class MySqlSchemaDdlTestsBase : DatabaseTest<MySqlDatabase>
 {
     protected MySqlSchemaDdlTestsBase(IDatabaseFixture fixture)

@@ -1,3 +1,5 @@
+using Grillisoft.Tools.DatabaseDeploy.Contracts.Formatting;
+
 namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
 
 /// <summary>

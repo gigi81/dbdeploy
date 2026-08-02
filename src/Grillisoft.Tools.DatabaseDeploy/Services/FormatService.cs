@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Text;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.Options;

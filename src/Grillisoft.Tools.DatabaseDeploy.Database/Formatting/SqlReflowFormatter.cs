@@ -1,4 +1,5 @@
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts.Formatting;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Database.Formatting;
 
@@ -11,7 +12,7 @@ public class SqlReflowFormatter : ISqlFormatter
 {
     private readonly SqlDialect _dialect;
 
-    public SqlReflowFormatter(SqlDialect dialect)
+    protected SqlReflowFormatter(SqlDialect dialect)
     {
         _dialect = dialect;
     }

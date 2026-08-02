@@ -8,5 +8,7 @@ namespace Grillisoft.Tools.DatabaseDeploy.MySql.Tests;
 public sealed class MySqlFixture : DatabaseFixture<MySqlContainer>
 {
     protected override MySqlContainer CreateContainer() =>
-        new MySqlBuilder(ContainerImages.MySql).Build();
+        new MySqlBuilder(ContainerImages.MySql)
+            .WithCommand(MySqlServerOptions.TrustFunctionCreators)
+            .Build();
 }

@@ -91,6 +91,43 @@ reproducing a layout bug. `CorpusFiles` skips anything over 2 MB, which drops th
 `_Init.Data*.sql` dumps only: they are never formatted by the product, and they cost four minutes of
 CI time. Keep a new fixture under that size or it will be silently ignored.
 
+## Schema DDL generation
+
+`dbdeploy generate-schema` scripts a whole database into the `_Init.sql` of every configured
+database. Two rules drive the whole design and neither may be given up: **the script has to be
+replayable top to bottom on an empty database**, and **no single object that cannot be scripted may
+take the whole run down** - it is recorded, written into the file as a comment, and reported at the
+end through a `DdlGenerationException`.
+
+The shape is shared-plus-per-dialect, the same as `Formatting/`. `Database/Ddl` holds
+`SchemaDdlGenerator` (the ordering and writing loop), `DdlScriptWriter` and `DdlGenerationException`;
+`Database/` holds `CatalogReader`, `DbObjectsGraph` and `ProgressReporter`. A provider contributes a
+`Ddl/` folder with a discovery, a scripter, its type ranks, and the comment prefix and statement
+terminator **its own `IScriptParser` reads back** - that last part is a contract, not a preference,
+because the round-trip tests replay the generated file through the real parser.
+
+`CatalogReader.Query` against `TryQuery` is the distinction that matters in a discovery: `Query` for
+a read the generation *is*, `TryQuery` for one that only makes the script better, so a login without
+the grant gets a warning and a slightly poorer script rather than nothing.
+
+Each provider has one thing it must not stop doing:
+
+- **SQL Server** scripts through SMO, the only project referencing it.
+- **Oracle** uses `DBMS_METADATA` with transform parameters that make the output portable, and falls
+  back to `ALL_SOURCE`/`ALL_VIEWS`/`ALL_TRIGGERS` when the caller lacks `SELECT_CATALOG_ROLE`.
+- **MySQL/MariaDB** uses `SHOW CREATE` and then takes back off what is local to that server:
+  `DEFINER=`, `AUTO_INCREMENT=n`, and the source database name, which MySQL bakes into every view
+  definition. Inline foreign keys are split into `ALTER TABLE`, because two tables referencing each
+  other have no valid `CREATE TABLE` order. Read the DDL column **by name**: `SHOW CREATE TRIGGER`
+  calls it `SQL Original Statement`. MariaDB has sequences and packages and no `VIEW_TABLE_USAGE`,
+  and is covered by its own container and round trip.
+- **PostgreSQL** must empty the session `search_path` before generating, or `format_type` and every
+  `pg_get_..._def` quietly emit unqualified names that replay only under a matching path. Constraints
+  are never inline. Excluded for a reason each: extension owned objects, the sequence behind an
+  identity column, the index behind a constraint. `pg_get_functiondef` **errors** on an aggregate.
+  Bind an oid as `bigint` and cast it (`@oid::oid`), and cast the `"char"` kind columns to `text`;
+  Npgsql will not do either for you.
+
 ## Running a script
 
 Every script that reaches a database - deploy, data, test, rollback, hooks - goes through the

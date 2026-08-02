@@ -252,6 +252,45 @@ The rules around them:
 - With `--dryrun` they are only reported, like every other script.
 
 
+## Generate the schema of an existing database
+
+To adopt a database that already exists, `generate-schema` scripts its whole schema into the
+`_Init` step of every database in the settings file:
+
+```shell
+dbdeploy generate-schema --path examples/examples01
+```
+
+For each database it writes `<path>/<database>/_Init.sql` and adds the step to the default branch
+file. A database whose `_Init.sql` already exists is skipped with a warning rather than overwritten,
+so re-running the command is safe and adopting one more database costs nothing to the others.
+
+The script it writes is meant to be replayed top to bottom on an **empty** database, and to be
+deployed by `dbdeploy` itself: it comes out in dependency order, it is written in the dialect's own
+batch shape (`GO` for SQL Server, `/` for Oracle, `DELIMITER` around MySQL routines), and it carries
+nothing that ties it to the server it was read from — no tablespace or filegroup, no owner or
+definer, no auto-increment counter, no name of the source database, and nothing of the `__Migrations`
+table, which `dbdeploy` manages itself.
+
+Each provider uses whatever its server offers and fills in the rest:
+
+| Provider | Where the DDL comes from |
+| --- | --- |
+| SQL Server | SMO |
+| Oracle | `DBMS_METADATA.GET_DDL`, falling back to the data dictionary when it is refused |
+| MySQL / MariaDB | `SHOW CREATE`, plus `information_schema` for the plan |
+| PostgreSQL | `pg_get_viewdef` and friends, with `CREATE TABLE`, types and sequences assembled from `pg_catalog` |
+
+An object that cannot be scripted does not stop the run: the rest of the script is written, the
+failure is repeated in it as a comment, and the command exits with an error naming everything that
+failed. **A script reported that way is incomplete and must not be deployed as it is.**
+
+Two things are worth checking on the result before committing it. Object types the tool does not
+script are listed as a warning at the start of the run, and a dependency cycle — which every engine
+allows between program units — is reported both in the log and in the file, since the objects in one
+may be created invalid and need a recompilation. On PostgreSQL, a materialized view is created
+`WITH NO DATA` and needs a `REFRESH` of its own.
+
 ## Format
 
 To format the SQL of every `.Deploy.sql` and `.Rollback.sql` script consistently, run:

@@ -1,4 +1,3 @@
-using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
@@ -13,25 +12,21 @@ namespace Grillisoft.Tools.DatabaseDeploy;
 public class DatabaseHooksRunner
 {
     private readonly IDatabasesCollection _databases;
-    private readonly IDirectoryInfo _root;
     private readonly bool _dryRun;
     private readonly IScriptsRunner _scripts;
     private readonly IDatabaseLoggerFactory _dbl;
 
     /// <param name="databases">Where the hooks of a database and the database itself come from</param>
-    /// <param name="root">The folder the scripts are looked up in, the one of the branch files</param>
     /// <param name="dryRun">When set the scripts are only reported, like every other script</param>
     /// <param name="scripts">Runs a hook script the same way a step script is run</param>
     /// <param name="databaseLoggers">Where the logger of a database comes from</param>
     public DatabaseHooksRunner(
         IDatabasesCollection databases,
-        IDirectoryInfo root,
         bool dryRun,
         IScriptsRunner scripts,
         IDatabaseLoggerFactory databaseLoggers)
     {
         _databases = databases;
-        _root = root;
         _dryRun = dryRun;
         _scripts = scripts;
         _dbl = databaseLoggers;
@@ -84,7 +79,7 @@ public class DatabaseHooksRunner
 
     private async Task RunHook(DatabaseHook hook, string database, CancellationToken cancellationToken)
     {
-        if (!_databases.GetHooks(database).TryGetHookScript(hook, database, _root, out var script))
+        if (!_databases.GetHooks(database).TryGetHookScript(hook, out var script))
             return;
 
         var file = script.File ?? throw new HookScriptNotFoundException(script);

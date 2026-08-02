@@ -58,7 +58,7 @@ public class DatabaseHooksRunnerTests
         //arrange
         AddScript($"{HookName}.sql", RootScript);
         var database = new DatabaseMock("Database01");
-        var sut = CreateRunner(DatabaseHooks.None, database);
+        var sut = CreateRunner(TestHooks.None, database);
 
         //act
         await sut.Run(DatabaseHook.PreDeploy, ["Database01"], _cancellationToken);
@@ -148,7 +148,7 @@ public class DatabaseHooksRunnerTests
 
     private static string RootPath => OperatingSystem.IsWindows() ? "c:\\demo\\" : "/opt/demo/";
 
-    private static readonly DatabaseHooks PreDeployOnly =
+    private static readonly IDictionary<DatabaseHook, string> PreDeployOnly =
         TestHooks.Of((DatabaseHook.PreDeploy, HookName));
 
     private void AddScript(string relativePath, string content)
@@ -166,14 +166,17 @@ public class DatabaseHooksRunnerTests
         return CreateRunner(PreDeployOnly, dryRun, databases);
     }
 
-    private DatabaseHooksRunner CreateRunner(DatabaseHooks hooks, params DatabaseMock[] databases)
+    private DatabaseHooksRunner CreateRunner(IDictionary<DatabaseHook, string> hooks, params DatabaseMock[] databases)
     {
         return CreateRunner(hooks, false, databases);
     }
 
-    private DatabaseHooksRunner CreateRunner(DatabaseHooks hooks, bool dryRun, DatabaseMock[] databases)
+    private DatabaseHooksRunner CreateRunner(IDictionary<DatabaseHook, string> hooks, bool dryRun, DatabaseMock[] databases)
     {
-        var collection = new DatabasesCollectionMock(databases.Cast<IDatabase>().ToArray());
+        var collection = new DatabasesCollectionMock(
+            _fileSystem.DirectoryInfo.New(RootPath),
+            databases.Cast<IDatabase>().ToArray());
+
         foreach (var database in databases)
             collection.Hooks.Add(database.Name, hooks);
 
@@ -181,7 +184,6 @@ public class DatabaseHooksRunnerTests
 
         return new DatabaseHooksRunner(
             collection,
-            _fileSystem.DirectoryInfo.New(RootPath),
             dryRun,
             new ScriptsRunner(databaseLoggers),
             databaseLoggers);

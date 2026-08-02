@@ -1,6 +1,5 @@
 using System.Reflection;
 using CliWrap;
-using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
 using Soenneker.Extensions.String;
@@ -63,7 +62,7 @@ public class CiService : BranchService
             .WithArguments(GetArguments(verb, branch))
             .WithStandardOutputPipe(PipeTarget.ToDelegate(Console.WriteLine))
             .WithStandardErrorPipe(PipeTarget.ToDelegate(Console.WriteLine))
-            .WithWorkingDirectory(_options.Path);
+            .WithWorkingDirectory(_rootDirectory.FullName);
     }
 
     private IEnumerable<string> GetArguments(string verb, string branch)

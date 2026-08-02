@@ -1,5 +1,4 @@
 using System.IO.Abstractions.TestingHelpers;
-using System.Text;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Formatting;
 

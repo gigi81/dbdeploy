@@ -36,7 +36,6 @@ public abstract class BranchService : BaseService
     {
         return new DatabaseHooksRunner(
             _databases,
-            GetDirectory(_branchOptions.Path),
             _branchOptions.DryRun,
             _scripts,
             _dbl);

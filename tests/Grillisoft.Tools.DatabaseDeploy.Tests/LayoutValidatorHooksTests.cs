@@ -1,5 +1,6 @@
 using System.IO.Abstractions.TestingHelpers;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Grillisoft.Tools.DatabaseDeploy.Tests.Mocks;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests;
 
@@ -76,18 +77,16 @@ public class LayoutValidatorHooksTests
     /// </summary>
     private static async Task<List<string>> Load(MockFileSystem fileSystem, params string[] databases)
     {
-        var hooks = TestHooks.Of((DatabaseHook.PreDeploy, PreDeployName));
+        var root = fileSystem.DirectoryInfo.New(SampleBranches.RootPath);
+        var collection = new DatabasesCollectionMock(root);
 
-        var reader = new BranchesReader(
-            fileSystem.DirectoryInfo.New(SampleBranches.RootPath),
-            SampleBranches.GlobalSettings);
+        foreach (var database in databases)
+            collection.Hooks.Add(database, TestHooks.Of((DatabaseHook.PreDeploy, PreDeployName)));
+
+        var reader = new BranchesReader(root, SampleBranches.GlobalSettings);
 
         await reader.Load();
 
-        return await SampleBranches.Validate(
-            reader,
-            database => databases.Contains(database, StringComparer.InvariantCultureIgnoreCase)
-                ? hooks
-                : DatabaseHooks.None);
+        return await SampleBranches.Validate(reader, collection);
     }
 }

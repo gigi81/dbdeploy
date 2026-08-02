@@ -14,7 +14,7 @@ public class DeployServiceHooksTests
 {
     private static readonly string TestHash = new('0', Step.HashLength);
 
-    private static readonly DatabaseHooks AllHooks = TestHooks.Of(
+    private static readonly IDictionary<DatabaseHook, string> AllHooks = TestHooks.Of(
         (DatabaseHook.PreDeploy, SampleFilesystems.Hooks.PreDeploy),
         (DatabaseHook.PostDeploy, SampleFilesystems.Hooks.PostDeploy),
         (DatabaseHook.PreRollback, SampleFilesystems.Hooks.PreRollback),
@@ -185,14 +185,20 @@ public class DeployServiceHooksTests
         return CreateService(deployOptions, AllHooks, databases);
     }
 
-    private DeployService CreateService(DeployOptions deployOptions, DatabaseHooks hooks, params IDatabase[] databases)
+    private DeployService CreateService(
+        DeployOptions deployOptions,
+        IDictionary<DatabaseHook, string> hooks,
+        params IDatabase[] databases)
     {
-        var collection = new DatabasesCollectionMock(databases);
+        var collection = new DatabasesCollectionMock(
+            _fileSystem.DirectoryInfo.New(SampleFilesystems.Sample01RootPath),
+            databases);
         foreach (var database in databases)
             collection.Hooks.Add(database.Name, hooks);
 
         var provider = new TestServiceCollection<DeployService>()
             .AddSingleton(deployOptions)
+            .AddRootDirectory(deployOptions.Path)
             .AddSingleton<IFileSystem>(_fileSystem)
             .AddSingleton<IProgress<int>>(new Progress<int>())
             .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(databases))

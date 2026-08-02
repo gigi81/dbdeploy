@@ -1,5 +1,7 @@
 using System.IO.Abstractions.TestingHelpers;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Grillisoft.Tools.DatabaseDeploy.Tests.Mocks;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests;
 
@@ -12,9 +14,10 @@ public static class SampleBranches
     public static readonly GlobalSettings GlobalSettings = new();
 
     /// <summary>
-    /// For the tests that are about the branch layout and have no hook configured.
+    /// For the tests that are about the branch layout: a collection that knows no database, and so
+    /// has no hook configured for any of them.
     /// </summary>
-    public static readonly Func<string, DatabaseHooks> NoHooks = _ => DatabaseHooks.None;
+    public static IDatabasesCollection NoHooks => new DatabasesCollectionMock();
 
     public static async Task<BranchesReader> Read(MockFileSystem filesystem)
     {
@@ -27,9 +30,9 @@ public static class SampleBranches
     /// <summary>
     /// The errors of what a reader read, with no hook configured unless the test says otherwise.
     /// </summary>
-    public static Task<List<string>> Validate(BranchesReader reader, Func<string, DatabaseHooks>? hooks = null)
+    public static Task<List<string>> Validate(BranchesReader reader, IDatabasesCollection? databases = null)
     {
-        return LayoutValidator.Validate(reader, GlobalSettings, hooks ?? NoHooks);
+        return LayoutValidator.Validate(reader, GlobalSettings, databases ?? NoHooks);
     }
 
     public static BranchesWriter CreateWriter(MockFileSystem filesystem)

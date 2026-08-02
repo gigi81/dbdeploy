@@ -13,7 +13,7 @@ public class RollbackServiceHooksTests
 {
     private static readonly string TestHash = new('0', Step.HashLength);
 
-    private static readonly DatabaseHooks AllHooks = TestHooks.Of(
+    private static readonly IDictionary<DatabaseHook, string> AllHooks = TestHooks.Of(
         (DatabaseHook.PreDeploy, SampleFilesystems.Hooks.PreDeploy),
         (DatabaseHook.PostDeploy, SampleFilesystems.Hooks.PostDeploy),
         (DatabaseHook.PreRollback, SampleFilesystems.Hooks.PreRollback),
@@ -131,12 +131,15 @@ public class RollbackServiceHooksTests
 
     private RollbackService CreateService(RollbackOptions rollbackOptions, params IDatabase[] databases)
     {
-        var collection = new DatabasesCollectionMock(databases);
+        var collection = new DatabasesCollectionMock(
+            _fileSystem.DirectoryInfo.New(SampleFilesystems.Sample01RootPath),
+            databases);
         foreach (var database in databases)
             collection.Hooks.Add(database.Name, AllHooks);
 
         var provider = new TestServiceCollection<RollbackService>()
             .AddSingleton(rollbackOptions)
+            .AddRootDirectory(rollbackOptions.Path)
             .AddSingleton<IFileSystem>(_fileSystem)
             .AddSingleton<IProgress<int>>(new Progress<int>())
             .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(databases))

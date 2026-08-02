@@ -1,5 +1,6 @@
 ﻿using System.IO.Abstractions;
 using System.Text.RegularExpressions;
+using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Soenneker.Extensions.Enumerable.String;
 using Soenneker.Extensions.String;
@@ -20,22 +21,23 @@ public static class LayoutValidator
     /// untracked files, duplicate or badly named steps, files that are not UTF-8 without BOM, and
     /// the hook scripts the databases have configured.
     /// </summary>
+    /// <param name="hooks">The hooks of a database: <see cref="IDatabasesCollection.GetHooks"/>.</param>
     public static async Task<List<string>> Validate(
         BranchesReader reader,
         GlobalSettings settings,
-        Func<string, DatabaseHooks> hooks)
+        IDatabasesCollection databasesCollection)
     {
-        return await Validate(reader.Branches.Values.ToArray(), settings, reader.Directory, hooks);
+        return await Validate(reader.Branches.Values.ToArray(), settings, reader.Directory, databasesCollection);
     }
 
     private static async Task<List<string>> Validate(
         ICollection<Branch> branches,
         GlobalSettings settings,
         IDirectoryInfo directory,
-        Func<string, DatabaseHooks> hooks)
+        IDatabasesCollection databasesCollection)
     {
         var steps = branches.SelectMany(b => b.Steps).Distinct().ToArray();
-        var hookScripts = GetHookScripts(steps, directory, hooks);
+        var hookScripts = GetHookScripts(steps, databasesCollection);
 
         var errors = Array.Empty<string>()
             .Concat(CheckFiles(settings, directory, steps, hookScripts))
@@ -52,11 +54,11 @@ public static class LayoutValidator
     /// The hook scripts of every database taking part in the branches. A database with no hook
     /// configured contributes none.
     /// </summary>
-    private static HookScript[] GetHookScripts(Step[] steps, IDirectoryInfo directory, Func<string, DatabaseHooks> hooks)
+    private static HookScript[] GetHookScripts(Step[] steps, IDatabasesCollection databasesCollection)
     {
         return steps.Select(s => s.Database)
             .Distinct(StringComparer.InvariantCultureIgnoreCase)
-            .SelectMany(database => hooks(database).GetHookScripts(database, directory))
+            .SelectMany(database => databasesCollection.GetHooks(database).HookScripts)
             .ToArray();
     }
 

@@ -1,5 +1,4 @@
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
-using Microsoft.Extensions.Logging;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Database.Tests;
 

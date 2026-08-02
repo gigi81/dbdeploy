@@ -32,7 +32,7 @@ public class DeployService : BranchService
         if (_options.DryRun)
             _logger.LogInformation("Dry run enabled: no script will be run and nothing will be written");
 
-        var branches = await LoadBranches(_options.Path, cancellationToken);
+        var branches = await LoadBranches(cancellationToken);
         var branch = branches.GetBranch(this.Branch);
         var steps = branches.GetSteps(branch).ToArray();
         var databases = steps.Select(s => s.Database).Distinct().ToArray();

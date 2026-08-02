@@ -15,25 +15,25 @@ public class ServiceDependencies
 {
     public ServiceDependencies(
         IDatabasesCollection databases,
-        IFileSystem fileSystem,
         IOptions<GlobalSettings> globalSettings,
         IDatabaseLoggerFactory databaseLoggers,
-        IScriptsRunner scripts)
+        IScriptsRunner scripts,
+        IDirectoryInfo rootDirectory)
     {
         this.Databases = databases;
-        this.FileSystem = fileSystem;
         this.GlobalSettings = globalSettings;
         this.DatabaseLoggers = databaseLoggers;
         this.Scripts = scripts;
+        this.RootDirectory = rootDirectory;
     }
 
     public IDatabasesCollection Databases { get; }
-
-    public IFileSystem FileSystem { get; }
 
     public IOptions<GlobalSettings> GlobalSettings { get; }
 
     public IDatabaseLoggerFactory DatabaseLoggers { get; }
 
     public IScriptsRunner Scripts { get; }
+
+    public IDirectoryInfo RootDirectory { get; }
 }

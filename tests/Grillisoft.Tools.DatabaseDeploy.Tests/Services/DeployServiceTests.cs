@@ -311,6 +311,7 @@ public class DeployServiceTests
     {
         var provider = new TestServiceCollection<DeployService>()
             .AddSingleton(deployOptions)
+            .AddRootDirectory(deployOptions.Path)
             .AddSingleton<IFileSystem>(_fileSystem)
             .AddSingleton<IProgress<int>>(new Progress<int>())
             .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(databases))

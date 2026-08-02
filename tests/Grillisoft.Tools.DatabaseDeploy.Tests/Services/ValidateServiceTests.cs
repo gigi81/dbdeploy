@@ -67,6 +67,7 @@ public class ValidateServiceTests
     {
         var provider = new TestServiceCollection<ValidateService>()
             .AddSingleton(new ValidateOptions { Path = "/path" })
+            .AddRootDirectory("/path")
             .AddSingleton(fileSystem)
             .AddSingleton<IProgress<int>>(new Progress<int>())
             .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock())

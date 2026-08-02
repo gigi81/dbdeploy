@@ -1,5 +1,3 @@
-using System.IO.Abstractions.TestingHelpers;
-
 namespace Grillisoft.Tools.DatabaseDeploy.Tests;
 
 public class BranchesWriterTests

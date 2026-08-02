@@ -29,7 +29,7 @@ public class RollbackService : BranchService
         if (_options.DryRun)
             _logger.LogInformation("Dry run enabled: no script will be run and nothing will be written");
 
-        var branches = await LoadBranches(_options.Path, cancellationToken);
+        var branches = await LoadBranches(cancellationToken);
         var steps = branches.GetSteps(branches.GetBranch(this.Branch)).ToArray();
         var strategy = await GetStrategy(steps, cancellationToken);
         var rollbackSteps = strategy.GetRollbackSteps(this.Branch).ToArray();

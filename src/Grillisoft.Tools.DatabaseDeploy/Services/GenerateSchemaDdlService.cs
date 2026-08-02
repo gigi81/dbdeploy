@@ -19,6 +19,8 @@ public class GenerateSchemaDdlService : BaseService
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
+        _rootDirectory.ThrowIfNotFound();
+
         _logger.LogInformation("Starting generating database(s) schema definitions for {Count} databases",
             _databases.Databases.Count);
 

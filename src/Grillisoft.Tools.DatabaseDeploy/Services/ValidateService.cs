@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
@@ -19,6 +20,8 @@ public class ValidateService : BaseService
     {
         try
         {
+            _rootDirectory.ThrowIfNotFound();
+
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting validation");
             await LoadBranches(cancellationToken);

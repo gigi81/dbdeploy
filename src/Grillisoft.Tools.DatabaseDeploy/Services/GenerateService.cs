@@ -22,6 +22,8 @@ public class GenerateService : BaseService
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
+        _rootDirectory.ThrowIfNotFound();
+
         _logger.LogInformation("Searching for missing rollback scripts on path {Path}", _rootDirectory.FullName);
 
         var errors = 0;

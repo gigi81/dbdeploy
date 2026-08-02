@@ -1,5 +1,6 @@
 using System.Reflection;
 using CliWrap;
+using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
 using Soenneker.Extensions.String;
@@ -26,6 +27,8 @@ public class CiService : BranchService
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
+        _rootDirectory.ThrowIfNotFound();
+
         var steps = this.GetSteps().ToArray();
         var current = 1;
 

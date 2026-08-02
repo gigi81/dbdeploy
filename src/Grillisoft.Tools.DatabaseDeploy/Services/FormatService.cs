@@ -41,10 +41,14 @@ public class FormatService : BaseService
         _factories = factories.ToDictionary(f => f.Name, f => f, StringComparer.InvariantCultureIgnoreCase);
     }
 
-    public override Task<int> Execute(CancellationToken cancellationToken) =>
-        _options.IsDirectoryMode
+    public override Task<int> Execute(CancellationToken cancellationToken)
+    {
+        _rootDirectory.ThrowIfNotFound();
+
+        return _options.IsDirectoryMode
             ? FormatMatchingFiles(cancellationToken)
             : FormatBranchScripts(cancellationToken);
+    }
 
     private async Task<int> FormatBranchScripts(CancellationToken cancellationToken)
     {
@@ -145,7 +149,6 @@ public class FormatService : BaseService
     private async Task<int> FormatMatchingFiles(CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
-            _rootDirectory.ThrowIfNotFound();
 
         var matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
         matcher.AddIncludePatterns(_options.Include);

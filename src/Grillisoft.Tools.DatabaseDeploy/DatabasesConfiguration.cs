@@ -45,14 +45,16 @@ public class DatabasesConfiguration
     /// other settings an empty value here is not "nothing was said", it is how a database opts out
     /// of a hook the global settings turned on.
     /// </summary>
-    public DatabaseHooks GetHooks(string name)
+    public IDictionary<DatabaseHook, string> GetHooks(string name)
     {
         var section = GetSection(name);
 
-        return new DatabaseHooks(
-            _global.PreDeploy.OverrideWithAllowEmpty(section["preDeploy"]),
-            _global.PostDeploy.OverrideWithAllowEmpty(section["postDeploy"]),
-            _global.PreRollback.OverrideWithAllowEmpty(section["preRollback"]),
-            _global.PostRollback.OverrideWithAllowEmpty(section["postRollback"]));
+        return new Dictionary<DatabaseHook, string>()
+        {
+            { DatabaseHook.PreDeploy, _global.PreDeploy.OverrideWithAllowEmpty(section["preDeploy"]) },
+            { DatabaseHook.PostDeploy, _global.PostDeploy.OverrideWithAllowEmpty(section["postDeploy"]) },
+            { DatabaseHook.PreRollback, _global.PreRollback.OverrideWithAllowEmpty(section["preRollback"]) },
+            { DatabaseHook.PostRollback, _global.PostRollback.OverrideWithAllowEmpty(section["postRollback"]) }
+        };
     }
 }

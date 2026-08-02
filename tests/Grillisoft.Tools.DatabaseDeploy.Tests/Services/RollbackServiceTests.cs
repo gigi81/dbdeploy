@@ -89,6 +89,7 @@ public class RollbackServiceTests
     {
         var provider = new TestServiceCollection<RollbackService>()
             .AddSingleton(deployOptions)
+            .AddRootDirectory(deployOptions.Path)
             .AddSingleton<IFileSystem>(SampleFilesystems.Sample01)
             .AddSingleton<IProgress<int>>(new Progress<int>())
             .AddSingleton<IDatabaseFactory>(new DatabaseFactoryMock(databases))

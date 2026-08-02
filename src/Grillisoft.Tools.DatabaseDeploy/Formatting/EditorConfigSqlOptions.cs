@@ -1,7 +1,7 @@
 using System.IO.Abstractions;
 using System.Text;
 using EditorConfig.Core;
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts.Formatting;
 using Microsoft.Extensions.Logging;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Formatting;

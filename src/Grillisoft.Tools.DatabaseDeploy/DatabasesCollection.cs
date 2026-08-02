@@ -1,5 +1,6 @@
+using System.Collections.Concurrent;
+using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 
 namespace Grillisoft.Tools.DatabaseDeploy;
@@ -13,11 +14,22 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
     private readonly Dictionary<string, IDatabaseFactory> _databaseFactories;
     private readonly Dictionary<string, IDatabase> _databases = new(StringComparer.InvariantCultureIgnoreCase);
     private readonly DatabasesConfiguration _configuration;
+    private readonly IDirectoryInfo _root;
+    private readonly ConcurrentDictionary<string, IDatabaseHooks> _hooks = new(StringComparer.InvariantCultureIgnoreCase);
 
-    public DatabasesCollection(IEnumerable<IDatabaseFactory> databaseFactories, DatabasesConfiguration configuration)
+    /// <param name="databaseFactories">The providers that can build a database</param>
+    /// <param name="configuration">What the settings say about the databases</param>
+    /// <param name="root">
+    /// The folder of the run, the one given with <c>--path</c>: the hook scripts are looked up in it.
+    /// </param>
+    public DatabasesCollection(
+        IEnumerable<IDatabaseFactory> databaseFactories,
+        DatabasesConfiguration configuration,
+        IDirectoryInfo root)
     {
         _databaseFactories = databaseFactories.ToDictionary(f => f.Name, f => f, StringComparer.InvariantCultureIgnoreCase);
         _configuration = configuration;
+        _root = root;
     }
 
     public IReadOnlyCollection<string> Databases => _configuration.Names;
@@ -41,7 +53,8 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
         return GetFactory(provider, name).SqlFormatter;
     }
 
-    public DatabaseHooks GetHooks(string name) => _configuration.GetHooks(name);
+    public IDatabaseHooks GetHooks(string name) =>
+        _hooks.GetOrAdd(name, key => new DatabaseHooks(_configuration.GetHooks(key), key, _root));
 
     private async Task<IDatabase> CreateDatabase(string name, CancellationToken cancellationToken)
     {

@@ -63,6 +63,7 @@ static IHost CreateHostBuilder(OptionsBase options, string[] args)
         builder.Configuration.GetSection(GlobalSettings.SectionName));
 
     builder.Services.AddSingleton<IFileSystem, FileSystem>()
+        .AddRootDirectory(options.Path)
         .AddSingleton<DatabasesConfiguration>()
         .AddSingleton<IDatabasesCollection, DatabasesCollection>()
         .AddSingleton<IProgress<int>, ConsoleProgress>()

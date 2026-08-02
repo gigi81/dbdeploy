@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
@@ -23,13 +24,15 @@ public class RollbackService : BranchService
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
+        _rootDirectory.ThrowIfNotFound();
+
         var count = 0;
         var stopwatch = Stopwatch.StartNew();
 
         if (_options.DryRun)
             _logger.LogInformation("Dry run enabled: no script will be run and nothing will be written");
 
-        var branches = await LoadBranches(_options.Path, cancellationToken);
+        var branches = await LoadBranches(cancellationToken);
         var steps = branches.GetSteps(branches.GetBranch(this.Branch)).ToArray();
         var strategy = await GetStrategy(steps, cancellationToken);
         var rollbackSteps = strategy.GetRollbackSteps(this.Branch).ToArray();

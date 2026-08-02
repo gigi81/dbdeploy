@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
@@ -7,24 +8,23 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
 public class ValidateService : BaseService
 {
-    private readonly ValidateOptions _options;
-
     public ValidateService(
         ValidateOptions options,
         ServiceDependencies dependencies,
         ILogger<ValidateService> logger)
         : base(dependencies, logger)
     {
-        _options = options;
     }
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
         try
         {
+            _rootDirectory.ThrowIfNotFound();
+
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting validation");
-            await LoadBranches(_options.Path, cancellationToken);
+            await LoadBranches(cancellationToken);
             _logger.LogInformation("Validation completed successfully in {Elapsed}", stopwatch.Elapsed);
             return 0;
         }

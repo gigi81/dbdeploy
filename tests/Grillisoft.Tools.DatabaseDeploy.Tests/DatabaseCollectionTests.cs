@@ -19,8 +19,15 @@ public class DatabaseCollectionTests
     private static readonly IDirectoryInfo Directory =
         new MockFileSystem().DirectoryInfo.New(SampleBranches.RootPath);
 
-    private static IEnumerable<DatabaseHook> ConfiguredHooks(DatabaseHooks hooks) =>
-        hooks.GetHookScripts("test", Directory).Select(script => script.Hook);
+    private static IEnumerable<DatabaseHook> ConfiguredHooks(IDatabaseHooks hooks) =>
+        hooks.HookScripts.Select(script => script.Hook);
+
+    /// <summary>
+    /// The name a hook was configured with, or <c>null</c> when it was not configured at all: an
+    /// empty name and no name are the same thing to everything downstream.
+    /// </summary>
+    private static string? HookName(IDatabaseHooks hooks, DatabaseHook hook) =>
+        hooks.TryGetHookScript(hook, out var script) ? script.Name : null;
 
     private static DatabasesConfiguration CreateConfig(Dictionary<string, string?> settings)
     {
@@ -46,7 +53,7 @@ public class DatabaseCollectionTests
             .ReturnsAsync(database)
             .Throws(new Exception("This was expected to be called only once as it is cached afterwards"));
 
-        await using var collection = new DatabasesCollection([factory.Object], configuration);
+        await using var collection = new DatabasesCollection([factory.Object], configuration, Directory);
 
         //act
         var actualDatabase01 = await collection.GetDatabase("test", cts.Token);
@@ -74,7 +81,7 @@ public class DatabaseCollectionTests
             .ReturnsAsync(database)
             .Throws(new Exception("This was expected to be called only once as it is cached afterwards"));
 
-        await using var collection = new DatabasesCollection([factory.Object], configuration);
+        await using var collection = new DatabasesCollection([factory.Object], configuration, Directory);
 
         //act
         var actualDatabase01 = await collection.GetDatabase("test", cts.Token);
@@ -96,7 +103,7 @@ public class DatabaseCollectionTests
         });
 
         var factory = GetDatabaseFactory();
-        await using var collection = new DatabasesCollection([factory.Object], configuration);
+        await using var collection = new DatabasesCollection([factory.Object], configuration, Directory);
 
         //act
         var act = () => collection.GetDatabase("test", cts.Token);
@@ -124,7 +131,7 @@ public class DatabaseCollectionTests
         factory.Setup(f => f.GetDatabase(It.IsAny<string>(), It.IsAny<IConfigurationSection>(), It.IsAny<CancellationToken>()))
             .Throws(new Exception("Formatting must not build a database"));
 
-        await using var collection = new DatabasesCollection([factory.Object], configuration);
+        await using var collection = new DatabasesCollection([factory.Object], configuration, Directory);
 
         //act
         var actual = collection.GetSqlFormatter("test");
@@ -143,7 +150,7 @@ public class DatabaseCollectionTests
         });
 
         var factory = GetDatabaseFactory();
-        await using var collection = new DatabasesCollection([factory.Object], configuration);
+        await using var collection = new DatabasesCollection([factory.Object], configuration, Directory);
 
         //act
         var actual = collection.GetSqlFormatter("test");
@@ -162,7 +169,7 @@ public class DatabaseCollectionTests
         });
 
         var factory = GetDatabaseFactory();
-        await using var collection = new DatabasesCollection([factory.Object], configuration);
+        await using var collection = new DatabasesCollection([factory.Object], configuration, Directory);
 
         //act
         var act = () => collection.GetSqlFormatter("test");
@@ -182,16 +189,16 @@ public class DatabaseCollectionTests
             { "databases:test:provider", FactoryProviderName }
         });
 
-        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration);
+        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration, Directory);
 
         //act
         var actual = collection.GetHooks("test");
 
         //assert
-        actual.PreDeploy.Should().Be("_PreDeploy");
-        actual.PostRollback.Should().Be("_PostRollback");
-        actual.PostDeploy.Should().BeEmpty();
-        actual.PreRollback.Should().BeEmpty();
+        HookName(actual, DatabaseHook.PreDeploy).Should().Be("_PreDeploy");
+        HookName(actual, DatabaseHook.PostRollback).Should().Be("_PostRollback");
+        HookName(actual, DatabaseHook.PostDeploy).Should().BeNull();
+        HookName(actual, DatabaseHook.PreRollback).Should().BeNull();
         ConfiguredHooks(actual).Should().BeEquivalentTo([DatabaseHook.PreDeploy, DatabaseHook.PostRollback]);
     }
 
@@ -207,14 +214,14 @@ public class DatabaseCollectionTests
             { "databases:test:provider", FactoryProviderName }
         });
 
-        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration);
+        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration, Directory);
 
         //act
         var actual = collection.GetHooks("test");
 
         //assert
-        actual.PreDeploy.Should().Be("_TestPreDeploy");
-        actual.PostDeploy.Should().Be("_PostDeploy");
+        HookName(actual, DatabaseHook.PreDeploy).Should().Be("_TestPreDeploy");
+        HookName(actual, DatabaseHook.PostDeploy).Should().Be("_PostDeploy");
     }
 
     /// <summary>
@@ -233,17 +240,16 @@ public class DatabaseCollectionTests
             { "databases:test:provider", FactoryProviderName }
         });
 
-        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration);
+        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration, Directory);
 
         //act
         var actual = collection.GetHooks("test");
 
         //assert
-        actual.PreDeploy.Should().BeEmpty();
-        actual.TryGetHookScript(DatabaseHook.PreDeploy, "test", Directory, out _).Should().BeFalse();
+        actual.TryGetHookScript(DatabaseHook.PreDeploy, out _).Should().BeFalse();
 
         //the hooks it said nothing about are untouched
-        actual.PostDeploy.Should().Be("_PostDeploy");
+        HookName(actual, DatabaseHook.PostDeploy).Should().Be("_PostDeploy");
         ConfiguredHooks(actual).Should().BeEquivalentTo([DatabaseHook.PostDeploy]);
     }
 
@@ -256,13 +262,12 @@ public class DatabaseCollectionTests
             { "databases:test:provider", FactoryProviderName }
         });
 
-        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration);
+        await using var collection = new DatabasesCollection([GetDatabaseFactory().Object], configuration, Directory);
 
         //act
         var actual = collection.GetHooks("test");
 
         //assert
-        actual.Should().Be(DatabaseHooks.None);
         ConfiguredHooks(actual).Should().BeEmpty();
     }
 

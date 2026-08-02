@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Text;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
-using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Grillisoft.Tools.DatabaseDeploy.Contracts.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
 using Grillisoft.Tools.DatabaseDeploy.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.Options;
@@ -24,7 +24,6 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 public class FormatService : BaseService
 {
     private readonly FormatOptions _options;
-    private readonly IFileSystem _fileSystem;
     private readonly EditorConfigSqlOptions _editorConfig;
     private readonly IReadOnlyDictionary<string, IDatabaseFactory> _factories;
 
@@ -39,20 +38,23 @@ public class FormatService : BaseService
         : base(dependencies, logger)
     {
         _options = options;
-        _fileSystem = dependencies.FileSystem;
-        _editorConfig = new EditorConfigSqlOptions(_fileSystem, logger);
+        _editorConfig = new EditorConfigSqlOptions(_rootDirectory.FileSystem, logger);
         _factories = factories.ToDictionary(f => f.Name, f => f, StringComparer.InvariantCultureIgnoreCase);
     }
 
-    public override Task<int> Execute(CancellationToken cancellationToken) =>
-        _options.IsDirectoryMode
+    public override Task<int> Execute(CancellationToken cancellationToken)
+    {
+        _rootDirectory.ThrowIfNotFound();
+
+        return _options.IsDirectoryMode
             ? FormatMatchingFiles(cancellationToken)
             : FormatBranchScripts(cancellationToken);
+    }
 
     private async Task<int> FormatBranchScripts(CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
-        var branches = await LoadBranches(_options.Path, cancellationToken);
+        var branches = await LoadBranches(cancellationToken);
 
         var steps = branches.Branches.Values
             .SelectMany(branch => branch.Steps)
@@ -148,8 +150,6 @@ public class FormatService : BaseService
     private async Task<int> FormatMatchingFiles(CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
-        var root = GetDirectory(_options.Path);
-        root.ThrowIfNotFound();
 
         var matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
         matcher.AddIncludePatterns(_options.Include);
@@ -157,9 +157,9 @@ public class FormatService : BaseService
 
         // Matching an in-memory list rather than letting the matcher walk the disk itself, so that
         // the whole service keeps running on IFileSystem and stays testable.
-        var candidates = root
+        var candidates = _rootDirectory
             .EnumerateFiles("*", SearchOption.AllDirectories)
-            .ToDictionary(file => Relative(root, file), file => file, StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(file => Relative(_rootDirectory, file), file => file, StringComparer.OrdinalIgnoreCase);
 
         var matches = matcher.Match(candidates.Keys).Files
             .Select(match => candidates[match.Path])
@@ -170,7 +170,7 @@ public class FormatService : BaseService
         {
             _logger.LogWarning(
                 "No file under {Path} matched {Patterns}",
-                root.FullName,
+                _rootDirectory.FullName,
                 string.Join(", ", _options.Include));
 
             return 0;
@@ -181,7 +181,7 @@ public class FormatService : BaseService
 
         foreach (var file in matches)
         {
-            switch (await FormatFile(file, ResolveFormatter(root, file), cancellationToken))
+            switch (await FormatFile(file, ResolveFormatter(_rootDirectory, file), cancellationToken))
             {
                 case FormatOutcome.Rewritten:
                     formatted++;
@@ -259,7 +259,7 @@ public class FormatService : BaseService
         if (!file.Exists)
             return FormatOutcome.Skipped;
 
-        var sql = await _fileSystem.File.ReadAllTextAsync(file.FullName, cancellationToken);
+        var sql = await _rootDirectory.FileSystem.File.ReadAllTextAsync(file.FullName, cancellationToken);
         var options = _editorConfig.For(file.FullName, DetectNewLine(sql));
 
         if (!options.Enabled)
@@ -290,7 +290,7 @@ public class FormatService : BaseService
             return FormatOutcome.Unchanged;
         }
 
-        await _fileSystem.File.WriteAllTextAsync(file.FullName, result.Sql, ResolveEncoding(file, options), cancellationToken);
+        await _rootDirectory.FileSystem.File.WriteAllTextAsync(file.FullName, result.Sql, ResolveEncoding(file, options), cancellationToken);
         _logger.LogInformation("Formatted {Path} as {Dialect}", file.FullName, formatter.Dialect);
 
         return FormatOutcome.Rewritten;

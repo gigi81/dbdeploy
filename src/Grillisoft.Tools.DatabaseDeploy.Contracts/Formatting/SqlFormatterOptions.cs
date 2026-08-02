@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
+namespace Grillisoft.Tools.DatabaseDeploy.Contracts.Formatting;
 
 /// <summary>
 /// The knobs the formatter reads, resolved per file from the script repository's own

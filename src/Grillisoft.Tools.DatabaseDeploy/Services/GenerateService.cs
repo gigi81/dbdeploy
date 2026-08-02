@@ -9,32 +9,32 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 public class GenerateService : BaseService
 {
     private readonly IGenerator _generator;
-    private readonly IDirectoryInfo _directory;
 
     public GenerateService(
-        GenerateOptions options,
+        GenerateOptions _,
         IGenerator generator,
         ServiceDependencies dependencies,
         ILogger<GenerateService> logger)
         : base(dependencies, logger)
     {
         _generator = generator;
-        _directory = GetDirectory(options.Path);
     }
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Searching for missing rollback scripts on path {Path}", _directory.FullName);
+        _rootDirectory.ThrowIfNotFound();
+
+        _logger.LogInformation("Searching for missing rollback scripts on path {Path}", _rootDirectory.FullName);
 
         var errors = 0;
         var stopwatch = Stopwatch.StartNew();
-        var missingRollbacks = _directory.GetFiles("*.Deploy.sql", SearchOption.AllDirectories)
+        var missingRollbacks = _rootDirectory.GetFiles("*.Deploy.sql", SearchOption.AllDirectories)
             .Where(file => !GetRollbackFile(file).Exists)
             .ToArray();
 
         if (missingRollbacks.Length <= 0)
         {
-            _logger.LogWarning("No missing rollback scripts found on path {Path}", _directory.FullName);
+            _logger.LogWarning("No missing rollback scripts found on path {Path}", _rootDirectory.FullName);
             return 0;
         }
 

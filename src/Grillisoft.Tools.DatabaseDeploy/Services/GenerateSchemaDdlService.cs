@@ -8,8 +8,6 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
 public class GenerateSchemaDdlService : BaseService
 {
-    private readonly GenerateSchemaDdlOptions _options;
-
     public GenerateSchemaDdlService(
         GenerateSchemaDdlOptions options,
         ServiceDependencies dependencies,
@@ -17,26 +15,25 @@ public class GenerateSchemaDdlService : BaseService
         ILogger<GenerateSchemaDdlService> logger
     ) : base(dependencies, logger)
     {
-        _options = options;
     }
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
+        _rootDirectory.ThrowIfNotFound();
+
         _logger.LogInformation("Starting generating database(s) schema definitions for {Count} databases",
             _databases.Databases.Count);
 
         var stopwatch = Stopwatch.StartNew();
-        var rootDirectory = this.GetDirectory(_options.Path);
         var lines = new List<string>();
 
         foreach (var databaseName in _databases.Databases)
         {
-            if (await GenerateDatabaseDdl(databaseName, rootDirectory, cancellationToken))
+            if (await GenerateDatabaseDdl(databaseName, _rootDirectory, cancellationToken))
                 lines.Add($"{databaseName},{_globalSettings.Value.InitStepName}");
         }
 
-        rootDirectory
-            .File(_globalSettings.Value.DefaultBranch + ".csv")
+        _rootDirectory.File(_globalSettings.Value.DefaultBranch + ".csv")
             .AppendAllLines(lines);
 
         _logger.LogInformation("Schema definitions completed in {ElapsedTime}", stopwatch.Elapsed);

@@ -1,6 +1,5 @@
 using System.IO.Abstractions.TestingHelpers;
-using System.Text;
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.Formatting;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests.Formatting;

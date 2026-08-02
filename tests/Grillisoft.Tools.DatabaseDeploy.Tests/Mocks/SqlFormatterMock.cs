@@ -1,4 +1,5 @@
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts.Formatting;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Tests.Mocks;
 

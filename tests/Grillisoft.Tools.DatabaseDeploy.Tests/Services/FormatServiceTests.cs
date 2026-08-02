@@ -460,8 +460,11 @@ public class FormatServiceTests
     {
         database = new DatabaseMock("MyDb", new ScriptParserMock(), formatter ?? new SqlFormatterMock());
 
+        var formatOptions = options ?? new FormatOptions { Path = "/path" };
+
         var services = new TestServiceCollection<FormatService>()
-            .AddSingleton(options ?? new FormatOptions { Path = "/path" })
+            .AddSingleton(formatOptions)
+            .AddRootDirectory(formatOptions.Path)
             .AddSingleton(fileSystem)
             .AddSingleton(factory ?? new DatabaseFactoryMock())
             .AddSingleton(databases ?? new DatabasesCollectionMock(database))
@@ -500,6 +503,7 @@ public class FormatServiceTests
         public ISqlFormatter? GetSqlFormatter(string name) =>
             name.Equals(_name, StringComparison.InvariantCultureIgnoreCase) ? _formatter : null;
 
-        public DatabaseHooks GetHooks(string name) => DatabaseHooks.None;
+        public IDatabaseHooks GetHooks(string name) =>
+            new DatabaseHooks(TestHooks.None, name, new MockFileSystem().DirectoryInfo.New("/path"));
     }
 }

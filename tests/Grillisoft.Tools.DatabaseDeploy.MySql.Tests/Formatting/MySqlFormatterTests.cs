@@ -1,4 +1,4 @@
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.MySql.Formatting;
 
 namespace Grillisoft.Tools.DatabaseDeploy.MySql.Tests.Formatting;

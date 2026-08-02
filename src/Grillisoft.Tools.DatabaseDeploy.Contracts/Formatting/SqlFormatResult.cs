@@ -1,4 +1,4 @@
-namespace Grillisoft.Tools.DatabaseDeploy.Abstractions;
+namespace Grillisoft.Tools.DatabaseDeploy.Contracts.Formatting;
 
 /// <summary>
 /// The outcome of formatting one script.

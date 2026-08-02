@@ -11,39 +11,33 @@ namespace Grillisoft.Tools.DatabaseDeploy.Services;
 
 public abstract class BaseService : IExecutable
 {
-    private readonly IFileSystem _fileSystem;
     protected readonly IDatabasesCollection _databases;
     protected readonly IOptions<GlobalSettings> _globalSettings;
     protected readonly ILogger _logger;
     protected readonly IDatabaseLoggerFactory _dbl;
     protected readonly IScriptsRunner _scripts;
+    protected readonly IDirectoryInfo _rootDirectory;
 
     protected BaseService(ServiceDependencies dependencies, ILogger logger)
     {
         _databases = dependencies.Databases;
-        _fileSystem = dependencies.FileSystem;
         _globalSettings = dependencies.GlobalSettings;
         _logger = logger;
         _dbl = dependencies.DatabaseLoggers;
         _scripts = dependencies.Scripts;
+        _rootDirectory = dependencies.RootDirectory;
     }
 
     public abstract Task<int> Execute(CancellationToken cancellationToken);
 
-    protected IDirectoryInfo GetDirectory(string path)
+    protected async Task<BranchesReader> LoadBranches(CancellationToken cancellationToken)
     {
-        return _fileSystem.DirectoryInfo.New(path);
-    }
+        var branches = new BranchesReader(_rootDirectory, _globalSettings.Value);
 
-    protected async Task<BranchesReader> LoadBranches(string path, CancellationToken cancellationToken)
-    {
-        var directory = this.GetDirectory(path);
-        var branches = new BranchesReader(directory, _globalSettings.Value);
-
-        _logger.LogInformation("Loading branches from {Directory}", directory.FullName);
+        _logger.LogInformation("Loading branches from {Directory}", _rootDirectory.FullName);
         await branches.Load();
 
-        var errors = await LayoutValidator.Validate(branches, _globalSettings.Value, _databases.GetHooks);
+        var errors = await LayoutValidator.Validate(branches, _globalSettings.Value, _databases);
 
         foreach (var error in errors)
             _logger.LogError(error);

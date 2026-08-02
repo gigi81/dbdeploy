@@ -1,4 +1,4 @@
-using Grillisoft.Tools.DatabaseDeploy.Abstractions;
+using Grillisoft.Tools.DatabaseDeploy.Contracts.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.PostgreSql.Formatting;
 
 namespace Grillisoft.Tools.DatabaseDeploy.PostgreSql.Tests.Formatting;

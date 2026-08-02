@@ -1,6 +1,6 @@
 using System.Reflection;
 using CliWrap;
-using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Options;
 using Microsoft.Extensions.Logging;
 using Soenneker.Extensions.String;
@@ -27,6 +27,8 @@ public class CiService : BranchService
 
     public async override Task<int> Execute(CancellationToken cancellationToken)
     {
+        _rootDirectory.ThrowIfNotFound();
+
         var steps = this.GetSteps().ToArray();
         var current = 1;
 
@@ -63,7 +65,7 @@ public class CiService : BranchService
             .WithArguments(GetArguments(verb, branch))
             .WithStandardOutputPipe(PipeTarget.ToDelegate(Console.WriteLine))
             .WithStandardErrorPipe(PipeTarget.ToDelegate(Console.WriteLine))
-            .WithWorkingDirectory(_options.Path);
+            .WithWorkingDirectory(_rootDirectory.FullName);
     }
 
     private IEnumerable<string> GetArguments(string verb, string branch)

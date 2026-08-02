@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.IO.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Exceptions;
@@ -14,6 +15,7 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
     private readonly Dictionary<string, IDatabase> _databases = new(StringComparer.InvariantCultureIgnoreCase);
     private readonly DatabasesConfiguration _configuration;
     private readonly IDirectoryInfo _root;
+    private readonly ConcurrentDictionary<string, IDatabaseHooks> _hooks = new(StringComparer.InvariantCultureIgnoreCase);
 
     /// <param name="databaseFactories">The providers that can build a database</param>
     /// <param name="configuration">What the settings say about the databases</param>
@@ -51,7 +53,8 @@ public class DatabasesCollection : IDatabasesCollection, IAsyncDisposable
         return GetFactory(provider, name).SqlFormatter;
     }
 
-    public IDatabaseHooks GetHooks(string name) => new DatabaseHooks(_configuration.GetHooks(name), name, _root);
+    public IDatabaseHooks GetHooks(string name) =>
+        _hooks.GetOrAdd(name, key => new DatabaseHooks(_configuration.GetHooks(key), key, _root));
 
     private async Task<IDatabase> CreateDatabase(string name, CancellationToken cancellationToken)
     {

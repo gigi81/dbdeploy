@@ -34,16 +34,13 @@ internal sealed class SqlEmitter
 
     private readonly SqlDialect _dialect;
     private readonly SqlFormatterOptions _options;
-    private readonly StringBuilder _output = new();
+    private readonly SqlWriter _writer;
     private readonly Stack<Frame> _frames = new();
 
     private List<SqlToken> _tokens = [];
-    private int _indent;
     private int _statementBase;
     private int _clauseIndent;
     private int _inlineDepth;
-    private int _pendingNewlines;
-    private bool _pendingSpace;
 
     /// <summary>The first keyword of the statement being written, for the contextual clause rules.</summary>
     private string? _statementKeyword;
@@ -65,6 +62,7 @@ internal sealed class SqlEmitter
     {
         _dialect = dialect;
         _options = options;
+        _writer = new SqlWriter(options);
     }
 
     public string Emit(List<SqlToken> tokens)
@@ -80,7 +78,7 @@ internal sealed class SqlEmitter
             var token = tokens[i];
 
             if (KeepsBlankLineBefore(token) && HasBlankLineBefore(i))
-                BlankLines(_options.BlankLinesBetweenStatements);
+                _writer.BlankLines(_options.BlankLinesBetweenStatements);
 
             switch (token.Kind)
             {
@@ -136,7 +134,7 @@ internal sealed class SqlEmitter
             i++;
         }
 
-        return Finish();
+        return _writer.Finish();
     }
 
     // ---------------------------------------------------------------- words
@@ -156,25 +154,25 @@ internal sealed class SqlEmitter
         {
             _statementKeyword ??= phrase;
             WritePhrase(index, last);
-            Space();
+            _writer.Space();
             return last;
         }
 
         if (_dialect.LineKeywords.Contains(phrase))
         {
-            NewLine();
-            _indent = _statementBase;
+            _writer.NewLine();
+            _writer.Indent = _statementBase;
             WritePhrase(index, last);
-            Space();
+            _writer.Space();
             return last;
         }
 
         if (_dialect.SetOperatorKeywords.Contains(phrase))
         {
-            NewLine();
-            _indent = _statementBase;
+            _writer.NewLine();
+            _writer.Indent = _statementBase;
             WritePhrase(index, last);
-            NewLine();
+            _writer.NewLine();
             _clauseIndent = _statementBase;
             return last;
         }
@@ -183,12 +181,12 @@ internal sealed class SqlEmitter
         {
             _statementKeyword ??= phrase;
             _inClause = true;
-            NewLine();
-            _indent = _statementBase;
+            _writer.NewLine();
+            _writer.Indent = _statementBase;
             WritePhrase(index, last);
-            NewLine();
-            _indent = _statementBase + 1;
-            _clauseIndent = _indent;
+            _writer.NewLine();
+            _writer.Indent = _statementBase + 1;
+            _clauseIndent = _writer.Indent;
             return last;
         }
 
@@ -196,19 +194,19 @@ internal sealed class SqlEmitter
         {
             _statementKeyword = phrase;
             _inHeader = IsHeaderOnlyStatement(phrase);
-            NewLine();
-            _indent = _statementBase;
+            _writer.NewLine();
+            _writer.Indent = _statementBase;
             WritePhrase(index, last);
-            Space();
+            _writer.Space();
             return last;
         }
 
         if (_dialect.ContinuationKeywords.Contains(phrase) && _inlineDepth == 0 && !TakePendingBetween(phrase))
         {
-            NewLine();
-            _indent = _clauseIndent;
+            _writer.NewLine();
+            _writer.Indent = _clauseIndent;
             WritePhrase(index, last);
-            Space();
+            _writer.Space();
             return last;
         }
 
@@ -222,7 +220,7 @@ internal sealed class SqlEmitter
 
         _statementKeyword ??= phrase;
         WritePhrase(index, last);
-        Space();
+        _writer.Space();
         return last;
     }
 
@@ -278,9 +276,9 @@ internal sealed class SqlEmitter
         }
 
         PopFrame();
-        NewLine();
+        _writer.NewLine();
         WriteCased(phrase);
-        Space();
+        _writer.Space();
         return true;
     }
 
@@ -290,49 +288,49 @@ internal sealed class SqlEmitter
         {
             case "BEGIN" when !OpensTransaction(last):
                 _inHeader = false;
-                NewLine();
-                _indent = _statementBase;
+                _writer.NewLine();
+                _writer.Indent = _statementBase;
                 WriteCased(phrase);
-                PushFrame(FrameKind.Begin, _indent + 1);
-                NewLine();
+                PushFrame(FrameKind.Begin, _writer.Indent + 1);
+                _writer.NewLine();
                 return true;
 
             case "CASE":
                 EmitInline(Case(phrase));
-                PushFrame(FrameKind.Case, _indent + 1);
-                NewLine();
+                PushFrame(FrameKind.Case, _writer.Indent + 1);
+                _writer.NewLine();
                 return true;
 
             case "LOOP":
                 EmitInline(Case(phrase));
-                PushFrame(FrameKind.Loop, _indent + 1);
-                NewLine();
+                PushFrame(FrameKind.Loop, _writer.Indent + 1);
+                _writer.NewLine();
                 return true;
 
             case "IF" when _dialect.UsesThenForIf && _statementKeyword is null:
-                NewLine();
-                _indent = _statementBase;
+                _writer.NewLine();
+                _writer.Indent = _statementBase;
                 WriteCased(phrase);
-                Space();
+                _writer.Space();
                 // The condition may wrap; its continuations sit one level in, which is also where
                 // the body lands once THEN arrives.
-                PushFrame(FrameKind.If, _indent);
-                _clauseIndent = _indent + 1;
+                PushFrame(FrameKind.If, _writer.Indent);
+                _clauseIndent = _writer.Indent + 1;
                 return true;
 
             case "THEN" when InFrame(FrameKind.If):
                 EmitInline(Case(phrase));
-                _indent = _frames.Peek().Indent + 1;
-                _statementBase = _indent;
-                _clauseIndent = _indent;
-                NewLine();
+                _writer.Indent = _frames.Peek().Indent + 1;
+                _statementBase = _writer.Indent;
+                _clauseIndent = _writer.Indent;
+                _writer.NewLine();
                 return true;
 
             case "WHEN" when InFrame(FrameKind.Case):
-                NewLine();
-                _indent = _frames.Peek().Indent + 1;
+                _writer.NewLine();
+                _writer.Indent = _frames.Peek().Indent + 1;
                 WriteCased(phrase);
-                Space();
+                _writer.Space();
                 return true;
 
             case "ELSE" or "ELSIF" or "ELSEIF" when InFrame(FrameKind.Case) || InFrame(FrameKind.If):
@@ -341,10 +339,10 @@ internal sealed class SqlEmitter
 
             case "IS" or "AS" when IntroducesBody(last):
                 _inHeader = false;
-                NewLine();
-                _indent = _statementBase;
+                _writer.NewLine();
+                _writer.Indent = _statementBase;
                 WriteCased(phrase);
-                NewLine();
+                _writer.NewLine();
                 return true;
 
             default:
@@ -356,26 +354,26 @@ internal sealed class SqlEmitter
     {
         var frame = _frames.Peek();
 
-        NewLine();
-        _indent = frame.Kind == FrameKind.Case ? frame.Indent + 1 : frame.Indent;
+        _writer.NewLine();
+        _writer.Indent = frame.Kind == FrameKind.Case ? frame.Indent + 1 : frame.Indent;
         WriteCased(phrase);
 
         if (frame.Kind == FrameKind.Case)
         {
-            Space();
+            _writer.Space();
             return;
         }
 
         if (phrase.Equals("ELSE", StringComparison.OrdinalIgnoreCase))
         {
-            _indent = frame.Indent + 1;
-            _statementBase = _indent;
-            _clauseIndent = _indent;
-            NewLine();
+            _writer.Indent = frame.Indent + 1;
+            _statementBase = _writer.Indent;
+            _clauseIndent = _writer.Indent;
+            _writer.NewLine();
             return;
         }
 
-        Space(); // ELSIF carries a condition, and its THEN re-indents the body
+        _writer.Space(); // ELSIF carries a condition, and its THEN re-indents the body
         _clauseIndent = frame.Indent + 1;
     }
 
@@ -415,13 +413,12 @@ internal sealed class SqlEmitter
 
     private void EmitComma()
     {
-        _pendingSpace = false;
-        Write(",");
+        _writer.WriteTight(",");
 
         if (BreaksAfterComma())
-            NewLine();
+            _writer.NewLine();
         else
-            Space();
+            _writer.Space();
     }
 
     /// <summary>
@@ -434,7 +431,7 @@ internal sealed class SqlEmitter
         if (_inlineDepth > 0)
             return false;
 
-        return _indent > _statementBase || InFrame(FrameKind.Paren);
+        return _writer.Indent > _statementBase || InFrame(FrameKind.Paren);
     }
 
     private void EmitOpenParen(int index)
@@ -444,26 +441,26 @@ internal sealed class SqlEmitter
         if (inline)
         {
             if (!WantsSpaceBeforeParen(index))
-                _pendingSpace = false;
+                _writer.SuppressSpace();
 
-            Write("(");
+            _writer.Write("(");
             _inlineDepth++;
             return;
         }
 
         if (ParenBelongsOnItsOwnLine())
         {
-            NewLine();
-            _indent = _statementBase;
+            _writer.NewLine();
+            _writer.Indent = _statementBase;
         }
         else if (!WantsSpaceBeforeParen(index))
         {
-            _pendingSpace = false;
+            _writer.SuppressSpace();
         }
 
-        Write("(");
-        PushFrame(FrameKind.Paren, _indent + 1);
-        NewLine();
+        _writer.Write("(");
+        PushFrame(FrameKind.Paren, _writer.Indent + 1);
+        _writer.NewLine();
     }
 
     private void EmitCloseParen()
@@ -471,18 +468,17 @@ internal sealed class SqlEmitter
         if (_inlineDepth > 0)
         {
             _inlineDepth--;
-            _pendingSpace = false;
-            Write(")");
-            Space();
+            _writer.WriteTight(")");
+            _writer.Space();
             return;
         }
 
         if (_frames.Count > 0 && _frames.Peek().Kind == FrameKind.Paren)
             PopFrame();
 
-        NewLine();
-        Write(")");
-        Space();
+        _writer.NewLine();
+        _writer.Write(")");
+        _writer.Space();
     }
 
     /// <summary>
@@ -512,27 +508,26 @@ internal sealed class SqlEmitter
 
     private void EmitTerminator()
     {
-        _pendingSpace = false;
-        Write(";");
+        _writer.WriteTight(";");
 
         _statementKeyword = null;
         _inClause = false;
         _inHeader = false;
         _pendingBetween = false;
-        _indent = _statementBase;
+        _writer.Indent = _statementBase;
         _clauseIndent = _statementBase;
 
         if (InAnyBlock())
-            NewLine();
+            _writer.NewLine();
         else
-            BlankLines(_options.BlankLinesBetweenStatements);
+            _writer.BlankLines(_options.BlankLinesBetweenStatements);
     }
 
     private void EmitBatchSeparator(SqlToken token)
     {
         _frames.Clear();
         _inlineDepth = 0;
-        _indent = 0;
+        _writer.Indent = 0;
         _statementBase = 0;
         _clauseIndent = 0;
         _statementKeyword = null;
@@ -542,9 +537,9 @@ internal sealed class SqlEmitter
 
         // The separator closes the batch above it, so it belongs directly under it. Any blank line
         // the terminator just queued is dropped; the blank line goes after instead.
-        ForceNewLine();
-        Write(Apply(token.Text, _options.BatchSeparatorCase));
-        BlankLines(_options.BlankLinesBetweenStatements);
+        _writer.ForceNewLine();
+        _writer.Write(Apply(token.Text, _options.BatchSeparatorCase));
+        _writer.BlankLines(_options.BlankLinesBetweenStatements);
     }
 
     /// <summary>
@@ -604,75 +599,42 @@ internal sealed class SqlEmitter
 
     private void EmitPassthrough(SqlToken token)
     {
-        var indent = _indent;
-        _indent = 0;
-        NewLine();
-        Write(token.Text);
-        NewLine();
-        _indent = indent;
+        var indent = _writer.Indent;
+        _writer.Indent = 0;
+        _writer.NewLine();
+        _writer.Write(token.Text);
+        _writer.NewLine();
+        _writer.Indent = indent;
     }
 
     private void EmitLineComment(SqlToken token)
     {
         if (token.StartsLine)
-            NewLine();
+            _writer.NewLine();
         else
-            Space();
+            _writer.Space();
 
-        Write(token.Text.TrimEnd());
-        NewLine();
-    }
-
-    private void EmitBlockComment(SqlToken token)
-    {
-        NewLine();
-        Write(ReindentComment(token.Text));
-        NewLine();
+        _writer.Write(token.Text.TrimEnd());
+        _writer.NewLine();
     }
 
     /// <summary>
-    /// Puts the continuation lines of a block comment under its opener, keeping whatever line
-    /// endings the comment itself was written with.
+    /// The continuation lines of a block comment go under its opener, which is
+    /// <see cref="SqlWriter.WriteIndented"/>'s job.
     /// </summary>
-    private string ReindentComment(string comment)
+    private void EmitBlockComment(SqlToken token)
     {
-        var lines = comment.Split('\n');
-        if (lines.Length == 1)
-            return comment;
-
-        var builder = new StringBuilder(comment.Length);
-        var indent = IndentText(_indent);
-
-        for (var i = 0; i < lines.Length; i++)
-        {
-            if (i > 0)
-                builder.Append('\n');
-
-            var line = lines[i];
-            var carriageReturn = line.EndsWith('\r');
-            if (carriageReturn)
-                line = line[..^1];
-
-            if (i > 0)
-            {
-                line = _options.TrimTrailingWhitespace ? line.Trim() : line.TrimStart();
-                line = indent + line;
-            }
-
-            builder.Append(line);
-            if (carriageReturn)
-                builder.Append('\r');
-        }
-
-        return builder.ToString();
+        _writer.NewLine();
+        _writer.WriteIndented(token.Text);
+        _writer.NewLine();
     }
 
     // ----------------------------------------------------------- primitives
 
     private void EmitInline(string text)
     {
-        Write(text);
-        Space();
+        _writer.Write(text);
+        _writer.Space();
     }
 
     /// <summary>
@@ -683,17 +645,16 @@ internal sealed class SqlEmitter
     {
         if (_dialect.IsTightOperator(text))
         {
-            _pendingSpace = false;
-            Write(text);
+            _writer.WriteTight(text);
             return;
         }
 
-        Write(text);
+        _writer.Write(text);
 
         if (IsUnarySign(index, text))
-            _pendingSpace = false;
+            _writer.SuppressSpace();
         else
-            Space();
+            _writer.Space();
     }
 
     private bool IsUnarySign(int index, string text)
@@ -715,10 +676,10 @@ internal sealed class SqlEmitter
             if (_tokens[i].Kind != SqlTokenKind.Word)
                 continue;
 
-            Write(CaseAt(i));
+            _writer.Write(CaseAt(i));
 
             if (i < last)
-                Space();
+                _writer.Space();
         }
     }
 
@@ -728,80 +689,18 @@ internal sealed class SqlEmitter
 
         for (var i = 0; i < words.Length; i++)
         {
-            Write(Case(words[i]));
+            _writer.Write(Case(words[i]));
             if (i < words.Length - 1)
-                Space();
+                _writer.Space();
         }
-    }
-
-    private void Write(string text)
-    {
-        if (text.Length == 0)
-            return;
-
-        if (_pendingNewlines > 0)
-        {
-            if (_output.Length > 0)
-            {
-                for (var i = 0; i < _pendingNewlines; i++)
-                    _output.Append(_options.NewLine);
-            }
-
-            _pendingNewlines = 0;
-            _pendingSpace = false;
-            _output.Append(IndentText(_indent));
-        }
-        else if (_pendingSpace && _output.Length > 0)
-        {
-            _output.Append(' ');
-        }
-
-        _pendingSpace = false;
-        _output.Append(text);
-    }
-
-    private void Space() => _pendingSpace = true;
-
-    private void NewLine()
-    {
-        _pendingNewlines = Math.Max(_pendingNewlines, 1);
-        _pendingSpace = false;
-    }
-
-    /// <summary>
-    /// Exactly one line break, discarding any blank line already queued.
-    /// </summary>
-    private void ForceNewLine()
-    {
-        _pendingNewlines = 1;
-        _pendingSpace = false;
-    }
-
-    private void BlankLines(int count)
-    {
-        _pendingNewlines = Math.Max(_pendingNewlines, count + 1);
-        _pendingSpace = false;
-    }
-
-    private string IndentText(int level) =>
-        level <= 0 ? string.Empty : string.Concat(Enumerable.Repeat(_options.Indent, level));
-
-    private string Finish()
-    {
-        var text = _output.ToString().TrimEnd();
-
-        if (_options.InsertFinalNewline && text.Length > 0)
-            text += _options.NewLine;
-
-        return text;
     }
 
     // ---------------------------------------------------------------- frames
 
     private void PushFrame(FrameKind kind, int indent)
     {
-        _frames.Push(new Frame(kind, _indent, _statementBase, _clauseIndent));
-        _indent = indent;
+        _frames.Push(new Frame(kind, _writer.Indent, _statementBase, _clauseIndent));
+        _writer.Indent = indent;
         _statementBase = indent;
         _clauseIndent = indent;
         _statementKeyword = null;
@@ -812,7 +711,7 @@ internal sealed class SqlEmitter
     private void PopFrame()
     {
         var frame = _frames.Pop();
-        _indent = frame.Indent;
+        _writer.Indent = frame.Indent;
         _statementBase = frame.StatementBase;
         _clauseIndent = frame.ClauseIndent;
         _statementKeyword = null;
@@ -917,7 +816,7 @@ internal sealed class SqlEmitter
     /// </summary>
     private bool CanInline(int open)
     {
-        var length = CurrentColumn();
+        var length = _writer.Column;
         var depth = 0;
 
         for (var i = open; i < _tokens.Count; i++)
@@ -968,20 +867,6 @@ internal sealed class SqlEmitter
         || word.Equals("CASE", StringComparison.OrdinalIgnoreCase)
         || word.Equals("LOOP", StringComparison.OrdinalIgnoreCase)
         || word.Equals("END", StringComparison.OrdinalIgnoreCase);
-
-    private int CurrentColumn()
-    {
-        if (_pendingNewlines > 0)
-            return IndentText(_indent).Length;
-
-        for (var i = _output.Length - 1; i >= 0; i--)
-        {
-            if (_output[i] == '\n')
-                return _output.Length - i - 1;
-        }
-
-        return _output.Length;
-    }
 
     // ---------------------------------------------------------------- casing
 

@@ -29,7 +29,7 @@ internal sealed class OracleObjectsDiscovery
         _logger = logger;
     }
 
-    public async Task<(List<DbObject> Objects, List<OracleObjectDependencies> Dependencies)> Discover(
+    public async Task<(List<DbObject> Objects, List<(DbObject DbObject, DbObject DependsOn)> Dependencies)> Discover(
         CancellationToken cancellationToken)
     {
         await LogUnsupportedObjectTypes(cancellationToken);
@@ -172,12 +172,12 @@ internal sealed class OracleObjectsDiscovery
         return excluded;
     }
 
-    private async Task<List<OracleObjectDependencies>> GetDependencies(CancellationToken cancellationToken)
+    private async Task<List<(DbObject DbObject, DbObject DependsOn)>> GetDependencies(CancellationToken cancellationToken)
     {
         var dependencies = await _catalog.Query(
             OracleDdlQueries.Dependencies,
             "object dependencies",
-            reader => new OracleObjectDependencies(
+            reader => (
                 new DbObject(reader.GetString(0), reader.GetString(1)),
                 new DbObject(reader.GetString(2), reader.GetString(3))),
             cancellationToken,
@@ -200,7 +200,7 @@ internal sealed class OracleObjectsDiscovery
         List<DbObject> objects,
         HashSet<string> excludedTables,
         HashSet<string> excludedNames,
-        List<OracleObjectDependencies> dependencies,
+        List<(DbObject DbObject, DbObject DependsOn)> dependencies,
         CancellationToken cancellationToken)
     {
         var constraintIndexes = await TryQueryNames(
@@ -240,7 +240,7 @@ internal sealed class OracleObjectsDiscovery
             }
 
             if (tables.TryGetValue(table, out var target))
-                dependencies.Add(new OracleObjectDependencies(new DbObject(index, "INDEX"), target));
+                dependencies.Add((new DbObject(index, "INDEX"), target));
             else
                 _logger.LogDebug("Index {IndexName} sits on {TableName}, which is not in the object list", index, table);
         }
@@ -261,7 +261,7 @@ internal sealed class OracleObjectsDiscovery
     private async Task AddForeignKeys(
         List<DbObject> objects,
         HashSet<string> excludedNames,
-        List<OracleObjectDependencies> dependencies,
+        List<(DbObject DbObject, DbObject DependsOn)> dependencies,
         CancellationToken cancellationToken)
     {
         var foreignKeys = await _catalog.TryQuery(
@@ -289,7 +289,7 @@ internal sealed class OracleObjectsDiscovery
             foreach (var dependency in new[] { table, referenced })
             {
                 if (byName.TryGetValue(dependency, out var target))
-                    dependencies.Add(new OracleObjectDependencies(constraint, target));
+                    dependencies.Add((constraint, target));
             }
         }
 
@@ -302,7 +302,7 @@ internal sealed class OracleObjectsDiscovery
     /// </summary>
     private async Task AddTriggerDependencies(
         List<DbObject> objects,
-        List<OracleObjectDependencies> dependencies,
+        List<(DbObject DbObject, DbObject DependsOn)> dependencies,
         CancellationToken cancellationToken)
     {
         var triggers = await _catalog.TryQuery(
@@ -320,7 +320,7 @@ internal sealed class OracleObjectsDiscovery
                 continue;
 
             if (byKey.TryGetValue((table, baseType), out var target))
-                dependencies.Add(new OracleObjectDependencies(triggerObject, target));
+                dependencies.Add((triggerObject, target));
         }
     }
 
@@ -328,7 +328,7 @@ internal sealed class OracleObjectsDiscovery
     /// A package or type body cannot compile before its specification. The server does record this,
     /// but the pair is important enough to not rely on it.
     /// </summary>
-    private static void AddBodyDependencies(List<DbObject> objects, List<OracleObjectDependencies> dependencies)
+    private static void AddBodyDependencies(List<DbObject> objects, List<(DbObject DbObject, DbObject DependsOn)> dependencies)
     {
         var byKey = ByKey(objects);
 
@@ -337,7 +337,7 @@ internal sealed class OracleObjectsDiscovery
             foreach (var body in objects.Where(o => o.Type == bodyType).ToList())
             {
                 if (byKey.TryGetValue((body.Name, specType), out var spec))
-                    dependencies.Add(new OracleObjectDependencies(body, spec));
+                    dependencies.Add((body, spec));
             }
         }
     }

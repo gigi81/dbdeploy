@@ -1,4 +1,5 @@
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
+using Grillisoft.Tools.DatabaseDeploy.Database;
 using Grillisoft.Tools.DatabaseDeploy.Oracle.Ddl;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Tests.Ddl;
@@ -15,14 +16,14 @@ public class OracleObjectsGraphTests
         var function1 = new DbObject("FUNCTION1", "FUNCTION");
 
         var dbObjects = new List<DbObject> { table1, table2, view1, function1 };
-        var dependencies = new List<OracleObjectDependencies>
+        var dependencies = new List<(DbObject, DbObject)>
         {
-            new(view1, table1),
-            new(view1, table2),
-            new(function1, view1)
+            (view1, table1),
+            (view1, table2),
+            (function1, view1)
         };
 
-        var graph = new OracleObjectsGraph(dbObjects, dependencies);
+        var graph = new DbObjectsGraph(dbObjects, dependencies, OracleObjectType.RankOf);
 
         // Act
         var result = graph.GetGraph();
@@ -42,16 +43,16 @@ public class OracleObjectsGraphTests
         var function1 = new DbObject("FUNCTION1", "FUNCTION");
 
         var dbObjects = new List<DbObject> { table1, table2, view1, view2, function1 };
-        var dependencies = new List<OracleObjectDependencies>
+        var dependencies = new List<(DbObject, DbObject)>
         {
-            new(view1, table1),
-            new(view1, table2),
-            new(view2, table1),
-            new(function1, view1),
-            new(function1, view2)
+            (view1, table1),
+            (view1, table2),
+            (view2, table1),
+            (function1, view1),
+            (function1, view2)
         };
 
-        var graph = new OracleObjectsGraph(dbObjects, dependencies);
+        var graph = new DbObjectsGraph(dbObjects, dependencies, OracleObjectType.RankOf);
 
         // Act
         var result = graph.GetGraph();
@@ -72,13 +73,13 @@ public class OracleObjectsGraphTests
         var body2 = new DbObject("PKG2", "PACKAGE BODY");
 
         var dbObjects = new List<DbObject> { body1, body2 };
-        var dependencies = new List<OracleObjectDependencies>
+        var dependencies = new List<(DbObject, DbObject)>
         {
-            new(body1, body2),
-            new(body2, body1)
+            (body1, body2),
+            (body2, body1)
         };
 
-        var graph = new OracleObjectsGraph(dbObjects, dependencies);
+        var graph = new DbObjectsGraph(dbObjects, dependencies, OracleObjectType.RankOf);
 
         // Act
         var result = graph.GetGraph();
@@ -101,14 +102,14 @@ public class OracleObjectsGraphTests
         var trigger = new DbObject("TRG1", "TRIGGER");
 
         var dbObjects = new List<DbObject> { trigger, body1, body2 };
-        var dependencies = new List<OracleObjectDependencies>
+        var dependencies = new List<(DbObject, DbObject)>
         {
-            new(body1, body2),
-            new(body2, body1),
-            new(trigger, body1)
+            (body1, body2),
+            (body2, body1),
+            (trigger, body1)
         };
 
-        var graph = new OracleObjectsGraph(dbObjects, dependencies);
+        var graph = new DbObjectsGraph(dbObjects, dependencies, OracleObjectType.RankOf);
 
         // Act
         var result = graph.GetGraph();
@@ -131,14 +132,14 @@ public class OracleObjectsGraphTests
         var unknown = new DbObject("SOME_JAVA_CLASS", "JAVA CLASS");
 
         var dbObjects = new List<DbObject> { table, view };
-        var dependencies = new List<OracleObjectDependencies>
+        var dependencies = new List<(DbObject, DbObject)>
         {
-            new(view, table),
-            new(view, unknown),
-            new(unknown, table)
+            (view, table),
+            (view, unknown),
+            (unknown, table)
         };
 
-        var graph = new OracleObjectsGraph(dbObjects, dependencies);
+        var graph = new DbObjectsGraph(dbObjects, dependencies, OracleObjectType.RankOf);
 
         // Act
         var result = graph.GetGraph();
@@ -162,15 +163,15 @@ public class OracleObjectsGraphTests
         var foreignKey = new DbObject("FK_CHILD_PARENT", OracleObjectType.RefConstraint);
 
         var dbObjects = new List<DbObject> { foreignKey, child, parent, function };
-        var dependencies = new List<OracleObjectDependencies>
+        var dependencies = new List<(DbObject, DbObject)>
         {
             // a virtual column or a check constraint calling a user function
-            new(parent, function),
-            new(foreignKey, child),
-            new(foreignKey, parent)
+            (parent, function),
+            (foreignKey, child),
+            (foreignKey, parent)
         };
 
-        var graph = new OracleObjectsGraph(dbObjects, dependencies);
+        var graph = new DbObjectsGraph(dbObjects, dependencies, OracleObjectType.RankOf);
 
         // Act
         var result = graph.GetGraph();
@@ -188,13 +189,13 @@ public class OracleObjectsGraphTests
         var table = new DbObject("TABLE1", "TABLE");
 
         var dbObjects = new List<DbObject> { body, spec, table };
-        var dependencies = new List<OracleObjectDependencies>
+        var dependencies = new List<(DbObject, DbObject)>
         {
-            new(body, spec),
-            new(body, table)
+            (body, spec),
+            (body, table)
         };
 
-        var graph = new OracleObjectsGraph(dbObjects, dependencies);
+        var graph = new DbObjectsGraph(dbObjects, dependencies, OracleObjectType.RankOf);
 
         // Act
         var result = graph.GetGraph();
@@ -209,9 +210,10 @@ public class OracleObjectsGraphTests
         // Arrange
         var function = new DbObject("RECURSIVE_FN", "FUNCTION");
 
-        var graph = new OracleObjectsGraph(
+        var graph = new DbObjectsGraph(
             [function],
-            [new OracleObjectDependencies(function, function)]);
+            [(function, function)],
+            OracleObjectType.RankOf);
 
         // Act
         var result = graph.GetGraph();

@@ -1,6 +1,7 @@
 using System.Data.Common;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Database;
+using Grillisoft.Tools.DatabaseDeploy.PostgreSql.Ddl;
 using Grillisoft.Tools.DatabaseDeploy.PostgreSql.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer;
 using Microsoft.Extensions.Logging;
@@ -66,5 +67,18 @@ public class PostgreSqlDatabase : DatabaseBase
         var builder = new NpgsqlConnectionStringBuilder(this.Connection.ConnectionString);
         builder.Database = "";
         return CreateConnection(builder.ConnectionString, logger);
+    }
+
+    public async override Task GenerateSchemaDdl(StreamWriter writer, CancellationToken cancellationToken)
+    {
+        await OpenConnection(cancellationToken);
+
+        var generator = new PostgreSqlSchemaDdlGenerator(
+            script => CreateCommand(script),
+            this.DatabaseName,
+            _migrationTableName,
+            this.Logger);
+
+        await generator.Generate(writer, cancellationToken);
     }
 }

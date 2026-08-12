@@ -1,6 +1,7 @@
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Database;
 using Microsoft.Extensions.Logging;
+using Soenneker.Extensions.String;
 
 namespace Grillisoft.Tools.DatabaseDeploy.PostgreSql.Ddl;
 
@@ -89,8 +90,7 @@ internal sealed class PostgreSqlObjectsDiscovery
     /// script must not recreate.
     /// </summary>
     private bool IsMigrationTable(string schema, string name)
-        => string.Equals(name, _migrationTable, StringComparison.Ordinal)
-           && string.Equals(schema, _migrationSchema, StringComparison.Ordinal);
+        => _migrationTable.EqualsIgnoreCase(name) && _migrationSchema.EqualsIgnoreCase(schema);
 
     private async Task<List<string>> AddSchemas(CancellationToken cancellationToken)
     {

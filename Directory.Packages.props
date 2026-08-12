@@ -10,10 +10,10 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageVersion>
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.8.3" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.9.0" />
     <PackageVersion Include="OllamaSharp" Version="5.4.30" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.11" />
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.10.91">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
@@ -25,13 +25,13 @@
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.2" />
     <PackageVersion Include="Microsoft.SqlServer.SqlManagementObjects" Version="181.25.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.FileSystemGlobbing" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.FileSystemGlobbing" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
-    <PackageVersion Include="MySqlConnector" Version="2.6.1" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="MySqlConnector" Version="2.6.2" />
     <PackageVersion Include="Npgsql" Version="10.0.3" />
     <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.26.300" />
     <PackageVersion Include="Serilog" Version="4.4.0" />
@@ -40,10 +40,10 @@
     <PackageVersion Include="Serilog.Settings.Configuration" Version="10.0.1" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageVersion Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
-    <PackageVersion Include="Soenneker.Extensions.Enumerable" Version="4.0.646" />
-    <PackageVersion Include="Soenneker.Extensions.Enumerable.String" Version="4.0.1400" />
-    <PackageVersion Include="Soenneker.Extensions.String" Version="4.0.713" />
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.31.0.145097" />
+    <PackageVersion Include="Soenneker.Extensions.Enumerable" Version="4.0.647" />
+    <PackageVersion Include="Soenneker.Extensions.Enumerable.String" Version="4.0.1404" />
+    <PackageVersion Include="Soenneker.Extensions.String" Version="4.0.716" />
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.32.0.713" />
     <PackageVersion Include="System.Linq.Async" Version="7.0.1" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="22.2.0" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions.Wrappers" Version="22.2.0" />
@@ -54,7 +54,7 @@
     <PackageVersion Include="Testcontainers.MySql" Version="4.13.0" />
     <PackageVersion Include="Testcontainers.Oracle" Version="4.13.0" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.13.0" />
-    <PackageVersion Include="TUnit" Version="1.63.0" />
+    <PackageVersion Include="TUnit" Version="1.64.13" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <!-- Transitive dependencies -->
     <PackageVersion Include="Azure.Core" Version="1.42.0" />

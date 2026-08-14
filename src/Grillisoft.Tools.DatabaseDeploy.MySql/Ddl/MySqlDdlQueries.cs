@@ -74,6 +74,17 @@ internal static class MySqlDdlQueries
         ORDER BY TABLE_NAME, CONSTRAINT_NAME
         """;
 
+    /// <summary>
+    /// Which of the view usage tables this server has. MariaDB has neither, and asking is what
+    /// keeps a permanent property of the server from being reported as something going wrong.
+    /// </summary>
+    public const string ViewUsageTables = """
+        SELECT TABLE_NAME
+        FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = 'information_schema'
+          AND TABLE_NAME IN ('VIEW_TABLE_USAGE', 'VIEW_ROUTINE_USAGE')
+        """;
+
     /// <summary>Which tables and views a view is built on. MySQL 8 only.</summary>
     public const string ViewTableUsage = """
         SELECT VIEW_NAME, TABLE_NAME

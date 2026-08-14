@@ -232,17 +232,34 @@ internal sealed class MySqlObjectsDiscovery
         var byName = ByName(objects, MySqlObjectType.Table, MySqlObjectType.View,
             MySqlObjectType.Function, MySqlObjectType.Sequence);
 
-        var declared = await _catalog.TryQuery(
-            MySqlDdlQueries.ViewTableUsage,
-            "view dependencies",
-            reader => (View: reader.GetString(0), Used: reader.GetString(1)),
+        // Only MySQL 8 records what a view uses. Asking which of the two tables exist before
+        // reading them is what keeps MariaDB, where neither ever has, from reporting a warning on
+        // every run for something that is handled and expected.
+        var available = await _catalog.TryQueryNames(
+            MySqlDdlQueries.ViewUsageTables,
+            "the view usage tables of information_schema",
+            NameComparer,
             cancellationToken);
 
-        declared.AddRange(await _catalog.TryQuery(
-            MySqlDdlQueries.ViewRoutineUsage,
-            "view routine dependencies",
-            reader => (View: reader.GetString(0), Used: reader.GetString(1)),
-            cancellationToken));
+        var declared = new List<(string View, string Used)>();
+
+        if (available.Contains("VIEW_TABLE_USAGE"))
+        {
+            declared.AddRange(await _catalog.TryQuery(
+                MySqlDdlQueries.ViewTableUsage,
+                "view dependencies",
+                reader => (View: reader.GetString(0), Used: reader.GetString(1)),
+                cancellationToken));
+        }
+
+        if (available.Contains("VIEW_ROUTINE_USAGE"))
+        {
+            declared.AddRange(await _catalog.TryQuery(
+                MySqlDdlQueries.ViewRoutineUsage,
+                "view routine dependencies",
+                reader => (View: reader.GetString(0), Used: reader.GetString(1)),
+                cancellationToken));
+        }
 
         if (declared.Count > 0)
         {

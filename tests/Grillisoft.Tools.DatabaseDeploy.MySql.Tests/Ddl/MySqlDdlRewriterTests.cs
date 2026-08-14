@@ -82,9 +82,35 @@ public class MySqlDdlRewriterTests
     {
         const string ddl = "CREATE VIEW `v` AS select `northwind`.`o`.`id` from `northwind`.`o` join northwind.`c`";
 
-        MySqlDdlRewriter.RemoveDatabaseQualifier(ddl, "northwind")
+        MySqlDdlRewriter.RemoveDatabaseQualifier(ddl, "northwind", Names("o", "c"))
             .Should().Be("CREATE VIEW `v` AS select `o`.`id` from `o` join `c`");
     }
+
+    /// <summary>
+    /// A database qualifier and a table qualifier look exactly the same, so a database holding a
+    /// table of its own name - the `employees` sample is one - used to lose the table qualifier off
+    /// every column, which binds the view to whatever happens to be in scope on replay.
+    /// </summary>
+    [Test]
+    public void RemoveDatabaseQualifier_ShouldKeepTheTableQualifierOfAColumn()
+    {
+        const string ddl = "select `employees`.`emp_no` AS `emp_no` from `employees`.`employees`";
+
+        MySqlDdlRewriter.RemoveDatabaseQualifier(ddl, "employees", Names("employees", "departments"))
+            .Should().Be("select `employees`.`emp_no` AS `emp_no` from `employees`");
+    }
+
+    [Test]
+    public void RemoveDatabaseQualifier_ShouldLeaveAnotherDatabaseAlone()
+    {
+        const string ddl = "select * from `other`.`orders`";
+
+        MySqlDdlRewriter.RemoveDatabaseQualifier(ddl, "northwind", Names("orders"))
+            .Should().Be(ddl);
+    }
+
+    private static IReadOnlySet<string> Names(params string[] names)
+        => names.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     [Test]
     public void SplitForeignKeys_ShouldMoveTheConstraintIntoAnAlterTable()

@@ -34,6 +34,14 @@ internal static partial class MySqlDdlRewriter
     [GeneratedRegex(@"\s*AUTO_INCREMENT\s*=\s*\d+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex AutoIncrementOption();
 
+    /// <summary>
+    /// A two part name, <c>`a`.`b`</c>, with either half backtick quoted or bare. A three part
+    /// <c>`a`.`b`.`c`</c> matches its first two parts, which is the pair that carries the database.
+    /// </summary>
+    [GeneratedRegex(@"(?<qualifier>`(?:[^`]|``)*`|[\p{L}\p{N}_$]+)\.(?<name>`(?:[^`]|``)*`|[\p{L}\p{N}_$]+)",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex QualifiedName();
+
     /// <summary>A <c>CONSTRAINT `x` FOREIGN KEY ...</c> definition line inside a CREATE TABLE.</summary>
     [GeneratedRegex(@"^\s*CONSTRAINT\s+(`(?:[^`]|``)*`)\s+FOREIGN\s+KEY\b",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
@@ -63,15 +71,39 @@ internal static partial class MySqlDdlRewriter
     /// definition fully qualified, so <c>SHOW CREATE VIEW</c> on <c>northwind</c> comes back
     /// selecting from <c>`northwind`.`orders`</c>, and replaying that into <c>northwind_test</c>
     /// either fails or - worse - silently points the new view at the old database.
+    /// <para>
+    /// A database qualifier and a table qualifier are the same two part shape, <c>`a`.`b`</c>, so
+    /// what tells them apart is <paramref name="objectNames"/>: the qualifier only comes off when
+    /// the name behind it is something the database actually holds. Without that test a database
+    /// whose name is also one of its table names - which is what <c>employees</c> is - loses the
+    /// table qualifier off every column of every view.
+    /// </para>
     /// </remarks>
-    public static string RemoveDatabaseQualifier(string ddl, string databaseName)
+    /// <param name="objectNames">
+    /// The unquoted names of the tables, views and routines of the database.
+    /// </param>
+    public static string RemoveDatabaseQualifier(string ddl, string databaseName, IReadOnlySet<string> objectNames)
     {
         if (string.IsNullOrEmpty(databaseName))
             return ddl;
 
-        return ddl.Replace($"{databaseName.Quote()}.", string.Empty, StringComparison.Ordinal)
-                  .Replace($"{databaseName}.", string.Empty, StringComparison.Ordinal);
+        return QualifiedName().Replace(ddl, match =>
+        {
+            var qualifier = match.Groups["qualifier"];
+            var name = match.Groups["name"];
+
+            if (!string.Equals(Unquote(qualifier.Value), databaseName, StringComparison.OrdinalIgnoreCase))
+                return match.Value;
+
+            return objectNames.Contains(Unquote(name.Value)) ? name.Value : match.Value;
+        });
     }
+
+    /// <summary>An identifier as it is written, reduced to the name it stands for.</summary>
+    private static string Unquote(string identifier)
+        => identifier.StartsWith('`') && identifier.EndsWith('`')
+            ? identifier[1..^1].Replace("``", "`", StringComparison.Ordinal)
+            : identifier;
 
     /// <summary>
     /// Takes the inline foreign keys out of a <c>CREATE TABLE</c> and returns them as

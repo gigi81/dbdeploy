@@ -21,12 +21,22 @@ internal sealed class MySqlObjectScripter
     /// <summary>The foreign keys taken out of a table, keyed by the object they were split into.</summary>
     private readonly Dictionary<string, string> _foreignKeys = new(StringComparer.OrdinalIgnoreCase);
 
+    private IReadOnlySet<string> _objectNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
     public MySqlObjectScripter(Func<string, DbCommand> createCommand, string database, ILogger logger)
     {
         _createCommand = createCommand;
         _database = database;
         _logger = logger;
     }
+
+    /// <summary>
+    /// What the database holds, which is what
+    /// <see cref="MySqlDdlRewriter.RemoveDatabaseQualifier"/> needs to tell a database qualifier
+    /// from a table one. Handed over once the discovery has run.
+    /// </summary>
+    public void SetObjectNames(IEnumerable<string> names)
+        => _objectNames = names.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     public async Task<IReadOnlyList<string>> Script(DbObject dbObject, CancellationToken cancellationToken)
     {
@@ -48,7 +58,7 @@ internal sealed class MySqlObjectScripter
         }
 
         ddl = MySqlDdlRewriter.StripDefiner(ddl);
-        ddl = MySqlDdlRewriter.RemoveDatabaseQualifier(ddl, _database);
+        ddl = MySqlDdlRewriter.RemoveDatabaseQualifier(ddl, _database, _objectNames);
 
         if (type.Name != MySqlObjectType.Table)
             return [ddl.Trim()];

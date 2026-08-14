@@ -35,9 +35,17 @@ internal sealed class MySqlSchemaDdlGenerator : SchemaDdlGenerator
 
     protected override DdlScriptWriter CreateWriter(StreamWriter stream) => new MySqlDdlScriptWriter(stream);
 
-    protected override Task<(List<DbObject> Objects, List<(DbObject DbObject, DbObject DependsOn)> Dependencies)>
+    protected async override Task<(List<DbObject> Objects, List<(DbObject DbObject, DbObject DependsOn)> Dependencies)>
         Discover(CancellationToken cancellationToken)
-        => _discovery.Discover(cancellationToken);
+    {
+        var discovered = await _discovery.Discover(cancellationToken);
+
+        // What the discovery found is also what tells a `database`.`table` qualifier apart from a
+        // `table`.`column` one when the two spellings collide.
+        _scripter.SetObjectNames(discovered.Objects.Select(o => o.Name));
+
+        return discovered;
+    }
 
     protected override Task<IReadOnlyList<string>> Script(DbObject dbObject, CancellationToken cancellationToken)
         => _scripter.Script(dbObject, cancellationToken);

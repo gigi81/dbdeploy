@@ -432,7 +432,7 @@ create view Invoices AS
 SELECT Orders.ShipName, Orders.ShipAddress, Orders.ShipCity, Orders.ShipRegion, Orders.ShipPostalCode, 
 	Orders.ShipCountry, Orders.CustomerID, Customers.CompanyName AS CustomerName, Customers.Address, Customers.City, 
 	Customers.Region, Customers.PostalCode, Customers.Country, 
-	(FirstName + ' ' + LastName) AS Salesperson, 
+	(Employees.FirstName + ' ' + Employees.LastName) AS Salesperson,
 	Orders.OrderID, Orders.OrderDate, Orders.RequiredDate, Orders.ShippedDate, Shippers.CompanyName As ShipperName, 
 	"Order Details".ProductID, Products.ProductName, "Order Details".UnitPrice, "Order Details".Quantity, 
 	"Order Details".Discount, 

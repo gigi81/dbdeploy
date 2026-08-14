@@ -291,6 +291,12 @@ allows between program units — is reported both in the log and in the file, si
 may be created invalid and need a recompilation. On PostgreSQL, a materialized view is created
 `WITH NO DATA` and needs a `REFRESH` of its own.
 
+The generated script also says something about the database it came from. Replaying it into an empty
+database is the fastest way to find out that a view still selects a column a migration dropped, or
+that it reads a name that only resolves on the server it was written on — both of which a database
+will happily hold onto until something tries to recreate it. That is worth doing once on adoption,
+and the project's own CI does it on every example.
+
 ## Format
 
 To format the SQL of every `.Deploy.sql` and `.Rollback.sql` script consistently, run:

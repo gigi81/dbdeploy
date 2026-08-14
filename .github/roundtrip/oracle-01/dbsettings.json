@@ -1,0 +1,17 @@
+{
+  "global": {
+    "defaultProvider": "oracle",
+    "scriptTimeout": 600,
+    "migrationsTable": "migrations"
+  },
+  "databases": {
+    "customer_orders": {
+      "connectionString": "Data Source=//oracle:1521/FREEPDB1;User Id=system;Password=oracle2019!;",
+      "schema": "CO_ROUNDTRIP"
+    },
+    "human_resources": {
+      "connectionString": "Data Source=//oracle:1521/FREEPDB1;User Id=system;Password=oracle2019!;",
+      "schema": "HR_ROUNDTRIP"
+    }
+  }
+}

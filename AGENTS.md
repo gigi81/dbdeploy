@@ -126,7 +126,9 @@ Each provider has one thing it must not stop doing:
   are never inline. Excluded for a reason each: extension owned objects, the sequence behind an
   identity column, the index behind a constraint. `pg_get_functiondef` **errors** on an aggregate.
   Bind an oid as `bigint` and cast it (`@oid::oid`), and cast the `"char"` kind columns to `text`;
-  Npgsql will not do either for you.
+  Npgsql will not do either for you. The script opens with `SET check_function_bodies = false`,
+  because a `LANGUAGE sql` function is parsed when it is created and what a body reads is not a
+  dependency the server records anywhere, so no ordering can put such a function after its tables.
 
 ## Running a script
 
@@ -211,6 +213,15 @@ The integration tests are run on every push and pull request to the `main` and `
 - PostgreSQL
 
 The integration tests run the `dbdeploy` tool against the example databases located in the `examples` folder.
+
+Each job then runs `.github/actions/schema-roundtrip`, which is the only test of `generate-schema`
+against a schema nobody built for it. It scripts the database the deploy just left behind, replays
+that script into an empty one whose settings live in `.github/roundtrip/<example>/`, and scripts that
+one too. The replay is the check that the script is deployable; comparing the two scripts is the
+check that nothing was dropped on the way. There is deliberately no expected file to keep up to date -
+both sides are read from the same server, so the check survives a server image moving. The comparison
+sorts the lines and drops their trailing comma, because the order of what a server hands back is not
+always ours to control: `DBMS_METADATA` writes the inline constraints of a table in creation order.
 
 ## Agent Instructions
 

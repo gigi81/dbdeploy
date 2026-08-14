@@ -200,6 +200,10 @@ public class PostgreSqlSchemaDdlTests : DatabaseTest<PostgreSqlDatabase>
 
         // pgcrypto's own functions belong to the extension and must not be scripted
         script.Should().NotContain("gen_salt");
+
+        // what a SQL function body reads is not a dependency the server records, so nothing can
+        // order such a function after the tables it names
+        script.Should().Contain("SET check_function_bodies = false");
     }
 
     private static async Task<string> GenerateScript(PostgreSqlDatabase database)

@@ -103,6 +103,22 @@ internal sealed class PostgreSqlSchemaDdlGenerator : SchemaDdlGenerator
         Discover(CancellationToken cancellationToken)
         => _discovery.Discover(cancellationToken);
 
+    /// <summary>
+    /// Stops the replaying server from validating a function body against a database that is only
+    /// half built.
+    /// </summary>
+    /// <remarks>
+    /// A <c>LANGUAGE sql</c> function is parsed when it is created, and what a function body reads
+    /// is not a dependency PostgreSQL records anywhere, so nothing can order such a function after
+    /// the tables it names - Pagila's <c>inventory_in_stock</c> is the case that proves it. This is
+    /// the same line, for the same reason, that <c>pg_dump</c> writes into its preamble.
+    /// </remarks>
+    protected async override Task WritePrologue(DdlScriptWriter writer, CancellationToken cancellationToken)
+    {
+        await writer.WriteStatement("SET check_function_bodies = false");
+        CountStatements(1);
+    }
+
     protected override Task<IReadOnlyList<string>> Script(DbObject dbObject, CancellationToken cancellationToken)
     {
         if (_discovery.Find(dbObject) is not { } target)

@@ -34,6 +34,8 @@ public class SchemaDdlGeneratorTests
 
         public HashSet<string> Failing { get; } = [];
 
+        public List<string> Prologue { get; } = [];
+
         public List<string> Epilogue { get; } = [];
 
         public bool Prepared { get; private set; }
@@ -61,6 +63,14 @@ public class SchemaDdlGeneratorTests
 
             Scripted.Add(dbObject);
             return Task.FromResult<IReadOnlyList<string>>([$"CREATE {dbObject.Type} {dbObject.Name}"]);
+        }
+
+        protected async override Task WritePrologue(DdlScriptWriter writer, CancellationToken cancellationToken)
+        {
+            foreach (var statement in Prologue)
+                await writer.WriteStatement(statement);
+
+            CountStatements(Prologue.Count);
         }
 
         protected async override Task WriteEpilogue(
@@ -214,6 +224,33 @@ public class SchemaDdlGeneratorTests
 
         // Assert
         script.Should().NotContain("!!").And.NotContain("Dependency cycle");
+    }
+
+    /// <summary>
+    /// The prologue is for what the replaying session has to have run before anything else, so
+    /// being after the header and before the first object is the whole of its contract.
+    /// </summary>
+    [Test]
+    public async Task Generate_ShouldWriteThePrologueBeforeTheObjects()
+    {
+        // Arrange
+        var logger = new RecordingLogger();
+        var generator = new FakeGenerator(logger);
+        generator.Objects.Add(Customer);
+        generator.Prologue.Add("SET check_function_bodies = false");
+
+        // Act
+        var script = await Generate(generator);
+
+        // Assert
+        script.IndexOf("-- Database HR", StringComparison.Ordinal)
+              .Should().BeLessThan(script.IndexOf("SET check_function_bodies", StringComparison.Ordinal));
+
+        script.IndexOf("SET check_function_bodies", StringComparison.Ordinal)
+              .Should().BeLessThan(script.IndexOf("CREATE TABLE CUSTOMER", StringComparison.Ordinal));
+
+        // one statement for the object, one for the prologue
+        logger.Messages.Should().Contain(message => message.Contains("into 2 statements"));
     }
 
     [Test]

@@ -63,6 +63,14 @@ public abstract class SchemaDdlGenerator
     protected virtual Task Prepare(CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <summary>
+    /// Written after the header and before the first object, for the statements the rest of the
+    /// script needs the replaying session to have run. Implementations report what they wrote
+    /// through <see cref="CountStatements"/>.
+    /// </summary>
+    protected virtual Task WritePrologue(DdlScriptWriter writer, CancellationToken cancellationToken)
+        => Task.CompletedTask;
+
+    /// <summary>
     /// Written after the last object and before the footer, for the statements that belong to no
     /// object of their own - comments, mostly. Implementations report what they wrote through
     /// <see cref="CountStatements"/>.
@@ -121,6 +129,7 @@ public abstract class SchemaDdlGenerator
         }
 
         await WriteHeader(writer, ordered.Count);
+        await WritePrologue(writer, cancellationToken);
 
         Logger.LogInformation("Scripting {ObjectCount} objects", ordered.Count);
         var progress = new ProgressReporter(ordered.Count, Logger);

@@ -21,3 +21,12 @@ GO
 ALTER TABLE Customers
 DROP COLUMN ContactName
 GO
+
+-- SQL Server does not stop a column being dropped out from under a view, it just leaves the view
+-- broken, so a step that drops a column has to carry every view that reads it.
+ALTER VIEW "Customer and Suppliers by City" AS
+SELECT City, CompanyName, FirstName + ' ' + LastName AS ContactName, 'Customers' AS Relationship
+FROM Customers
+UNION SELECT City, CompanyName, ContactName, 'Suppliers'
+FROM Suppliers
+GO

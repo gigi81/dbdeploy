@@ -17,5 +17,13 @@ public static class ContainerImages
 
     public const string MySql = "mysql:8.0";
 
+    /// <summary>
+    /// MariaDB is served by the MySql provider rather than one of its own, but it is different
+    /// enough where DDL generation is concerned - it has sequences and packages, it reports
+    /// sequences in <c>information_schema.TABLES</c>, and it has no <c>VIEW_TABLE_USAGE</c> - to be
+    /// worth a container of its own. Pinned to an LTS release for the same reason as the others.
+    /// </summary>
+    public const string MariaDb = "mariadb:11.4";
+
     public const string PostgreSql = "postgres:15.1";
 }

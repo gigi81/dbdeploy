@@ -1,7 +1,7 @@
 using System.Data.Common;
-using System.Diagnostics;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Database;
+using Grillisoft.Tools.DatabaseDeploy.Database.Ddl;
 using Microsoft.Extensions.Logging;
 
 namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Ddl;
@@ -10,24 +10,15 @@ namespace Grillisoft.Tools.DatabaseDeploy.SqlServer.Ddl;
 /// Scripts a whole SQL Server database into a single deployable file.
 /// </summary>
 /// <remarks>
-/// The work is split three ways: <see cref="SqlServerObjectsDiscovery"/> decides what to script and
-/// what depends on what, <see cref="DbObjectsGraph"/> turns that into an order, and
-/// <see cref="SqlServerObjectScripter"/> writes the DDL of one object at a time through SMO.
-/// Everything here is the orchestration and the writing. Two rules drive the whole design - the
-/// script has to be replayable top to bottom on an empty database, and no single object that cannot
-/// be scripted may take the whole run down.
+/// <see cref="SchemaDdlGenerator"/> holds the ordering and the writing; what is SQL Server's own is
+/// <see cref="SqlServerObjectsDiscovery"/>, which decides what to script and what depends on what,
+/// and <see cref="SqlServerObjectScripter"/>, which writes the DDL of one object at a time through
+/// SMO. The scripter holds a connection of its own, which is why this is disposable.
 /// </remarks>
-internal sealed class SqlServerSchemaDdlGenerator
+internal sealed class SqlServerSchemaDdlGenerator : SchemaDdlGenerator, IDisposable
 {
-    private readonly Func<string, DbCommand> _createCommand;
-    private readonly string _connectionString;
-    private readonly string _databaseName;
-    private readonly string _migrationTable;
-    private readonly ILogger _logger;
-
-    private readonly List<(SqlServerObject Object, string Error)> _failures = [];
-    private readonly Dictionary<string, int> _scriptedByType = new(StringComparer.OrdinalIgnoreCase);
-    private int _statementsWritten;
+    private readonly SqlServerObjectScripter _scripter;
+    private readonly SqlServerObjectsDiscovery _discovery;
 
     public SqlServerSchemaDdlGenerator(
         Func<string, DbCommand> createCommand,
@@ -35,152 +26,54 @@ internal sealed class SqlServerSchemaDdlGenerator
         string databaseName,
         string migrationTable,
         ILogger logger)
+        : base(databaseName, "database", logger)
     {
-        _createCommand = createCommand;
-        _connectionString = connectionString;
-        _databaseName = databaseName;
-        _migrationTable = migrationTable;
-        _logger = logger;
+        _scripter = new SqlServerObjectScripter(connectionString, databaseName, logger);
+
+        var catalog = new CatalogReader(createCommand, databaseName, logger);
+        _discovery = new SqlServerObjectsDiscovery(catalog, databaseName, migrationTable, logger);
     }
 
-    public async Task Generate(StreamWriter writer, CancellationToken cancellationToken)
+    protected override Func<string, int> RankOf => SqlServerObjectType.RankOf;
+
+    /// <summary>
+    /// A line holding nothing but <c>GO</c> ends a batch, which is how sqlcmd, SQL Server Management
+    /// Studio and <see cref="SqlServerScriptParser"/> all read a script.
+    /// </summary>
+    protected override DdlScriptWriter CreateWriter(StreamWriter stream) => new(stream, "-- ", "GO");
+
+    protected override string StatementNoun => "batches";
+
+    protected override Task Prepare(CancellationToken cancellationToken)
     {
-        var stopwatch = Stopwatch.StartNew();
-        _logger.LogInformation("Generating DDL for database {DatabaseName}", _databaseName);
-
-        using var scripter = new SqlServerObjectScripter(_connectionString, _databaseName, _logger);
-        scripter.Connect();
-
-        var catalog = new CatalogReader(_createCommand, _databaseName, _logger);
-        var discovery = new SqlServerObjectsDiscovery(catalog, _databaseName, _migrationTable, _logger);
-        var (objects, dependencies) = await discovery.Discover(cancellationToken);
-
-        if (objects.Count == 0)
-        {
-            _logger.LogWarning("No scriptable object found in database {DatabaseName}; the generated script will be empty",
-                _databaseName);
-            await WriteHeader(writer, 0);
-            return;
-        }
-
-        _logger.LogInformation("Ordering {ObjectCount} objects using {DependencyCount} dependencies",
-            objects.Count, dependencies.Count);
-
-        var graph = new DbObjectsGraph(objects, dependencies, SqlServerObjectType.RankOf, _logger);
-        var ordered = graph.GetGraph();
-
-        if (graph.IgnoredDependencies > 0)
-        {
-            _logger.LogInformation(
-                "Ignored {IgnoredCount} dependencies pointing at objects that are not being scripted (run with debug logging to list them)",
-                graph.IgnoredDependencies);
-        }
-
-        await WriteHeader(writer, ordered.Count);
-
-        _logger.LogInformation("Scripting {ObjectCount} objects", ordered.Count);
-        var progress = new ProgressReporter(ordered.Count, _logger);
-
-        foreach (var dbObject in ordered)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            await WriteObject(writer, scripter, discovery, dbObject);
-            progress.Advance(dbObject);
-        }
-
-        await WriteFooter(writer, graph);
-
-        LogSummary(stopwatch.Elapsed, ordered.Count);
-
-        if (_failures.Count > 0)
-            throw new SqlServerDdlGenerationException(_databaseName, _failures.Select(f => (f.Object.Key, f.Error)));
+        _scripter.Connect();
+        return Task.CompletedTask;
     }
 
-    private async Task WriteObject(
-        StreamWriter writer,
-        SqlServerObjectScripter scripter,
-        SqlServerObjectsDiscovery discovery,
-        DbObject dbObject)
+    protected override Task<(List<DbObject> Objects, List<(DbObject DbObject, DbObject DependsOn)> Dependencies)>
+        Discover(CancellationToken cancellationToken)
+        => _discovery.Discover(cancellationToken);
+
+    protected override Task<IReadOnlyList<string>> Script(DbObject dbObject, CancellationToken cancellationToken)
     {
-        if (discovery.Find(dbObject) is not { } target)
+        if (_discovery.Find(dbObject) is not { } target)
         {
-            _logger.LogWarning("Skipping {ObjectKey}: it is not one of the discovered objects", dbObject.Key);
-            return;
+            Logger.LogWarning("Skipping {ObjectKey}: it is not one of the discovered objects", dbObject.Key);
+            return Task.FromResult<IReadOnlyList<string>>([]);
         }
 
-        var stopwatch = Stopwatch.StartNew();
-        IReadOnlyList<string> batches;
-
-        try
-        {
-            batches = scripter.Script(target);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            var error = ex.Describe();
-            _logger.LogError(ex, "Failed to script {ObjectKey}: {Error}", dbObject.Key, error);
-            _failures.Add((target, error));
-            await writer.WriteComment($"!! FAILED to script {target.Type.Name} {target.QualifiedName}: {error}");
-            return;
-        }
+        var batches = _scripter.Script(target);
 
         if (batches.Count == 0)
-        {
-            _logger.LogWarning("Skipping {ObjectKey}: SMO returned no statement", dbObject.Key);
-            return;
-        }
+            Logger.LogWarning("Skipping {ObjectKey}: SMO returned no statement", dbObject.Key);
 
-        foreach (var batch in batches)
-            await writer.WriteStatement(batch);
-
-        _statementsWritten += batches.Count;
-        _scriptedByType[dbObject.Type] = _scriptedByType.GetValueOrDefault(dbObject.Type) + 1;
-
-        _logger.LogDebug("Scripted {ObjectKey} into {BatchCount} batch(es) in {ElapsedMs}ms",
-            dbObject.Key, batches.Count, stopwatch.ElapsedMilliseconds);
+        return Task.FromResult(batches);
     }
 
-    private async Task WriteHeader(StreamWriter writer, int objectCount)
-    {
-        await writer.WriteComment(new string('=', 78));
-        await writer.WriteComment($"Database {_databaseName} - {objectCount} object(s)");
-        await writer.WriteComment($"Generated by dbdeploy on {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-        await writer.WriteComment("Do not edit: regenerate instead");
-        await writer.WriteComment(new string('=', 78));
-        await writer.WriteLineAsync();
-    }
+    protected override string Describe(Exception exception) => exception.Describe();
 
-    private async Task WriteFooter(StreamWriter writer, DbObjectsGraph graph)
-    {
-        if (graph.BrokenCycles.Count == 0 && _failures.Count == 0)
-            return;
+    protected override Exception CreateGenerationException(IEnumerable<(string Object, string Error)> failures)
+        => new SqlServerDdlGenerationException(Source, failures);
 
-        await writer.WriteLineAsync();
-        await writer.WriteComment(new string('=', 78));
-
-        foreach (var cycle in graph.BrokenCycles)
-        {
-            await writer.WriteComment(
-                $"Dependency cycle, objects may be created invalid: {string.Join(" -> ", cycle.Select(o => o.Key))}");
-        }
-
-        foreach (var (dbObject, error) in _failures)
-            await writer.WriteComment($"!! {dbObject.Key} could not be scripted: {error}");
-
-        await writer.WriteComment(new string('=', 78));
-    }
-
-    private void LogSummary(TimeSpan elapsed, int objectCount)
-    {
-        _logger.LogInformation(
-            "Scripted {ScriptedCount}/{ObjectCount} objects into {StatementCount} batches in {Elapsed}: {Breakdown}",
-            _scriptedByType.Values.Sum(), objectCount, _statementsWritten, elapsed,
-            _scriptedByType.Breakdown(SqlServerObjectType.RankOf));
-
-        if (_failures.Count > 0)
-        {
-            _logger.LogError("{FailureCount} object(s) could not be scripted: {Objects}",
-                _failures.Count, string.Join(", ", _failures.Select(f => f.Object.Key)));
-        }
-    }
+    public void Dispose() => _scripter.Dispose();
 }

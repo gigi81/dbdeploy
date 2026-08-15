@@ -1,7 +1,7 @@
 using System.Data.Common;
-using System.Diagnostics;
 using Grillisoft.Tools.DatabaseDeploy.Contracts;
 using Grillisoft.Tools.DatabaseDeploy.Database;
+using Grillisoft.Tools.DatabaseDeploy.Database.Ddl;
 using Microsoft.Extensions.Logging;
 
 namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Ddl;
@@ -10,128 +10,63 @@ namespace Grillisoft.Tools.DatabaseDeploy.Oracle.Ddl;
 /// Scripts a whole Oracle schema into a single deployable file.
 /// </summary>
 /// <remarks>
-/// The work is split three ways: <see cref="OracleObjectsDiscovery"/> decides what to script and
-/// what depends on what, <see cref="OracleObjectsGraph"/> turns that into an order, and
-/// <see cref="OracleObjectScripter"/> writes the DDL of one object at a time through
-/// <c>DBMS_METADATA</c>. Everything here is the orchestration and the writing. Two rules drive the
-/// whole design - the script has to be replayable top to bottom on an empty schema, and no single
-/// object that cannot be scripted may take the whole run down.
+/// <see cref="SchemaDdlGenerator"/> holds the ordering and the writing; what is Oracle's own is
+/// <see cref="OracleObjectsDiscovery"/>, which decides what to script and what depends on what, and
+/// <see cref="OracleObjectScripter"/>, which writes the DDL of one object at a time through
+/// <c>DBMS_METADATA</c>. The comments are the one thing that has to be written outside the object
+/// loop - see <see cref="WriteEpilogue"/>.
 /// </remarks>
-internal sealed class OracleSchemaDdlGenerator
+internal sealed class OracleSchemaDdlGenerator : SchemaDdlGenerator
 {
-    private readonly Func<string, DbCommand> _createCommand;
-    private readonly string _schema;
-    private readonly string _migrationTable;
-    private readonly ILogger _logger;
-
-    private readonly List<(DbObject Object, string Error)> _failures = [];
-    private readonly Dictionary<string, int> _scriptedByType = new(StringComparer.OrdinalIgnoreCase);
-    private int _statementsWritten;
+    private readonly OracleObjectScripter _scripter;
+    private readonly OracleObjectsDiscovery _discovery;
 
     public OracleSchemaDdlGenerator(
         Func<string, DbCommand> createCommand,
         string schema,
         string migrationTable,
         ILogger logger)
+        : base(schema, "schema", logger)
     {
-        _createCommand = createCommand;
-        _schema = schema;
-        _migrationTable = migrationTable;
-        _logger = logger;
+        var catalog = new CatalogReader(createCommand, schema, logger);
+        _scripter = new OracleObjectScripter(createCommand, catalog, schema, logger);
+        _discovery = new OracleObjectsDiscovery(catalog, schema, migrationTable, logger);
     }
 
-    public async Task Generate(StreamWriter writer, CancellationToken cancellationToken)
-    {
-        var stopwatch = Stopwatch.StartNew();
-        _logger.LogInformation("Generating DDL for schema {SchemaName}", _schema);
+    protected override Func<string, int> RankOf => OracleObjectType.RankOf;
 
-        var catalog = new CatalogReader(_createCommand, _schema, _logger);
-        var scripter = new OracleObjectScripter(_createCommand, catalog, _schema, _logger);
-        await scripter.Configure(cancellationToken);
+    /// <summary>
+    /// SQL*Plus <c>REM</c> rather than <c>--</c>, because <see cref="OracleScriptParser"/> drops
+    /// those lines instead of sending them to the server as a statement of their own, and a line
+    /// holding nothing but <c>/</c> is what both it and SQL*Plus end a statement on.
+    /// </summary>
+    protected override DdlScriptWriter CreateWriter(StreamWriter stream) => new(stream, "REM ", "/");
 
-        var discovery = new OracleObjectsDiscovery(catalog, _schema, _migrationTable, _logger);
-        var (objects, dependencies) = await discovery.Discover(cancellationToken);
+    protected override Task Prepare(CancellationToken cancellationToken)
+        => _scripter.Configure(cancellationToken);
 
-        if (objects.Count == 0)
-        {
-            _logger.LogWarning("No scriptable object found in schema {SchemaName}; the generated script will be empty", _schema);
-            await WriteHeader(writer, objects.Count);
-            return;
-        }
+    protected override Task<(List<DbObject> Objects, List<(DbObject DbObject, DbObject DependsOn)> Dependencies)>
+        Discover(CancellationToken cancellationToken)
+        => _discovery.Discover(cancellationToken);
 
-        _logger.LogInformation("Ordering {ObjectCount} objects using {DependencyCount} dependencies", objects.Count, dependencies.Count);
-        var graph = new OracleObjectsGraph(objects, dependencies, _logger);
-        var ordered = graph.GetGraph();
+    protected override Task<IReadOnlyList<string>> Script(DbObject dbObject, CancellationToken cancellationToken)
+        => _scripter.Script(dbObject, cancellationToken);
 
-        if (graph.IgnoredDependencies > 0)
-        {
-            _logger.LogInformation(
-                "Ignored {IgnoredCount} dependencies pointing at objects that are not being scripted (run with debug logging to list them)",
-                graph.IgnoredDependencies);
-        }
+    protected override string Describe(Exception exception) => exception.Describe();
 
-        await WriteHeader(writer, ordered.Count);
+    protected override Exception CreateGenerationException(IEnumerable<(string Object, string Error)> failures)
+        => new OracleDdlGenerationException(Source, failures);
 
-        _logger.LogInformation("Scripting {ObjectCount} objects", ordered.Count);
-        var progress = new ProgressReporter(ordered.Count, _logger);
-
-        foreach (var dbObject in ordered)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            await WriteObject(writer, scripter, dbObject, cancellationToken);
-            progress.Advance(dbObject);
-        }
-
-        await WriteComments(writer, discovery, ordered, cancellationToken);
-        await WriteFooter(writer, graph);
-
-        LogSummary(stopwatch.Elapsed, ordered.Count, scripter.FallbacksUsed);
-
-        if (_failures.Count > 0)
-            throw new OracleDdlGenerationException(_schema, _failures.Select(f => (f.Object.Key, f.Error)));
-    }
-
-    private async Task WriteObject(
-        StreamWriter writer,
-        OracleObjectScripter scripter,
-        DbObject dbObject,
+    /// <summary>
+    /// Comments are not schema objects and <c>DBMS_METADATA</c> only returns them attached to their
+    /// table, which is not an option here since the table DDL is emitted on its own.
+    /// </summary>
+    protected async override Task WriteEpilogue(
+        DdlScriptWriter writer,
+        IReadOnlyList<DbObject> ordered,
         CancellationToken cancellationToken)
     {
-        var stopwatch = Stopwatch.StartNew();
-        IReadOnlyList<string> statements;
-
-        try
-        {
-            statements = await scripter.Script(dbObject, cancellationToken);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            var error = ex.Describe();
-            _logger.LogError(ex, "Failed to script {ObjectKey}: {Error}", dbObject.Key, error);
-            _failures.Add((dbObject, error));
-            await writer.WriteComment($"!! FAILED to script {dbObject.Type} {dbObject.Name}: {error}");
-            return;
-        }
-
-        if (statements.Count == 0)
-            return;
-
-        foreach (var statement in statements)
-            await writer.WriteStatement(statement);
-
-        _statementsWritten += statements.Count;
-        _scriptedByType[dbObject.Type] = _scriptedByType.GetValueOrDefault(dbObject.Type) + 1;
-
-        _logger.LogDebug("Wrote {ObjectKey} in {ElapsedMs}ms", dbObject.Key, stopwatch.ElapsedMilliseconds);
-    }
-
-    private async Task WriteComments(
-        StreamWriter writer,
-        OracleObjectsDiscovery discovery,
-        IReadOnlyList<DbObject> objects,
-        CancellationToken cancellationToken)
-    {
-        var comments = await discovery.GetComments(objects, cancellationToken);
+        var comments = await _discovery.GetComments(ordered, cancellationToken);
 
         foreach (var (table, column, comment) in comments)
         {
@@ -141,59 +76,18 @@ internal sealed class OracleSchemaDdlGenerator
             await writer.WriteStatement($"COMMENT ON {what} {target} IS {comment.ToSqlLiteral()}");
         }
 
-        _statementsWritten += comments.Count;
-        _logger.LogInformation("Scripted {CommentCount} comments", comments.Count);
+        CountStatements(comments.Count);
+        Logger.LogInformation("Scripted {CommentCount} comments", comments.Count);
     }
 
-    private async Task WriteHeader(StreamWriter writer, int objectCount)
+    protected override void LogSummaryDetails()
     {
-        await writer.WriteComment(new string('=', 78));
-        await writer.WriteComment($"Schema {_schema} - {objectCount} object(s)");
-        await writer.WriteComment($"Generated by dbdeploy on {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-        await writer.WriteComment("Do not edit: regenerate instead");
-        await writer.WriteComment(new string('=', 78));
-        await writer.WriteLineAsync();
-    }
-
-    private async Task WriteFooter(StreamWriter writer, OracleObjectsGraph graph)
-    {
-        if (graph.BrokenCycles.Count == 0 && _failures.Count == 0)
-            return;
-
-        await writer.WriteLineAsync();
-        await writer.WriteComment(new string('=', 78));
-
-        foreach (var cycle in graph.BrokenCycles)
+        if (_scripter.FallbacksUsed > 0)
         {
-            await writer.WriteComment(
-                $"Dependency cycle, objects may be created invalid: {string.Join(" -> ", cycle.Select(o => o.Key))}");
-        }
-
-        foreach (var (dbObject, error) in _failures)
-            await writer.WriteComment($"!! {dbObject.Key} could not be scripted: {error}");
-
-        await writer.WriteComment(new string('=', 78));
-    }
-
-    private void LogSummary(TimeSpan elapsed, int objectCount, int fallbacksUsed)
-    {
-        _logger.LogInformation(
-            "Scripted {ScriptedCount}/{ObjectCount} objects into {StatementCount} statements in {Elapsed}: {Breakdown}",
-            _scriptedByType.Values.Sum(), objectCount, _statementsWritten, elapsed,
-            _scriptedByType.Breakdown(OracleObjectType.RankOf));
-
-        if (fallbacksUsed > 0)
-        {
-            _logger.LogWarning(
+            Logger.LogWarning(
                 "{FallbackCount} object(s) were rebuilt from the data dictionary because DBMS_METADATA refused them; " +
                 "granting SELECT_CATALOG_ROLE to the connected user produces a more faithful script",
-                fallbacksUsed);
-        }
-
-        if (_failures.Count > 0)
-        {
-            _logger.LogError("{FailureCount} object(s) could not be scripted: {Objects}",
-                _failures.Count, string.Join(", ", _failures.Select(f => f.Object.Key)));
+                _scripter.FallbacksUsed);
         }
     }
 }

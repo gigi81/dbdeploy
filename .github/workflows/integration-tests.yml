@@ -34,7 +34,14 @@ jobs:
 
       - name: dbdeploy ci
         run: dotnet run --configuration Release --project $PROJECT -- ci --path examples/mssql-02 -c --branch release/1.1
-        
+
+      - name: dbdeploy generate-schema round trip
+        uses: ./.github/actions/schema-roundtrip
+        with:
+          example: mssql-02
+          project: ${{ env.PROJECT }}
+
+
   oracle-job:
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/dotnet/sdk:10.0
@@ -56,6 +63,12 @@ jobs:
 
       - name: dbdeploy ci
         run: dotnet run --configuration Release --project $PROJECT -- ci --path examples/oracle-01 -c --branch release/1.1
+
+      - name: dbdeploy generate-schema round trip
+        uses: ./.github/actions/schema-roundtrip
+        with:
+          example: oracle-01
+          project: ${{ env.PROJECT }}
 
   mariadb-job:
     runs-on: ubuntu-latest
@@ -79,6 +92,12 @@ jobs:
       - name: dbdeploy ci
         run: dotnet run --configuration Release --project $PROJECT -- ci --path examples/mysql-01 -c --branch release/1.1
 
+      - name: dbdeploy generate-schema round trip
+        uses: ./.github/actions/schema-roundtrip
+        with:
+          example: mysql-01
+          project: ${{ env.PROJECT }}
+
   postgres-job:
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/dotnet/sdk:10.0
@@ -100,3 +119,9 @@ jobs:
 
       - name: dbdeploy ci
         run: dotnet run --configuration Release --project $PROJECT -- ci --path examples/postgres-01 -c --branch release/1.1
+
+      - name: dbdeploy generate-schema round trip
+        uses: ./.github/actions/schema-roundtrip
+        with:
+          example: postgres-01
+          project: ${{ env.PROJECT }}

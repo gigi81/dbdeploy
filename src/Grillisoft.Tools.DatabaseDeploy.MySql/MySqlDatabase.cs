@@ -1,6 +1,7 @@
 ﻿using System.Data.Common;
 using Grillisoft.Tools.DatabaseDeploy.Abstractions;
 using Grillisoft.Tools.DatabaseDeploy.Database;
+using Grillisoft.Tools.DatabaseDeploy.MySql.Ddl;
 using Grillisoft.Tools.DatabaseDeploy.MySql.Formatting;
 using Grillisoft.Tools.DatabaseDeploy.SqlServer;
 using Microsoft.Extensions.Logging;
@@ -39,6 +40,19 @@ public class MySqlDatabase : DatabaseBase
         var builder = new MySqlConnectionStringBuilder(this.Connection.ConnectionString);
         builder.Database = "";
         return CreateConnection(builder.ConnectionString, logger);
+    }
+
+    public async override Task GenerateSchemaDdl(StreamWriter writer, CancellationToken cancellationToken)
+    {
+        await OpenConnection(cancellationToken);
+
+        var generator = new MySqlSchemaDdlGenerator(
+            script => CreateCommand(script),
+            this.DatabaseName,
+            _migrationTableName,
+            this.Logger);
+
+        await generator.Generate(writer, cancellationToken);
     }
 
     private static DbConnection CreateConnection(string connectionString, ILogger logger)

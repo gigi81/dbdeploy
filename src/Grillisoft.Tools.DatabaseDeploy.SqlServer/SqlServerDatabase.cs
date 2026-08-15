@@ -59,7 +59,7 @@ public class SqlServerDatabase : DatabaseBase
     {
         await OpenConnection(cancellationToken);
 
-        var generator = new SqlServerSchemaDdlGenerator(
+        using var generator = new SqlServerSchemaDdlGenerator(
             script => CreateCommand(script),
             _connectionString,
             this.DatabaseName,

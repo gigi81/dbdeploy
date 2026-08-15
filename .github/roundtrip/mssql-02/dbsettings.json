@@ -1,0 +1,14 @@
+{
+  "global": {
+    "defaultProvider": "sqlServer",
+    "scriptTimeout": 600
+  },
+  "databases": {
+    "Northwind": {
+      "connectionString": "Server=mssql,1433;Database=Northwind_roundtrip;User Id=sa;Password=SqlServer2019!;Trusted_Connection=False;TrustServerCertificate=True"
+    },
+    "Pubs": {
+      "connectionString": "Server=mssql,1433;Database=Pubs_roundtrip;User Id=sa;Password=SqlServer2019!;Trusted_Connection=False;TrustServerCertificate=True"
+    }
+  }
+}

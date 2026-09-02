@@ -4,7 +4,7 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="CliWrap" Version="3.10.4" />
+    <PackageVersion Include="CliWrap" Version="3.10.5" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.3">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -14,13 +14,13 @@
     <PackageVersion Include="OllamaSharp" Version="5.4.30" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.11" />
-    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.10.91">
+    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.10.94">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageVersion>
     <PackageVersion Include="CommandLineParser" Version="2.9.1" />
-    <PackageVersion Include="editorconfig" Version="0.17.0" />
-    <PackageVersion Include="AwesomeAssertions" Version="9.5.0" />
+    <PackageVersion Include="editorconfig" Version="0.18.0" />
+    <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.2" />
     <PackageVersion Include="Microsoft.SqlServer.SqlManagementObjects" Version="181.36.0" />
@@ -40,10 +40,10 @@
     <PackageVersion Include="Serilog.Settings.Configuration" Version="10.0.1" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageVersion Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
-    <PackageVersion Include="Soenneker.Extensions.Enumerable" Version="4.0.649" />
-    <PackageVersion Include="Soenneker.Extensions.Enumerable.String" Version="4.0.1410" />
-    <PackageVersion Include="Soenneker.Extensions.String" Version="4.0.723" />
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.32.0.713" />
+    <PackageVersion Include="Soenneker.Extensions.Enumerable" Version="4.0.658" />
+    <PackageVersion Include="Soenneker.Extensions.Enumerable.String" Version="4.0.1431" />
+    <PackageVersion Include="Soenneker.Extensions.String" Version="4.0.736" />
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.33.0.1635" />
     <PackageVersion Include="System.Linq.Async" Version="7.0.1" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="22.2.0" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions.Wrappers" Version="22.2.0" />
@@ -54,7 +54,7 @@
     <PackageVersion Include="Testcontainers.MySql" Version="4.13.0" />
     <PackageVersion Include="Testcontainers.Oracle" Version="4.13.0" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.13.0" />
-    <PackageVersion Include="TUnit" Version="1.65.63" />
+    <PackageVersion Include="TUnit" Version="1.65.68" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <!-- Transitive dependencies -->
     <PackageVersion Include="Azure.Core" Version="1.42.0" />

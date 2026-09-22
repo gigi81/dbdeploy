@@ -12,6 +12,9 @@ concurrency:
   group: integration-tests-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
   DOTNET_ENVIRONMENT: ci
   PROJECT: src/Grillisoft.Tools.DatabaseDeploy.Cli/Grillisoft.Tools.DatabaseDeploy.Cli.csproj

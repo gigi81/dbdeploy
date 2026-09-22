@@ -29,8 +29,7 @@ internal static partial class OracleDdlSplitter
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex TrailingAlter();
 
-    private static readonly char[] TrimmedFromSql = ['\r', '\n', '\t', ' ', ';', '/'];
-    private static readonly char[] TrimmedFromPlSql = ['\r', '\n', '\t', ' ', '/'];
+    private static readonly char[] Whitespace = ['\r', '\n', '\t', ' '];
 
     /// <param name="ddl">Raw DDL as returned by Oracle.</param>
     /// <param name="isPlSql">
@@ -43,19 +42,19 @@ internal static partial class OracleDdlSplitter
             return [];
 
         if (isPlSql)
-            return SplitPlSql(ddl.Trim(TrimmedFromPlSql));
+            return SplitPlSql(TrimTerminators(ddl, isPlSql: true));
 
         var statements = new List<string>();
         var current = new StringBuilder();
-        var scanner = new Scanner();
+        var scanner = new OracleSqlScanner();
 
         foreach (var line in ddl.Split('\n'))
         {
-            if (scanner.AtStatementBoundary && current.Length > 0 && StatementStart().IsMatch(line.TrimStart()))
+            if (scanner.InCode && current.Length > 0 && StatementStart().IsMatch(line.TrimStart()))
                 Flush(statements, current);
 
             current.Append(line.TrimEnd('\r')).Append('\n');
-            scanner.Advance(line);
+            scanner.Scan(line);
         }
 
         Flush(statements, current);
@@ -78,11 +77,11 @@ internal static partial class OracleDdlSplitter
 
         while (lines.Count > 1 && TrailingAlter().IsMatch(lines[^1].TrimStart()))
         {
-            trailing.Insert(0, lines[^1].Trim(TrimmedFromSql));
+            trailing.Insert(0, TrimTerminators(lines[^1], isPlSql: false));
             lines.RemoveAt(lines.Count - 1);
         }
 
-        var body = string.Join('\n', lines).Trim(TrimmedFromPlSql);
+        var body = TrimTerminators(string.Join('\n', lines), isPlSql: true);
         var statements = new List<string>();
 
         if (!string.IsNullOrWhiteSpace(body))
@@ -94,7 +93,7 @@ internal static partial class OracleDdlSplitter
 
     private static void Flush(List<string> statements, StringBuilder current)
     {
-        var statement = current.ToString().Trim(TrimmedFromSql);
+        var statement = TrimTerminators(current.ToString(), isPlSql: false);
         current.Clear();
 
         if (!string.IsNullOrWhiteSpace(statement))
@@ -102,76 +101,29 @@ internal static partial class OracleDdlSplitter
     }
 
     /// <summary>
-    /// Tracks whether the text carried over from the previous lines leaves us inside a literal or a
-    /// block comment, in which case the next line cannot be starting a new statement.
+    /// Takes the terminators off the end of a statement - a <c>/</c>, and for anything but a program
+    /// unit a <c>;</c> - but only where they are code.
     /// </summary>
-    private struct Scanner
+    /// <remarks>
+    /// They used to be trimmed off as characters, and a block comment ends with a slash: a view
+    /// whose text ended with a comment went out ending in an unterminated one. Only whitespace
+    /// comes off the front, for the same reason.
+    /// </remarks>
+    private static string TrimTerminators(string statement, bool isPlSql)
     {
-        private bool _inString;
-        private bool _inQuotedIdentifier;
-        private bool _inBlockComment;
+        var trimmed = statement.Trim(Whitespace);
 
-        public readonly bool AtStatementBoundary => !_inString && !_inQuotedIdentifier && !_inBlockComment;
-
-        public void Advance(string line)
+        while (true)
         {
-            var i = 0;
+            var last = OracleSqlScanner.LastCodeIndex(trimmed);
+            if (last < 0)
+                return trimmed;
 
-            while (i < line.Length)
-            {
-                var c = line[i];
-                var next = i + 1 < line.Length ? line[i + 1] : '\0';
-                i++;
+            var c = trimmed[last];
+            if (c != '/' && (isPlSql || c != ';'))
+                return trimmed;
 
-                if (_inBlockComment)
-                {
-                    if (c == '*' && next == '/')
-                    {
-                        _inBlockComment = false;
-                        i++;
-                    }
-
-                    continue;
-                }
-
-                if (_inString)
-                {
-                    if (c != '\'')
-                        continue;
-
-                    if (next == '\'')
-                        i++; // '' is an escaped quote, not the end of the literal
-                    else
-                        _inString = false;
-
-                    continue;
-                }
-
-                if (_inQuotedIdentifier)
-                {
-                    if (c == '"')
-                        _inQuotedIdentifier = false;
-
-                    continue;
-                }
-
-                if (c == '-' && next == '-')
-                    return; // line comment: nothing else on this line can change the state
-
-                if (c == '/' && next == '*')
-                {
-                    _inBlockComment = true;
-                    i++;
-                }
-                else if (c == '\'')
-                {
-                    _inString = true;
-                }
-                else if (c == '"')
-                {
-                    _inQuotedIdentifier = true;
-                }
-            }
+            trimmed = trimmed.Remove(last, 1).Trim(Whitespace);
         }
     }
 }

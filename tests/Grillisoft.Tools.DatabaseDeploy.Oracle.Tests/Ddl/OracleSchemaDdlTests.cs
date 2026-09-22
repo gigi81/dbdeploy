@@ -116,10 +116,12 @@ public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase>
           RETURN amount * 0.22;
         END;
         """,
+        // DBMS_METADATA hands a view's text back as it was written, block comments included, and a
+        // block comment ends with a slash: both splitters used to take it for the terminator
         """
         CREATE OR REPLACE VIEW v_customer_orders AS
-        SELECT c.id AS customer_id, c.name, o.id AS order_id, fn_tax(o.total) AS tax
-        FROM customer c JOIN orders o ON o.customer_id = c.id
+        SELECT c.id AS customer_id, c.name, /* the order's own key */ o.id AS order_id, fn_tax(o.total) AS tax
+        FROM customer c JOIN orders o ON o.customer_id = c.id /* every order has a customer */
         """,
         """
         CREATE MATERIALIZED VIEW mv_order_totals AS
@@ -145,11 +147,16 @@ public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase>
         // pkg_alpha's body calls pkg_beta, so the two bodies and the two specs have to be ordered
         """
         CREATE OR REPLACE PACKAGE BODY pkg_alpha AS
+          /*
+           * Over several lines; with semicolons, an apostrophe that's unpaired,
+           * and a line that is nothing but a slash:
+           /
+           */
           FUNCTION describe RETURN VARCHAR2 IS
           BEGIN
-            RETURN 'alpha then ' || pkg_beta.describe;
+            RETURN 'alpha then ' || pkg_beta.describe; /* calls the other package */
           END;
-        END pkg_alpha;
+        END pkg_alpha; /* end of pkg_alpha */
         """,
         """
         CREATE OR REPLACE PACKAGE BODY pkg_beta AS
@@ -221,6 +228,11 @@ public class OracleSchemaDdlTests : DatabaseTest<OracleDatabase>
         // a script carrying the tablespace of the database it was taken from cannot be replayed
         // anywhere else
         script.Should().NotContain("TABLESPACE");
+
+        // the block comments reached the script, so the replay above went through them
+        script.Should().Contain("/* the order's own key */")
+              .And.Contain("/* calls the other package */")
+              .And.Contain("a line that is nothing but a slash:");
     }
 
     private static async Task<string> GenerateScript(OracleDatabase database)

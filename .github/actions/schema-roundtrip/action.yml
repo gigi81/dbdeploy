@@ -28,7 +28,7 @@ runs:
         set -euo pipefail
         mkdir -p roundtrip/from
         cp "examples/$EXAMPLE"/dbsettings*.json roundtrip/from/
-        dotnet run --configuration Release --project "$PROJECT" -- generate-schema --path roundtrip/from
+        dotnet run --configuration Release --no-build --project "$PROJECT" -- generate-schema --path roundtrip/from
 
     # The first half of the contract: the generated script is deployable top to bottom on an empty
     # database. A missing dependency, a name only resolvable on the source server, an object written
@@ -44,7 +44,7 @@ runs:
         cp -r roundtrip/from/. roundtrip/to/
         rm -f roundtrip/to/dbsettings*.json
         cp ".github/roundtrip/$EXAMPLE/dbsettings.json" roundtrip/to/
-        dotnet run --configuration Release --project "$PROJECT" -- deploy --path roundtrip/to -b main --create
+        dotnet run --configuration Release --no-build --project "$PROJECT" -- deploy --path roundtrip/to -b main --create
 
     - name: Script the replayed database
       shell: bash
@@ -55,7 +55,7 @@ runs:
         set -euo pipefail
         mkdir -p roundtrip/back
         cp ".github/roundtrip/$EXAMPLE/dbsettings.json" roundtrip/back/
-        dotnet run --configuration Release --project "$PROJECT" -- generate-schema --path roundtrip/back
+        dotnet run --configuration Release --no-build --project "$PROJECT" -- generate-schema --path roundtrip/back
 
     # The second half: scripting the replayed database says the same thing as scripting the original
     # one. Anything the generation drops on the floor is missing from the replayed database and shows

@@ -171,6 +171,49 @@ public class OracleDdlSplitterTests
                   .Which.Should().Be("CREATE SEQUENCE \"S1\" START WITH 1");
     }
 
+    /// <summary>
+    /// A block comment ends with a slash, and the terminator was trimmed off as a character rather
+    /// than as a line: a view ending with a comment went out ending in an unterminated one.
+    /// </summary>
+    [Test]
+    public void Split_WhenAViewEndsWithABlockComment_ShouldKeepTheWholeComment()
+    {
+        var ddl = """
+
+              CREATE OR REPLACE FORCE VIEW "V1" ("ID") AS
+              SELECT "ID" FROM "T1" /* the key */
+            """;
+
+        var statements = OracleDdlSplitter.Split(ddl, isPlSql: false);
+
+        statements.Should().ContainSingle()
+                  .Which.Should().EndWith("FROM \"T1\" /* the key */");
+    }
+
+    [Test]
+    public void Split_WhenAPackageBodyStartsOrEndsWithABlockComment_ShouldKeepTheWholeComment()
+    {
+        var ddl = """
+            /* Keep me */ CREATE OR REPLACE PACKAGE BODY "PKG" AS
+              PROCEDURE "RUN" IS BEGIN NULL; END "RUN";
+            END "PKG"; /* end of PKG */
+            """;
+
+        var statements = OracleDdlSplitter.Split(ddl, isPlSql: true);
+
+        statements.Should().ContainSingle()
+                  .Which.Should().StartWith("/* Keep me */").And.EndWith("END \"PKG\"; /* end of PKG */");
+    }
+
+    [Test]
+    public void Split_ShouldStripATerminatorOnALineOfItsOwn()
+    {
+        var statements = OracleDdlSplitter.Split("CREATE OR REPLACE PROCEDURE \"P\" AS BEGIN NULL; END;\n/\n", isPlSql: true);
+
+        statements.Should().ContainSingle()
+                  .Which.Should().Be("CREATE OR REPLACE PROCEDURE \"P\" AS BEGIN NULL; END;");
+    }
+
     [Test]
     [Arguments(null)]
     [Arguments("")]

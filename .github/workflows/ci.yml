@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - 'feature/**'
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
   pull_request:
@@ -12,13 +11,41 @@ permissions:
   contents: read
   actions: read
   checks: write
+# A push to a branch with an open PR fires both `push` and `pull_request` for the same commit;
+# cancelling a superseded run here means a quick follow-up push doesn't leave two runs racing.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
+  # Windows and macOS are only run once a change has merged to main: they gate a merge on Ubuntu
+  # (which also runs the Docker/Testcontainers cases, see below) and only widen to the full matrix
+  # after. macOS in particular is the slowest and most expensive runner, so keeping it off every PR
+  # push is worth the small risk of a Windows/macOS-only regression surfacing after merge instead of
+  # before it.
+  os-matrix:
+    name: Determine OS matrix
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.os.outputs.list }}
+    steps:
+      - name: Determine which OS legs to run
+        id: os
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo 'list=["ubuntu-latest","windows-latest"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'list=["ubuntu-latest","windows-latest","macos-latest"]' >> "$GITHUB_OUTPUT"
+          fi
   test:
     name: Test
+    needs: [os-matrix]
+    # A tag is pushed once its commit is already on main and already green from that push's own run
+    # of this job, so re-running the whole matrix here would only be repeating work already done.
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: ${{ fromJson(needs.os-matrix.outputs.list) }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
@@ -29,6 +56,11 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            Directory.Packages.props
+            Directory.Build.props
       # TUnit runs on Microsoft.Testing.Platform (see global.json): the xUnit trait filter is now a
       # tree node filter on the test category, and the reports come from the platform rather than
       # from VSTest loggers and collectors.
@@ -74,6 +106,8 @@ jobs:
   pack:
     name: Pack
     needs: [test]
+    # `test` is skipped (not failed) on a tag push, and that must still let a release be packed.
+    if: ${{ always() && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -84,6 +118,11 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            Directory.Packages.props
+            Directory.Build.props
       - name: Create packages
         run: dotnet pack --configuration Release --output ./packages
       - name: Upload a Build Artifact
@@ -110,6 +149,11 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            Directory.Packages.props
+            Directory.Build.props
       - uses: actions/download-artifact@v8
         with:
           name: NuGet packages

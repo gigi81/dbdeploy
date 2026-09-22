@@ -3,14 +3,22 @@ on:
   push:
     branches:
       - main
-      - 'feature/**'
   pull_request:
     branches: [main]
+
+# A push to a branch with an open PR fires both `push` and `pull_request` for the same commit;
+# cancelling a superseded run here means a quick follow-up push doesn't leave two runs racing.
+concurrency:
+  group: integration-tests-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   DOTNET_ENVIRONMENT: ci
   PROJECT: src/Grillisoft.Tools.DatabaseDeploy.Cli/Grillisoft.Tools.DatabaseDeploy.Cli.csproj
-  
+  # A fixed path, rather than whatever $HOME resolves to inside the SDK container, so the cache
+  # step below and dotnet's own restore agree on where packages land.
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
 jobs:
   mssql-job:
     runs-on: ubuntu-latest
@@ -29,11 +37,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Packages.props', 'Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # These jobs only ever build and run the CLI project, so there's no reason to restore every
+      # test project's dependencies along with it.
       - name: Dotnet restore
-        run: dotnet restore
+        run: dotnet restore "$PROJECT"
+
+      - name: Dotnet build
+        run: dotnet build "$PROJECT" --configuration Release --no-restore
 
       - name: dbdeploy ci
-        run: dotnet run --configuration Release --project $PROJECT -- ci --path examples/mssql-02 -c --branch release/1.1
+        run: dotnet run --configuration Release --no-build --project $PROJECT -- ci --path examples/mssql-02 -c --branch release/1.1
 
       - name: dbdeploy generate-schema round trip
         uses: ./.github/actions/schema-roundtrip
@@ -58,11 +78,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Packages.props', 'Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
       - name: Dotnet restore
-        run: dotnet restore
+        run: dotnet restore "$PROJECT"
+
+      - name: Dotnet build
+        run: dotnet build "$PROJECT" --configuration Release --no-restore
 
       - name: dbdeploy ci
-        run: dotnet run --configuration Release --project $PROJECT -- ci --path examples/oracle-01 -c --branch release/1.1
+        run: dotnet run --configuration Release --no-build --project $PROJECT -- ci --path examples/oracle-01 -c --branch release/1.1
 
       - name: dbdeploy generate-schema round trip
         uses: ./.github/actions/schema-roundtrip
@@ -86,11 +116,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Packages.props', 'Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
       - name: Dotnet restore
-        run: dotnet restore
+        run: dotnet restore "$PROJECT"
+
+      - name: Dotnet build
+        run: dotnet build "$PROJECT" --configuration Release --no-restore
 
       - name: dbdeploy ci
-        run: dotnet run --configuration Release --project $PROJECT -- ci --path examples/mysql-01 -c --branch release/1.1
+        run: dotnet run --configuration Release --no-build --project $PROJECT -- ci --path examples/mysql-01 -c --branch release/1.1
 
       - name: dbdeploy generate-schema round trip
         uses: ./.github/actions/schema-roundtrip
@@ -114,11 +154,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Packages.props', 'Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
       - name: Dotnet restore
-        run: dotnet restore
+        run: dotnet restore "$PROJECT"
+
+      - name: Dotnet build
+        run: dotnet build "$PROJECT" --configuration Release --no-restore
 
       - name: dbdeploy ci
-        run: dotnet run --configuration Release --project $PROJECT -- ci --path examples/postgres-01 -c --branch release/1.1
+        run: dotnet run --configuration Release --no-build --project $PROJECT -- ci --path examples/postgres-01 -c --branch release/1.1
 
       - name: dbdeploy generate-schema round trip
         uses: ./.github/actions/schema-roundtrip
